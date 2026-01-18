@@ -1,1 +1,3 @@
-### Sprint boot
+### Sprint Web Project
+* Demo
+* Gallery API
