@@ -6,7 +6,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/gallery?useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
@@ -26,6 +27,12 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - gallery-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLs-88888888"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 networks:
   gallery-network:

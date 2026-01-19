@@ -14,7 +14,7 @@
 
 <script>
     function loadUsers() {
-        fetch("http://localhost:8080/api/users")
+        fetch("http://18.181.198.209:8080/api/users")
             .then(response => response.json())
             .then(data => {
                 const list = document.getElementById("userList");
