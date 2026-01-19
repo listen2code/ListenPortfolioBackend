@@ -13,7 +13,7 @@
 
 ## 2. 在 EC2 上安装 Docker
 
-通过 SSH 连接到你的 EC2 实例，并执行以下命令安装 Docker 和 Docker Compose。
+通过 SSH 连接到你的 EC2 实例，并执行以下命令安装 Docker、Buildx 和 Docker Compose。
 
 ### Amazon Linux 2023:
 ```bash
@@ -21,17 +21,37 @@ sudo yum update -y
 sudo yum install -y docker
 sudo service docker start
 sudo usermod -a -G docker ec2-user
-# 安装 Docker Compose 插件
+
+# 创建插件目录 (系统级)
 sudo mkdir -p /usr/local/lib/docker/cli-plugins
+
+# 安装 Docker Compose
 sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose
 sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# 安装 Docker Buildx (关键步骤)
+sudo curl -SL https://github.com/docker/buildx/releases/latest/download/buildx-linux-amd64 -o /usr/local/lib/docker/cli-plugins/docker-buildx
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 ```
 *注：执行完 `usermod` 后，建议断开 SSH 并重新连接以使用户组更改生效。*
 
 ### Ubuntu:
 ```bash
+# 设置 Docker 官方仓库以获取最新版本（推荐）
 sudo apt-get update
-sudo apt-get install -y docker.io docker-compose-plugin
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
 sudo usermod -aG docker $USER
 # 重新登录生效
 ```
@@ -75,7 +95,52 @@ docker compose up -d --build
 2.  在浏览器中访问：
     `http://<EC2-公网-IP>:8080`
 
-## 注意事项
+## 常见问题与故障排除
 
-*   **数据库数据**: 数据库文件存储在 Docker 卷 `db_data` 中，重启容器数据不会丢失。
-*   **生产环境建议**: 对于正式的生产环境，建议使用 AWS RDS 托管数据库，而不是在 Docker 中运行 MySQL，以获得更好的性能和备份功能。如果使用 RDS，请修改 `docker-compose.yml` 中的环境变量 `SPRING_DATASOURCE_URL` 指向 RDS 端点。
+### 问题 1: "docker: 'buildx' is not a docker command"
+
+如果按照上述步骤安装后仍然报错，请尝试以下方案：
+
+**方案 A：重启 Docker 服务**
+```bash
+sudo service docker restart
+```
+
+**方案 B：安装到用户目录（推荐尝试）**
+有时候系统目录 `/usr/local/lib/...` 不在 Docker 的搜索路径中。尝试安装到当前用户的目录下：
+```bash
+mkdir -p ~/.docker/cli-plugins
+curl -SL https://github.com/docker/buildx/releases/download/v0.30.1/buildx-v0.30.1.linux-amd64 -o ~/.docker/cli-plugins/docker-buildx
+chmod +x ~/.docker/cli-plugins/docker-buildx
+```
+安装完成后，运行 `docker buildx version` 验证。
+
+**方案 C：检查文件是否下载正确**
+运行 `ls -l /usr/local/lib/docker/cli-plugins/docker-buildx`。如果文件大小很小（例如几 KB），可能是下载失败（如下载到了 HTML 错误页）。请检查网络连接或 URL。
+
+### 问题 2: "ERROR [internal] load metadata for docker.io/library/openjdk:17-jdk-slim "
+* 
+```
+FROM openjdk:17-jdk-slim
+改成：
+FROM eclipse-temurin:17-jdk
+```
+
+### 问题 3: "Access denied for user 'root'@'172.18.0.3'"
+* openjdk:17-jdk-slim 镜像已经从 Docker Hub 下架，不存在了
+
+```
+CREATE USER 'appuser'@'%' IDENTIFIED BY 'yourpassword';
+GRANT ALL PRIVILEGES ON *.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
+```
+
+* 然后在 Spring Boot 的 application.properties 改成
+
+```
+spring.datasource.username=appuser
+spring.datasource.password=yourpassword
+spring.datasource.url=jdbc:mysql://mysql:3306/yourdb?useSSL=false&serverTimezone=Asia/Tokyo
+
+```
+
