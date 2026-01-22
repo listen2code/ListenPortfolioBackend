@@ -1,8 +1,8 @@
 package com.listen.gallery.controller;
 
+import com.listen.gallery.model.ApiResponse;
 import com.listen.gallery.model.UserInfo;
 import com.listen.gallery.service.UserInfoService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,30 +19,31 @@ public class UserInfoController {
     }
 
     @GetMapping("/userList")
-    public List<UserInfo> userList() {
-        return service.getAllUsers();
+    public ApiResponse<List<UserInfo>> userList() {
+        return ApiResponse.success(service.getAllUsers());
     }
 
     @GetMapping("/userInfo")
-    public ResponseEntity<UserInfo> userInfo(@RequestParam Integer id) {
+    public ApiResponse<UserInfo> userInfo(@RequestParam Integer id) {
         return service.getUserById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .map(ApiResponse::success)
+                .orElse(ApiResponse.error("101", "User not found"));
     }
 
     @PostMapping("/userUpdate")
-    public UserInfo userUpdate(@RequestBody UserInfo userInfo) {
-        return service.saveUser(userInfo);
+    public ApiResponse<Void> userUpdate(@RequestBody UserInfo userInfo) {
+        service.saveUser(userInfo);
+        return ApiResponse.success(null);
     }
 
     @PostMapping("/userDelete")
-    public ResponseEntity<Void> userDelete(@RequestBody Map<String, Integer> requestBody) {
+    public ApiResponse<Void> userDelete(@RequestBody Map<String, Integer> requestBody) {
         Integer id = requestBody.get("id");
         if (id != null) {
             service.deleteUser(id);
-            return ResponseEntity.ok().build();
+            return ApiResponse.success(null);
         } else {
-            return ResponseEntity.badRequest().build();
+            return ApiResponse.error("102","ID is required");
         }
     }
 }

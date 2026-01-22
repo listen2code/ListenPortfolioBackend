@@ -7,33 +7,34 @@ import jakarta.persistence.*;
 public class UserInfo {
 
     @Id
-    private Integer userId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
-    private String userName;
+    private String name;
 
-    private Integer userAge;
+    private Integer age;
 
-    public Integer getUserId() {
-        return userId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setUserId(Integer userId) {
-        this.userId = userId;
+    public void setId(Integer userId) {
+        this.id = userId;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getName() {
+        return name;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setName(String userName) {
+        this.name = userName;
     }
 
-    public Integer getUserAge() {
-        return userAge;
+    public Integer getAge() {
+        return age;
     }
 
-    public void setUserAge(Integer userAge) {
-        this.userAge = userAge;
+    public void setAge(Integer userAge) {
+        this.age = userAge;
     }
 }
