@@ -11,6 +11,8 @@ public class UserInfo {
 
     private String userName;
 
+    private Integer userAge;
+
     public Integer getUserId() {
         return userId;
     }
@@ -25,5 +27,13 @@ public class UserInfo {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public Integer getUserAge() {
+        return userAge;
+    }
+
+    public void setUserAge(Integer userAge) {
+        this.userAge = userAge;
     }
 }
