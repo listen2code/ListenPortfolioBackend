@@ -79,6 +79,9 @@ scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@18.181.198.209:~/g
 
 ```bash
 cd gallery
+## clean old db
+docker compose down -v
+## start build
 docker compose up -d --build
 ```
 
