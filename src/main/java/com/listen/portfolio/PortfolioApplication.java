@@ -1,13 +1,13 @@
-package com.listen.gallery;
+package com.listen.portfolio;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class GalleryApplication {
+public class PortfolioApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(GalleryApplication.class, args);
+		SpringApplication.run(PortfolioApplication.class, args);
 	}
 
 }

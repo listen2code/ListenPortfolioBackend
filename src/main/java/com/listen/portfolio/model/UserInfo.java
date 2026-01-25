@@ -1,4 +1,4 @@
-package com.listen.gallery.model;
+package com.listen.portfolio.model;
 
 import jakarta.persistence.*;
 

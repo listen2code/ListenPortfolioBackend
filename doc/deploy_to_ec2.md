@@ -45,18 +45,18 @@ sudo chmod +x /usr/local/bin/docker-compose
 
 **Windows (CMD/PowerShell):**
 ```cmd
-cd "C:\Users\liste\OneDrive\文档\project\gallery"
+cd "C:\...\portfolio"
 mvnw clean package -DskipTests
 ```
 
-构建成功后，你会在 `target` 目录下看到一个 `.war` 文件（例如 `gallery-0.0.1-SNAPSHOT.war`）。
+构建成功后，你会在 `target` 目录下看到一个 `.war` 文件（例如 `portfolio-0.0.1-SNAPSHOT.war`）。
 
 ## 4. 上传文件到 EC2
 
 你需要将编译好的 WAR 包和 Docker 配置文件上传到 EC2 实例。
 
 **需要上传的文件：**
-1.  `target/gallery-0.0.1-SNAPSHOT.war` (重命名为 `app.war` 上传，方便配置)
+1.  `target/portfolio-0.0.1-SNAPSHOT.war` (重命名为 `app.war` 上传，方便配置)
 2.  `Dockerfile`
 3.  `docker-compose.yml`
 
@@ -64,13 +64,13 @@ mvnw clean package -DskipTests
 
 ```bash
 # 1. 创建远程目录
-ssh -i tool/listen.pem ec2-user@18.181.198.209 "mkdir -p ~/gallery"
+ssh -i tool/listen.pem ec2-user@18.181.198.209 "mkdir -p ~/portfolio"
 
 # 2. 上传 WAR 包 (重命名为 app.war)
-scp -i tool/listen.pem target/gallery-0.0.1-SNAPSHOT.war ec2-user@18.181.198.209:~/gallery/app.war
+scp -i tool/listen.pem target/portfolio-0.0.1-SNAPSHOT.war ec2-user@18.181.198.209:~/portfolio/app.war
 
 # 3. 上传配置文件
-scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@18.181.198.209:~/gallery/
+scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@18.181.198.209:~/portfolio/
 ```
 
 ## 5. 启动服务
@@ -78,7 +78,7 @@ scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@18.181.198.209:~/g
 在 EC2 实例上，进入项目目录并启动。
 
 ```bash
-cd gallery
+cd portfolio
 ## clean old db
 docker compose down -v
 ## start build
@@ -124,27 +124,27 @@ services:
     depends_on:
       - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/gallery?useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: Ls-88888888
     networks:
-      - gallery-network
+      - portfolio-network
 
   db:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_DATABASE: gallery
+      MYSQL_DATABASE: portfolio
       MYSQL_ROOT_PASSWORD: Ls-88888888
     ports:
       - "3307:3306"
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - gallery-network
+      - portfolio-network
 
 networks:
-  gallery-network:
+  portfolio-network:
     driver: bridge
 
 volumes:

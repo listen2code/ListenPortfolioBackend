@@ -1,3 +1,3 @@
 ### Sprint Web Project
 * Demo
-* Gallery API
+* APP API

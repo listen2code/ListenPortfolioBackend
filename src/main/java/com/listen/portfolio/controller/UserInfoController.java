@@ -1,8 +1,8 @@
-package com.listen.gallery.controller;
+package com.listen.portfolio.controller;
 
-import com.listen.gallery.model.ApiResponse;
-import com.listen.gallery.model.UserInfo;
-import com.listen.gallery.service.UserInfoService;
+import com.listen.portfolio.model.ApiResponse;
+import com.listen.portfolio.model.UserInfo;
+import com.listen.portfolio.service.UserInfoService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

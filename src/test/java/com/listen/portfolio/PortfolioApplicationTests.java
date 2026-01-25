@@ -1,10 +1,10 @@
-package com.listen.gallery;
+package com.listen.portfolio;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class GalleryApplicationTests {
+class PortfolioApplicationTests {
 
 	@Test
 	void contextLoads() {

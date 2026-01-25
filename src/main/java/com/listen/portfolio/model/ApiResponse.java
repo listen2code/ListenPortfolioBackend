@@ -1,4 +1,4 @@
-package com.listen.gallery.model;
+package com.listen.portfolio.model;
 
 public class ApiResponse<T> {
     private String result;

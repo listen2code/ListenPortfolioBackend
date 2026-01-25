@@ -1,7 +1,7 @@
-package com.listen.gallery.service;
+package com.listen.portfolio.service;
 
-import com.listen.gallery.model.UserInfo;
-import com.listen.gallery.repository.UserInfoRepository;
+import com.listen.portfolio.model.UserInfo;
+import com.listen.portfolio.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
