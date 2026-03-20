@@ -5,11 +5,9 @@ import com.listen.portfolio.model.UserInfo;
 import com.listen.portfolio.service.UserInfoService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1/user")
 public class UserInfoController {
 
     private final UserInfoService service;
@@ -18,32 +16,19 @@ public class UserInfoController {
         this.service = service;
     }
 
-    @GetMapping("/userList")
-    public ApiResponse<List<UserInfo>> userList() {
-        return ApiResponse.success(service.getAllUsers());
-    }
-
-    @GetMapping("/userInfo")
-    public ApiResponse<UserInfo> userInfo(@RequestParam Integer id) {
+    @GetMapping
+    public ApiResponse<UserInfo> getUserById(@RequestParam Long id) {
         return service.getUserById(id)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error("101", "User not found"));
     }
 
-    @PostMapping("/userUpdate")
-    public ApiResponse<Void> userUpdate(@RequestBody UserInfo userInfo) {
-        service.saveUser(userInfo);
-        return ApiResponse.success(null);
-    }
-
-    @PostMapping("/userDelete")
-    public ApiResponse<Void> userDelete(@RequestBody Map<String, Integer> requestBody) {
-        Integer id = requestBody.get("id");
-        if (id != null) {
-            service.deleteUser(id);
-            return ApiResponse.success(null);
-        } else {
-            return ApiResponse.error("102","ID is required");
-        }
+    @PutMapping("/{id}")
+    public ApiResponse<UserInfo> updateUser(@PathVariable Long id, @RequestBody UserInfo userInfo) {
+        // Ensure the ID from the path is set on the object to be saved
+        userInfo.setId(id);
+        // The signUp method in the service will update if the user exists
+        UserInfo updatedUser = service.signUp(userInfo);
+        return ApiResponse.success(updatedUser);
     }
 }

@@ -1,5 +1,8 @@
 package com.listen.portfolio.service;
 
+import com.listen.portfolio.model.AuthRequest;
+import com.listen.portfolio.model.AuthResponse;
+import com.listen.portfolio.model.ChangePasswordRequest;
 import com.listen.portfolio.model.UserInfo;
 import com.listen.portfolio.repository.UserInfoRepository;
 import org.slf4j.Logger;
@@ -27,7 +30,7 @@ public class UserInfoService {
         return users;
     }
 
-    public Optional<UserInfo> getUserById(Integer id) {
+    public Optional<UserInfo> getUserById(Long id) {
         logger.info("Fetching user by id: {}", id);
         Optional<UserInfo> user = repo.findById(id);
         if (user.isPresent()) {
@@ -38,35 +41,54 @@ public class UserInfoService {
         return user;
     }
 
-    public void saveUser(UserInfo userInfo) {
-        logger.info("Attempting to save user: {}", userInfo.getId());
-        if (userInfo.getId() != null && repo.existsById(userInfo.getId())) {
-            logger.info("User with id: {} exists. Performing an update.", userInfo.getId());
-            repo.findById(userInfo.getId())
-                    .map(existingUser -> {
-                        existingUser.setName(userInfo.getName());
-                        existingUser.setAge(userInfo.getAge());
-                        UserInfo savedUser = repo.save(existingUser);
-                        logger.info("Successfully updated user: {}", savedUser);
-                        return savedUser;
-                    })
-                    .orElseGet(() -> {
-                        // This case is rare, but good to log
-                        logger.warn("User with id: {} was expected to exist but not found. Creating a new one instead.", userInfo.getId());
-                        UserInfo savedUser = repo.save(userInfo);
-                        logger.info("Successfully created user (fallback): {}", savedUser);
-                        return savedUser;
-                    });
-        } else {
-            logger.info("User does not exist or has no ID. Performing a create.");
-            UserInfo savedUser = repo.save(userInfo);
-            logger.info("Successfully created user: {}", savedUser);
-        }
+    public UserInfo signUp(UserInfo userInfo) {
+        logger.info("Signing up user: {}", userInfo.getEmail());
+        // In a real application, you would hash the password here
+        // userInfo.setPassword(passwordEncoder.encode(userInfo.getPassword()));
+        return repo.save(userInfo);
     }
 
-    public void deleteUser(Integer id) {
-        logger.info("Attempting to delete user with id: {}", id);
-        repo.deleteById(id);
-        logger.info("Successfully deleted user with id: {}", id);
+    public Optional<AuthResponse> login(AuthRequest authRequest) {
+        logger.info("Attempting to log in user: {}", authRequest.getUserName());
+        return repo.findByName(authRequest.getUserName())
+                .filter(userInfo -> {
+                    // In a real application, you would use passwordEncoder.matches()
+                    return userInfo.getPassword().equals(authRequest.getPassword());
+                })
+                .map(userInfo -> {
+                    // In a real application, you would generate a real JWT token
+                    String token = "dummy-jwt-token-for-" + userInfo.getEmail();
+                    String refreshToken = "dummy-refresh-token";
+                    logger.info("User {} logged in successfully", userInfo.getEmail());
+                    return new AuthResponse(token, refreshToken, userInfo.getId());
+                });
+    }
+
+    public boolean changePassword(ChangePasswordRequest changePasswordRequest) {
+        logger.info("Attempting to change password for user: {}", changePasswordRequest.getEmail());
+        return repo.findByName(changePasswordRequest.getEmail())
+                .map(userInfo -> {
+                    // In a real application, you would use passwordEncoder.matches()
+                    if (userInfo.getPassword().equals(changePasswordRequest.getOldPassword())) {
+                        // In a real application, you would hash the new password
+                        userInfo.setPassword(changePasswordRequest.getNewPassword());
+                        repo.save(userInfo);
+                        logger.info("Password changed successfully for user: {}", changePasswordRequest.getEmail());
+                        return true;
+                    }
+                    logger.warn("Old password does not match for user: {}", changePasswordRequest.getEmail());
+                    return false;
+                })
+                .orElse(false);
+    }
+
+    public boolean deleteAccount(Long userId) {
+        logger.info("Attempting to delete account for user: {}", userId);
+        return repo.findById(userId)
+                .map(userInfo -> {
+                    repo.delete(userInfo);
+                    logger.info("Account deleted successfully for user: {}", userId);
+                    return true;
+                }).orElse(false);
     }
 }

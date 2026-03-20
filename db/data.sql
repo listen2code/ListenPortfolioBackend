@@ -1,6 +1,6 @@
 -- Data for users table
-INSERT INTO users (id, name, location, email, avatar_url, status, job_title, bio, graduation_year, github_url, major) VALUES
-(1, 'Listen', 'Japan / Tokyo', 'listen2code@gmail.com', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Full Stack Mobile Architect', 'A seasoned mobile developer with over 10 years of experience in Android and 2+ years in Flutter. Specialized in high-performance application development, clean architecture, and reactive programming. Proven track record of leading cross-functional teams and delivering complex enterprise solutions.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
+INSERT INTO users (id, name, location, email, avatar_url, status, job_title, bio, graduation_year, github_url, major, password) VALUES
+(1, 'Listen', 'Japan / Tokyo', 'listen2code@gmail.com', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Full Stack Mobile Architect', 'A seasoned mobile developer with over 10 years of experience in Android and 2+ years in Flutter. Specialized in high-performance application development, clean architecture, and reactive programming. Proven track record of leading cross-functional teams and delivering complex enterprise solutions.', '2013', 'https://github.com/listen2code', 'softwareEngineering', '888888');
 
 -- Data for projects table
 INSERT INTO projects (id, title, subtitle, description, image_url, github_url) VALUES
