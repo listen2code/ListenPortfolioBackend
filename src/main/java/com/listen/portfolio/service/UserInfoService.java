@@ -1,9 +1,11 @@
 package com.listen.portfolio.service;
 
-import com.listen.portfolio.model.AuthRequest;
-import com.listen.portfolio.model.AuthResponse;
-import com.listen.portfolio.model.ChangePasswordRequest;
-import com.listen.portfolio.model.UserInfo;
+import com.listen.portfolio.model.request.AuthRequest;
+import com.listen.portfolio.model.request.ChangePasswordRequest;
+import com.listen.portfolio.model.request.ForgotPasswordRequest;
+import com.listen.portfolio.model.request.SignUpRequest;
+import com.listen.portfolio.model.response.AuthResponse;
+import com.listen.portfolio.model.response.UserInfoResponse;
 import com.listen.portfolio.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,16 +25,16 @@ public class UserInfoService {
         this.repo = repo;
     }
 
-    public List<UserInfo> getAllUsers() {
+    public List<UserInfoResponse> getAllUsers() {
         logger.info("Fetching all users");
-        List<UserInfo> users = repo.findAll();
+        List<UserInfoResponse> users = repo.findAll();
         logger.info("Found {} users", users.size());
         return users;
     }
 
-    public Optional<UserInfo> getUserById(Long id) {
+    public Optional<UserInfoResponse> getUserById(Long id) {
         logger.info("Fetching user by id: {}", id);
-        Optional<UserInfo> user = repo.findById(id);
+        Optional<UserInfoResponse> user = repo.findById(id);
         if (user.isPresent()) {
             logger.info("Found user: {}", user.get());
         } else {
@@ -41,11 +43,14 @@ public class UserInfoService {
         return user;
     }
 
-    public UserInfo signUp(UserInfo userInfo) {
-        logger.info("Signing up user: {}", userInfo.getEmail());
-        // In a real application, you would hash the password here
-        // userInfo.setPassword(passwordEncoder.encode(userInfo.getPassword()));
-        return repo.save(userInfo);
+    public void signUp(SignUpRequest signUpRequest) {
+        logger.info("Signing up new user: {}", signUpRequest.getUserName());
+        UserInfoResponse userInfo = new UserInfoResponse();
+        userInfo.setName(signUpRequest.getUserName());
+        userInfo.setPassword(signUpRequest.getPassword()); // In a real application, hash the password
+        userInfo.setEmail(signUpRequest.getEmail());
+        repo.save(userInfo);
+        logger.info("User {} signed up successfully", signUpRequest.getUserName());
     }
 
     public Optional<AuthResponse> login(AuthRequest authRequest) {
@@ -65,21 +70,32 @@ public class UserInfoService {
     }
 
     public boolean changePassword(ChangePasswordRequest changePasswordRequest) {
-        logger.info("Attempting to change password for user: {}", changePasswordRequest.getEmail());
-        return repo.findByName(changePasswordRequest.getEmail())
+        logger.info("Attempting to change password for user: {}", changePasswordRequest.getUserId());
+        return repo.findById(Long.parseLong(changePasswordRequest.getUserId()))
                 .map(userInfo -> {
                     // In a real application, you would use passwordEncoder.matches()
                     if (userInfo.getPassword().equals(changePasswordRequest.getOldPassword())) {
                         // In a real application, you would hash the new password
                         userInfo.setPassword(changePasswordRequest.getNewPassword());
                         repo.save(userInfo);
-                        logger.info("Password changed successfully for user: {}", changePasswordRequest.getEmail());
+                        logger.info("Password changed successfully for user: {}", changePasswordRequest.getUserId());
                         return true;
                     }
-                    logger.warn("Old password does not match for user: {}", changePasswordRequest.getEmail());
+                    logger.warn("Old password does not match for user: {}", changePasswordRequest.getUserId());
                     return false;
                 })
                 .orElse(false);
+    }
+
+    public boolean forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
+        logger.info("Attempting to reset password for user: {}", forgotPasswordRequest.getUserId());
+        return repo.findById(Long.parseLong(forgotPasswordRequest.getUserId()))
+                .map(userInfo -> {
+                    // In a real application, you would generate a password reset token and send an email
+                    logger.info("Password reset requested for user: {}", forgotPasswordRequest.getUserId());
+                    return true;
+                })
+                .orElse(false);        
     }
 
     public boolean deleteAccount(Long userId) {

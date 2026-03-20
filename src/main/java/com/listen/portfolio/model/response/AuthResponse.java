@@ -1,4 +1,4 @@
-package com.listen.portfolio.model;
+package com.listen.portfolio.model.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

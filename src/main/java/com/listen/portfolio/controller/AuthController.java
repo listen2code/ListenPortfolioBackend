@@ -1,13 +1,18 @@
 package com.listen.portfolio.controller;
 
 import com.listen.portfolio.model.*;
+import com.listen.portfolio.model.request.AuthRequest;
+import com.listen.portfolio.model.request.ChangePasswordRequest;
+import com.listen.portfolio.model.request.ForgotPasswordRequest;
+import com.listen.portfolio.model.request.SignUpRequest;
+import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.service.UserInfoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/v1/auth")
 public class AuthController {
 
     private final UserInfoService userInfoService;
@@ -17,9 +22,9 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserInfo>> signUp(@RequestBody UserInfo userInfo) {
-        UserInfo newUser = userInfoService.signUp(userInfo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(newUser));
+    public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody SignUpRequest signUpRequest) {
+        userInfoService.signUp(signUpRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
     }
 
     @PostMapping("/login")
@@ -32,6 +37,16 @@ public class AuthController {
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
         boolean success = userInfoService.changePassword(changePasswordRequest);
+        if (success) {
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("400", "Password change failed"));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        boolean success = userInfoService.forgotPassword(forgotPasswordRequest);
         if (success) {
             return ResponseEntity.ok(ApiResponse.success(null));
         } else {

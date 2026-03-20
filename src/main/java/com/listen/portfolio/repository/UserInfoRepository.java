@@ -2,18 +2,16 @@ package com.listen.portfolio.repository;
 
 
 
-import com.listen.portfolio.model.UserInfo;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 
-
+import com.listen.portfolio.model.response.UserInfoResponse;
 
 import java.util.Optional;
 
 
 
-public interface UserInfoRepository extends JpaRepository<UserInfo, Long> {
+public interface UserInfoRepository extends JpaRepository<UserInfoResponse, Long> {
 
-    Optional<UserInfo> findByName(String userName);
+    Optional<UserInfoResponse> findByName(String userName);
 
 }
