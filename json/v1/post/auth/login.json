@@ -1,0 +1,10 @@
+{
+  "result": "0",
+  "messageId": "messageId",
+  "message": "message",
+  "body": {
+    "userId": "1001",
+    "token": "token1",
+    "refreshToken": "refreshToken1"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "result": "0",
+  "message": "success",
+  "body": {
+    "id": "1",
+    "name": "Listen",
+    "location": "Japan / Tokyo",
+    "email": "listen2code@gmail.com",
+    "avatarUrl": "https://api.dicebear.com/7.x/avataaars/png?seed=Listen"
+  }
+}
