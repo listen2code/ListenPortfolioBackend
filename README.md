@@ -1,3 +1,3 @@
 ### Sprint Web Project
-* Demo
-* APP API
+* start project: .\mvnw spring-boot:run
+* access api: http://localhost:8080/api/userList
