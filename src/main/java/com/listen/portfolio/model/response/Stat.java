@@ -9,34 +9,37 @@ import java.util.List;
 public class Stat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long pk;
-    private String id;
+    private Long id;
+    @Column(name = "business_id", nullable = false)
+    private String businessId;
     private String year;
     private String label;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "stat_tags", joinColumns = @JoinColumn(name = "stat_id"))
+    @Column(name = "tag_name", nullable = false)
     private List<String> tags;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
     private UserInfoResponse user;
 
     // Getters and Setters
 
-    public Long getPk() {
-        return pk;
-    }
-
-    public void setPk(Long pk) {
-        this.pk = pk;
-    }
-
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getBusinessId() {
+        return businessId;
+    }
+
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
     }
 
     public String getYear() {

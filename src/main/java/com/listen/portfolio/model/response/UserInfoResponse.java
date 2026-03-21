@@ -25,7 +25,9 @@ public class UserInfoResponse {
     private String githubUrl;
     private String major;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "user_certifications", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "certification_name", nullable = false)
     private List<String> certifications;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

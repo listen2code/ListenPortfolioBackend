@@ -14,7 +14,7 @@ public class Education {
     private String period;
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
     private UserInfoResponse user;

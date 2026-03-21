@@ -1,40 +1,50 @@
--- Users table based on user.json and aboutMe.json
+-- Users table for authentication and basic info
 CREATE TABLE users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
-    location VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL, -- Added for login
+    location VARCHAR(255),
     avatar_url VARCHAR(255),
     status VARCHAR(255),
     job_title VARCHAR(255),
     bio TEXT,
-    graduation_year VARCHAR(4),
+    graduation_year VARCHAR(10),
     github_url VARCHAR(255),
     major VARCHAR(255)
 );
 
--- Projects table based on projects.json
+-- Collection table for user certifications (One-to-Many)
+CREATE TABLE user_certifications (
+    user_id BIGINT NOT NULL,
+    certification_name VARCHAR(255) NOT NULL,
+    PRIMARY KEY (user_id, certification_name),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Projects table
 CREATE TABLE projects (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    business_id VARCHAR(255) UNIQUE, -- For business logic ID from JSON
     title VARCHAR(255) NOT NULL,
     subtitle VARCHAR(255),
-    description TEXT,
+    project_desc TEXT, -- Renamed to avoid conflict with 'desc' keyword
     image_url VARCHAR(255),
     github_url VARCHAR(255)
 );
 
--- Tech stack for projects (many-to-many relationship)
+-- Collection table for project tech stack (One-to-Many)
 CREATE TABLE project_tech_stack (
-    project_id BIGINT,
-    tech_name VARCHAR(255),
+    project_id BIGINT NOT NULL,
+    tech_name VARCHAR(255) NOT NULL,
     PRIMARY KEY (project_id, tech_name),
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
--- Experiences table based on aboutMe.json
+-- Experiences table (Many-to-One with users)
 CREATE TABLE experiences (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT,
+    user_id BIGINT NOT NULL,
     title VARCHAR(255),
     company VARCHAR(255),
     period VARCHAR(255),
@@ -42,10 +52,10 @@ CREATE TABLE experiences (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Education table based on aboutMe.json
+-- Education table (Many-to-One with users)
 CREATE TABLE education (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT,
+    user_id BIGINT NOT NULL,
     degree VARCHAR(255),
     school VARCHAR(255),
     period VARCHAR(255),
@@ -53,45 +63,45 @@ CREATE TABLE education (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Skills table based on aboutMe.json
+-- Skills table (Many-to-One with users)
 CREATE TABLE skills (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT,
-    category VARCHAR(255),
-    items TEXT,
+    user_id BIGINT NOT NULL,
+    category VARCHAR(255) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Languages table based on aboutMe.json
+-- Collection table for skill items (One-to-Many)
+CREATE TABLE skill_items (
+    skill_id BIGINT NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    PRIMARY KEY (skill_id, item_name),
+    FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
+);
+
+-- Languages table (Many-to-One with users)
 CREATE TABLE languages (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT,
+    user_id BIGINT NOT NULL,
     name VARCHAR(255),
     level VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Certifications table based on aboutMe.json
-CREATE TABLE certifications (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT,
-    name VARCHAR(255),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Stats table based on aboutMe.json
+-- Stats table (Many-to-One with users)
 CREATE TABLE stats (
-    id VARCHAR(255) PRIMARY KEY,
-    user_id BIGINT,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    business_id VARCHAR(255) NOT NULL, -- For business logic ID from JSON
     year VARCHAR(255),
     label VARCHAR(255),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Tags for stats (many-to-many relationship)
+-- Collection table for stat tags (One-to-Many)
 CREATE TABLE stat_tags (
-    stat_id VARCHAR(255),
-    tag_name VARCHAR(255),
+    stat_id BIGINT NOT NULL,
+    tag_name VARCHAR(255) NOT NULL,
     PRIMARY KEY (stat_id, tag_name),
     FOREIGN KEY (stat_id) REFERENCES stats(id) ON DELETE CASCADE
 );

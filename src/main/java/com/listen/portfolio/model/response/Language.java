@@ -12,7 +12,7 @@ public class Language {
     private String name;
     private String level;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
     private UserInfoResponse user;

@@ -12,10 +12,12 @@ public class Skill {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String category;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "skill_items", joinColumns = @JoinColumn(name = "skill_id"))
+    @Column(name = "item_name", nullable = false)
     private List<String> items;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
     private UserInfoResponse user;

@@ -8,34 +8,36 @@ import java.util.List;
 public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long pk;
-    private String id;
+    private Long id;
+    @Column(name = "business_id", unique = true)
+    private String businessId;
     private String title;
     private String subtitle;
-    @Column(name = "`desc`")
-    private String desc;
+    @Column(name = "project_desc", columnDefinition="TEXT")
+    private String projectDesc;
     private String imageUrl;
     private String githubUrl;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "project_tech_stack", joinColumns = @JoinColumn(name = "project_id"))
+    @Column(name = "tech_name", nullable = false)
     private List<String> techStack;
 
     // Getters and setters for all fields
 
-    public Long getPk() {
-        return pk;
-    }
-
-    public void setPk(Long pk) {
-        this.pk = pk;
-    }
-
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getBusinessId() {
+        return businessId;
+    }
+
+    public void setBusinessId(String businessId) {
+        this.businessId = businessId;
     }
 
     public String getTitle() {
@@ -54,12 +56,12 @@ public class Project {
         this.subtitle = subtitle;
     }
 
-    public String getDesc() {
-        return desc;
+    public String getProjectDesc() {
+        return projectDesc;
     }
 
-    public void setDesc(String desc) {
-        this.desc = desc;
+    public void setProjectDesc(String projectDesc) {
+        this.projectDesc = projectDesc;
     }
 
     public String getImageUrl() {
