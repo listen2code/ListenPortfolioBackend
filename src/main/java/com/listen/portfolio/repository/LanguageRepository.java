@@ -1,7 +1,7 @@
 package com.listen.portfolio.repository;
 
-import com.listen.portfolio.model.response.Language;
+import com.listen.portfolio.model.response.LanguageResponse;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface LanguageRepository extends JpaRepository<Language, Long> {
+public interface LanguageRepository extends JpaRepository<LanguageResponse, Long> {
 }

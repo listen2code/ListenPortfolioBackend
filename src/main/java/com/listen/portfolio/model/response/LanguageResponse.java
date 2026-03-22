@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "languages")
-public class Language {
+public class LanguageResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,7 +15,7 @@ public class Language {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
-    private UserInfoResponse user;
+    private UserResponse user;
 
     // Getters and Setters
 
@@ -43,11 +43,11 @@ public class Language {
         this.level = level;
     }
 
-    public UserInfoResponse getUser() {
+    public UserResponse getUser() {
         return user;
     }
 
-    public void setUser(UserInfoResponse user) {
+    public void setUser(UserResponse user) {
         this.user = user;
     }
 }

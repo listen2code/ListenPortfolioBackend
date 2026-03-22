@@ -5,7 +5,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "projects")
-public class Project {
+public class ProjectResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

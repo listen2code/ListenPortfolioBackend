@@ -7,7 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "users")
-public class UserInfoResponse {
+public class UserResponse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,23 +32,23 @@ public class UserInfoResponse {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Stat> stats;
+    private List<StatResponse> stats;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Experience> experiences;
+    private List<ExperienceResponse> experiences;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Education> education;
+    private List<EducationResponse> education;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Language> languages;
+    private List<LanguageResponse> languages;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Skill> skills;
+    private List<SkillResponse> skills;
 
 
     public Long getId() {
@@ -155,43 +155,43 @@ public class UserInfoResponse {
         this.certifications = certifications;
     }
 
-    public List<Stat> getStats() {
+    public List<StatResponse> getStats() {
         return stats;
     }
 
-    public void setStats(List<Stat> stats) {
+    public void setStats(List<StatResponse> stats) {
         this.stats = stats;
     }
 
-    public List<Experience> getExperiences() {
+    public List<ExperienceResponse> getExperiences() {
         return experiences;
     }
 
-    public void setExperiences(List<Experience> experiences) {
+    public void setExperiences(List<ExperienceResponse> experiences) {
         this.experiences = experiences;
     }
 
-    public List<Education> getEducation() {
+    public List<EducationResponse> getEducation() {
         return education;
     }
 
-    public void setEducation(List<Education> education) {
+    public void setEducation(List<EducationResponse> education) {
         this.education = education;
     }
 
-    public List<Language> getLanguages() {
+    public List<LanguageResponse> getLanguages() {
         return languages;
     }
 
-    public void setLanguages(List<Language> languages) {
+    public void setLanguages(List<LanguageResponse> languages) {
         this.languages = languages;
     }
 
-    public List<Skill> getSkills() {
+    public List<SkillResponse> getSkills() {
         return skills;
     }
 
-    public void setSkills(List<Skill> skills) {
+    public void setSkills(List<SkillResponse> skills) {
         this.skills = skills;
     }
 }

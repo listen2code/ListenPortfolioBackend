@@ -12,7 +12,7 @@ public class UserSimpleResponse {
     }
 
     // Constructor to map from the UserInfoResponse entity
-    public UserSimpleResponse(UserInfoResponse user) {
+    public UserSimpleResponse(UserResponse user) {
         this.id = user.getId();
         this.name = user.getName();
         this.location = user.getLocation();

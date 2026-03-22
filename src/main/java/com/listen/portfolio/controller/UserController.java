@@ -2,7 +2,7 @@ package com.listen.portfolio.controller;
 
 import com.listen.portfolio.model.ApiResponse;
 import com.listen.portfolio.model.response.UserSimpleResponse;
-import com.listen.portfolio.service.UserInfoService;
+import com.listen.portfolio.service.UserService;
 
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/user")
-public class UserInfoController {
+public class UserController {
 
-    private final UserInfoService service;
+    private final UserService service;
 
-    public UserInfoController(UserInfoService service) {
+    public UserController(UserService service) {
         this.service = service;
     }
 

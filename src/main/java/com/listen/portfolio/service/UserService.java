@@ -5,9 +5,9 @@ import com.listen.portfolio.model.request.ChangePasswordRequest;
 import com.listen.portfolio.model.request.ForgotPasswordRequest;
 import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
-import com.listen.portfolio.model.response.UserInfoResponse;
+import com.listen.portfolio.model.response.UserResponse;
 import com.listen.portfolio.model.response.UserSimpleResponse;
-import com.listen.portfolio.repository.UserInfoRepository;
+import com.listen.portfolio.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,26 +16,26 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class UserInfoService {
+public class UserService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserInfoService.class);
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    private final UserInfoRepository repo;
+    private final UserRepository repo;
 
-    public UserInfoService(UserInfoRepository repo) {
+    public UserService(UserRepository repo) {
         this.repo = repo;
     }
 
-    public List<UserInfoResponse> getAllUsers() {
+    public List<UserResponse> getAllUsers() {
         logger.info("Fetching all users");
-        List<UserInfoResponse> users = repo.findAll();
+        List<UserResponse> users = repo.findAll();
         logger.info("Found {} users", users.size());
         return users;
     }
 
-    public Optional<UserInfoResponse> getUserById(Long id) {
+    public Optional<UserResponse> getUserById(Long id) {
         logger.info("Fetching user by id: {}", id);
-        Optional<UserInfoResponse> user = repo.findById(id);
+        Optional<UserResponse> user = repo.findById(id);
         if (user.isPresent()) {
             logger.info("Found user: {}", user.get());
         } else {
@@ -52,7 +52,7 @@ public class UserInfoService {
 
     public void signUp(SignUpRequest signUpRequest) {
         logger.info("Signing up new user: {}", signUpRequest.getUserName());
-        UserInfoResponse userInfo = new UserInfoResponse();
+        UserResponse userInfo = new UserResponse();
         userInfo.setName(signUpRequest.getUserName());
         userInfo.setPassword(signUpRequest.getPassword()); // In a real application, hash the password
         userInfo.setEmail(signUpRequest.getEmail());

@@ -1,6 +1,6 @@
 package com.listen.portfolio.service;
 
-import com.listen.portfolio.model.response.Project;
+import com.listen.portfolio.model.response.ProjectResponse;
 import com.listen.portfolio.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ public class ProjectService {
         this.projectRepository = projectRepository;
     }
 
-    public List<Project> getProjects() {
+    public List<ProjectResponse> getProjects() {
         logger.info("Fetching all projects from the database.");
         return projectRepository.findAll();
     }

@@ -4,23 +4,22 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "experiences")
-public class Experience {
+@Table(name = "education")
+public class EducationResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String title;
-    private String company;
+    private String degree;
+    private String school;
     private String period;
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
-    private UserInfoResponse user;
+    private UserResponse user;
 
     // Getters and Setters
-
 
     public Long getId() {
         return id;
@@ -30,20 +29,20 @@ public class Experience {
         this.id = id;
     }
 
-    public String getTitle() {
-        return title;
+    public String getDegree() {
+        return degree;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setDegree(String degree) {
+        this.degree = degree;
     }
 
-    public String getCompany() {
-        return company;
+    public String getSchool() {
+        return school;
     }
 
-    public void setCompany(String company) {
-        this.company = company;
+    public void setSchool(String school) {
+        this.school = school;
     }
 
     public String getPeriod() {
@@ -62,11 +61,11 @@ public class Experience {
         this.description = description;
     }
 
-    public UserInfoResponse getUser() {
+    public UserResponse getUser() {
         return user;
     }
 
-    public void setUser(UserInfoResponse user) {
+    public void setUser(UserResponse user) {
         this.user = user;
     }
 }

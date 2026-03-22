@@ -11,11 +11,11 @@ public class AboutMeResponse {
     private String github;
     private String major;
     private List<String> certifications;
-    private List<Stat> stats;
-    private List<Experience> experiences;
-    private List<Education> education;
-    private List<Language> languages;
-    private List<Skill> skills;
+    private List<StatResponse> stats;
+    private List<ExperienceResponse> experiences;
+    private List<EducationResponse> education;
+    private List<LanguageResponse> languages;
+    private List<SkillResponse> skills;
 
     // Getters and Setters
 
@@ -75,43 +75,43 @@ public class AboutMeResponse {
         this.certifications = certifications;
     }
 
-    public List<Stat> getStats() {
+    public List<StatResponse> getStats() {
         return stats;
     }
 
-    public void setStats(List<Stat> stats) {
+    public void setStats(List<StatResponse> stats) {
         this.stats = stats;
     }
 
-    public List<Experience> getExperiences() {
+    public List<ExperienceResponse> getExperiences() {
         return experiences;
     }
 
-    public void setExperiences(List<Experience> experiences) {
+    public void setExperiences(List<ExperienceResponse> experiences) {
         this.experiences = experiences;
     }
 
-    public List<Education> getEducation() {
+    public List<EducationResponse> getEducation() {
         return education;
     }
 
-    public void setEducation(List<Education> education) {
+    public void setEducation(List<EducationResponse> education) {
         this.education = education;
     }
 
-    public List<Language> getLanguages() {
+    public List<LanguageResponse> getLanguages() {
         return languages;
     }
 
-    public void setLanguages(List<Language> languages) {
+    public void setLanguages(List<LanguageResponse> languages) {
         this.languages = languages;
     }
 
-    public List<Skill> getSkills() {
+    public List<SkillResponse> getSkills() {
         return skills;
     }
 
-    public void setSkills(List<Skill> skills) {
+    public void setSkills(List<SkillResponse> skills) {
         this.skills = skills;
     }
 }

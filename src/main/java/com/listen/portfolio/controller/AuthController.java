@@ -6,7 +6,7 @@ import com.listen.portfolio.model.request.ChangePasswordRequest;
 import com.listen.portfolio.model.request.ForgotPasswordRequest;
 import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
-import com.listen.portfolio.service.UserInfoService;
+import com.listen.portfolio.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/v1/auth")
 public class AuthController {
 
-    private final UserInfoService userInfoService;
+    private final UserService userInfoService;
 
-    public AuthController(UserInfoService userInfoService) {
+    public AuthController(UserService userInfoService) {
         this.userInfoService = userInfoService;
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/signUp")
     public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody SignUpRequest signUpRequest) {
         userInfoService.signUp(signUpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));

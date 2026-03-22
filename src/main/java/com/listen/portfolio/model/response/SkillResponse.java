@@ -7,7 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "skills")
-public class Skill {
+public class SkillResponse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,7 +20,7 @@ public class Skill {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id", nullable=false)
     @JsonBackReference
-    private UserInfoResponse user;
+    private UserResponse user;
 
     // Getters and Setters
 
@@ -48,11 +48,11 @@ public class Skill {
         this.items = items;
     }
 
-    public UserInfoResponse getUser() {
+    public UserResponse getUser() {
         return user;
     }
 
-    public void setUser(UserInfoResponse user) {
+    public void setUser(UserResponse user) {
         this.user = user;
     }
 }
