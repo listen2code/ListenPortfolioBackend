@@ -64,6 +64,7 @@ public class UserService {
         logger.info("Attempting to log in user: {}", authRequest.getUserName());
         return repo.findByName(authRequest.getUserName())
                 .filter(userInfo -> {
+                    logger.info("User userInfo.getPassword={} authRequest.getPassword()={}", userInfo.getPassword(), authRequest.getPassword());
                     // In a real application, you would use passwordEncoder.matches()
                     return userInfo.getPassword().equals(authRequest.getPassword());
                 })
@@ -74,6 +75,13 @@ public class UserService {
                     logger.info("User {} logged in successfully", userInfo.getEmail());
                     return new AuthResponse(token, refreshToken, userInfo.getId());
                 });
+    }
+
+
+    public Optional<AuthResponse> logout() {
+        logger.info("Attempting to log out user");
+        // In a real application, you would invalidate the JWT token
+        return Optional.of(new AuthResponse("logged-out", "logged-out", null));
     }
 
     public boolean changePassword(ChangePasswordRequest changePasswordRequest) {

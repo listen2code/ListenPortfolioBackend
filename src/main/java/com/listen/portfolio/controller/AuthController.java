@@ -31,7 +31,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody AuthRequest authRequest) {
         return userInfoService.login(authRequest)
                 .map(authResponse -> ResponseEntity.ok(ApiResponse.success(authResponse)))
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("401", "Invalid credentials")));
+                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("1", "Invalid credentials")));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<AuthResponse>> logout() {
+        return userInfoService.logout()
+                .map(authResponse -> ResponseEntity.ok(ApiResponse.success(authResponse)))
+                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("500", "Logout failed")));
     }
 
     @PostMapping("/change-password")
