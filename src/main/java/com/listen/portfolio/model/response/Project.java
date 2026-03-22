@@ -14,7 +14,7 @@ public class Project {
     private String title;
     private String subtitle;
     @Column(name = "project_desc", columnDefinition="TEXT")
-    private String projectDesc;
+    private String desc;
     private String imageUrl;
     private String githubUrl;
     @ElementCollection(fetch = FetchType.LAZY)
@@ -56,12 +56,12 @@ public class Project {
         this.subtitle = subtitle;
     }
 
-    public String getProjectDesc() {
-        return projectDesc;
+    public String getDesc() {
+        return desc;
     }
 
-    public void setProjectDesc(String projectDesc) {
-        this.projectDesc = projectDesc;
+    public void setDesc(String desc) {
+        this.desc = desc;
     }
 
     public String getImageUrl() {
