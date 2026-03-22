@@ -1,6 +1,9 @@
 package com.listen.portfolio.model.response;
 
 import jakarta.persistence.*;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ser.std.ToStringSerializer;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.List;
 
@@ -11,6 +14,7 @@ public class UserResponse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
     private String name;
     private String email;

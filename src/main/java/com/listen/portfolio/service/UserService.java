@@ -8,6 +8,9 @@ import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.model.response.UserResponse;
 import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.repository.UserRepository;
+
+import utils.Constants;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -50,19 +53,27 @@ public class UserService {
                 .map(UserSimpleResponse::new);
     }
 
-    public void signUp(SignUpRequest signUpRequest) {
+    public boolean signUp(SignUpRequest signUpRequest) {
         logger.info("Signing up new user: {}", signUpRequest.getUserName());
+        
+        // Check if username already exists
+        if (repo.findByNameCaseSensitive(signUpRequest.getUserName()).isPresent()) {
+            logger.warn("Username {} already exists", signUpRequest.getUserName());
+            return false;
+        }
+        
         UserResponse userInfo = new UserResponse();
         userInfo.setName(signUpRequest.getUserName());
         userInfo.setPassword(signUpRequest.getPassword()); // In a real application, hash the password
         userInfo.setEmail(signUpRequest.getEmail());
         repo.save(userInfo);
         logger.info("User {} signed up successfully", signUpRequest.getUserName());
+        return true;
     }
 
     public Optional<AuthResponse> login(AuthRequest authRequest) {
         logger.info("Attempting to log in user: {}", authRequest.getUserName());
-        return repo.findByName(authRequest.getUserName())
+        return repo.findByNameCaseSensitive(authRequest.getUserName())
                 .filter(userInfo -> {
                     logger.info("User userInfo.getPassword={} authRequest.getPassword()={}", userInfo.getPassword(), authRequest.getPassword());
                     // In a real application, you would use passwordEncoder.matches()
@@ -76,7 +87,6 @@ public class UserService {
                     return new AuthResponse(token, refreshToken, userInfo.getId());
                 });
     }
-
 
     public Optional<AuthResponse> logout() {
         logger.info("Attempting to log out user");
@@ -106,8 +116,15 @@ public class UserService {
         logger.info("Attempting to reset password for user: {}", forgotPasswordRequest.getUserId());
         return repo.findById(Long.parseLong(forgotPasswordRequest.getUserId()))
                 .map(userInfo -> {
-                    // In a real application, you would generate a password reset token and send an email
-                    logger.info("Password reset requested for user: {}", forgotPasswordRequest.getUserId());
+                    // Verify email matches before resetting password
+                    if (!userInfo.getEmail().equals(forgotPasswordRequest.getEmail())) {
+                        logger.warn("Email does not match for user: {}", forgotPasswordRequest.getUserId());
+                        return false;
+                    }
+                    // Reset password to default
+                    userInfo.setPassword(Constants.DEFAULT_RESET_PASSWORD);
+                    repo.save(userInfo);
+                    logger.info("Password reset successfully for user: {}", forgotPasswordRequest.getUserId());
                     return true;
                 })
                 .orElse(false);        

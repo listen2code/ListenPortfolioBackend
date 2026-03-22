@@ -23,8 +23,12 @@ public class AuthController {
 
     @PostMapping("/signUp")
     public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody SignUpRequest signUpRequest) {
-        userInfoService.signUp(signUpRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        boolean success = userInfoService.signUp(signUpRequest);
+        if (success) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error("1001", "Username already exists"));
+        }
     }
 
     @PostMapping("/login")
