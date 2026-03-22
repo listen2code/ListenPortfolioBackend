@@ -6,6 +6,7 @@ import com.listen.portfolio.model.request.ForgotPasswordRequest;
 import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.model.response.UserInfoResponse;
+import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,12 @@ public class UserInfoService {
             logger.warn("User with id: {} not found", id);
         }
         return user;
+    }
+
+    public Optional<UserSimpleResponse> getSimpleUserById(Long id) {
+        logger.info("Fetching simple user by id: {}", id);
+        return repo.findById(id)
+                .map(UserSimpleResponse::new);
     }
 
     public void signUp(SignUpRequest signUpRequest) {

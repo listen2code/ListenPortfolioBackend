@@ -1,9 +1,14 @@
 package com.listen.portfolio.controller;
 
 import com.listen.portfolio.model.ApiResponse;
-import com.listen.portfolio.model.response.UserInfoResponse;
+import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.service.UserInfoService;
-import org.springframework.web.bind.annotation.*;
+
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
@@ -17,8 +22,8 @@ public class UserInfoController {
     }
 
     @GetMapping
-    public ApiResponse<UserInfoResponse> getUserById(@RequestParam Long id) {
-        return service.getUserById(id)
+    public ApiResponse<UserSimpleResponse> getUserById(@RequestParam Long id) {
+        return service.getSimpleUserById(id)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error("101", "User not found"));
     }
