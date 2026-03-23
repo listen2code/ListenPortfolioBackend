@@ -63,7 +63,7 @@ public class SecurityConfig {
 
     /**
      * 配置安全过滤链
-     * 禁用 CSRF，设置无状态会话，允许 /api/auth/** 路径无认证，其他路径需要认证。
+     * 禁用 CSRF，设置无状态会话，允许 /v1/auth/** 路径无认证，其他路径需要认证。
      * 添加 JWT 请求过滤器。
      */
     @Bean

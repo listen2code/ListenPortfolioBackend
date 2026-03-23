@@ -1,5 +1,7 @@
 package com.listen.portfolio.jwt;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.listen.portfolio.model.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,8 +87,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 username = jwtUtil.extractUsername(jwt);
                 logger.debug("从 JWT 令牌中提取用户名: {}", username);
             } catch (Exception e) {
-                // 如果令牌无效，记录错误并继续（不抛出异常）
+                // 如果令牌无效，返回标准 ApiResponse
                 logger.warn("JWT 令牌无效，无法提取用户名: {}", e.getMessage());
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
+                return;
             }
         } else {
             // 如果没有有效的 Authorization 头，记录警告
@@ -120,8 +124,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
                 logger.debug("用户 {} 的认证信息已设置到安全上下文中", username);
             } else {
-                // 令牌验证失败，记录警告
+                // 令牌验证失败，返回标准 ApiResponse
                 logger.warn("JWT 令牌验证失败，用户: {}", username);
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
+                return;
             }
         } else {
             // 如果没有用户名或已认证，记录调试信息
@@ -131,5 +137,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         // 继续过滤器链，将请求传递给下一个过滤器或控制器
         logger.debug("JWT 过滤器处理完成，继续过滤器链");
         chain.doFilter(request, response);
+    }
+
+    private void writeErrorResponse(HttpServletResponse response, int status, String messageId, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        ApiResponse<String> apiResponse = ApiResponse.error(messageId, message);
+        String json = new ObjectMapper().writeValueAsString(apiResponse);
+        response.getWriter().write(json);
     }
 }
