@@ -1,5 +1,6 @@
 package com.listen.portfolio.controller;
 
+import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.model.*;
 import com.listen.portfolio.model.request.AuthRequest;
 import com.listen.portfolio.model.request.ChangePasswordRequest;
@@ -7,13 +8,33 @@ import com.listen.portfolio.model.request.ForgotPasswordRequest;
 import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.service.UserService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
 
     private final UserService userInfoService;
 
@@ -32,17 +53,29 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody AuthRequest authRequest) {
-        return userInfoService.login(authRequest)
-                .map(authResponse -> ResponseEntity.ok(ApiResponse.success(authResponse)))
-                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("1", "Invalid credentials")));
+    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(authRequest.getUserName(), authRequest.getPassword())
+            );
+        } catch (BadCredentialsException e) {
+            logger.error("Invalid credentials for username {}", authRequest.getUserName());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("401", "Invalid credentials"));
+        }
+
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUserName());
+        final String jwt = jwtUtil.generateToken(userDetails);
+        final Long userId = userInfoService.getUserByName(authRequest.getUserName()).map(u -> u.getId()).orElse(null);
+        logger.info("User logged in successfully: {}", authRequest.getUserName());
+
+        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, null, userId)));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<AuthResponse>> logout() {
-        return userInfoService.logout()
-                .map(authResponse -> ResponseEntity.ok(ApiResponse.success(authResponse)))
-                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("500", "Logout failed")));
+    public ResponseEntity<ApiResponse<String>> logout() {
+        // For stateless JWT, logout is handled client-side by deleting the token.
+        // This endpoint is conventional and confirms logout from the client's perspective.
+        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
 
     @PostMapping("/change-password")
