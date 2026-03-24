@@ -63,7 +63,7 @@ public class SecurityConfig {
 
     /**
      * 配置安全过滤链
-     * 禁用 CSRF，设置无状态会话，允许 /v1/auth/** 路径无认证，其他路径需要认证。
+     * 禁用 CSRF，设置无状态会话，允许 /v1/auth/** 和静态资源路径无认证，其他路径需要认证。
      * 添加 JWT 请求过滤器。
      */
     @Bean
@@ -71,7 +71,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v1/auth/**", "/v1/projects/**").permitAll()
+                        .requestMatchers("/v1/auth/**", "/v1/projects/**", "/images/**", "/static/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
