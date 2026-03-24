@@ -9,6 +9,8 @@ import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.service.UserService;
 
+import utils.Constants;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,8 +126,8 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             // 认证失败（无效用户名或密码）
             logger.error("用户 {} 凭据无效", authRequest.getUserName());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error("401", "Invalid credentials"));
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Invalid credentials"));
         }
 
         // 认证成功！现在生成 JWT 令牌
