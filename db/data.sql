@@ -6,11 +6,11 @@ INSERT INTO users (id, name, email, password, location, avatar_url, status, job_
 -- Data for projects table
 -- Added business_id to match schema
 INSERT INTO projects (id, business_id, title, subtitle, project_desc, image_url, github_url) VALUES
-(1, 'lportfolio-flutter', 'lPortfolio Flutter', 'Current Project', 'My personal portfolio app (this one!). Demonstrating Clean Architecture, MVI pattern, and advanced Riverpod state management in Flutter.', 'localhost/resource/images/project1.jpg', 'https://github.com/listen2code/ListenPortfolioFlutter'),
-(2, 'listen-core-flutter', 'Listen Core Flutter', 'Framework', 'A foundational framework for Flutter projects providing base classes for MVI, standardized network wrappers, and lifecycle management.', 'localhost/resource/images/project2.jpg', 'https://github.com/listen2code/ListenCoreFlutter'),
-(3, 'listen-ui-kit', 'Listen UI Kit', 'Common Library', 'A comprehensive UI component library for consistent branding and rapid development across multiple Flutter applications.', 'localhost/resource/images/project3.jpg', 'https://github.com/listen2code/ListenUikitFlutter'),
-(4, 'portfolio-backend', 'Portfolio Backend', 'Cloud Infrastructure', 'The server-side implementation for this portfolio, managing user data, projects, and dynamic configurations.', 'localhost/resource/images/project4.jpg', 'https://github.com/listen2code/ListenPortfolioBackend'),
-(5, 'tech-knowledge-base', 'Tech Knowledge Base', 'Articles & Docs', 'A curated collection of my technical articles, architecture notes, and development experiences over the past 10 years.', 'localhost/resource/images/project5.jpg', 'https://github.com/listen2code/article');
+(1, 'lportfolio-flutter', 'lPortfolio Flutter', 'Current Project', 'My personal portfolio app (this one!). Demonstrating Clean Architecture, MVI pattern, and advanced Riverpod state management in Flutter.', 'localhost/images/project1.jpg', 'https://github.com/listen2code/ListenPortfolioFlutter'),
+(2, 'listen-core-flutter', 'Listen Core Flutter', 'Framework', 'A foundational framework for Flutter projects providing base classes for MVI, standardized network wrappers, and lifecycle management.', 'localhost/images/project2.jpg', 'https://github.com/listen2code/ListenCoreFlutter'),
+(3, 'listen-ui-kit', 'Listen UI Kit', 'Common Library', 'A comprehensive UI component library for consistent branding and rapid development across multiple Flutter applications.', 'localhost/images/project3.jpg', 'https://github.com/listen2code/ListenUikitFlutter'),
+(4, 'portfolio-backend', 'Portfolio Backend', 'Cloud Infrastructure', 'The server-side implementation for this portfolio, managing user data, projects, and dynamic configurations.', 'localhost/images/project4.jpg', 'https://github.com/listen2code/ListenPortfolioBackend'),
+(5, 'tech-knowledge-base', 'Tech Knowledge Base', 'Articles & Docs', 'A curated collection of my technical articles, architecture notes, and development experiences over the past 10 years.', 'localhost/images/project5.jpg', 'https://github.com/listen2code/article');
 
 -- Data for project_tech_stack table
 INSERT INTO project_tech_stack (project_id, tech_name) VALUES
