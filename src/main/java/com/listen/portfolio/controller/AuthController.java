@@ -4,6 +4,7 @@ import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.model.*;
 import com.listen.portfolio.model.request.AuthRequest;
 import com.listen.portfolio.model.request.ChangePasswordRequest;
+import com.listen.portfolio.model.request.DeleteAccountRequest;
 import com.listen.portfolio.model.request.ForgotPasswordRequest;
 import com.listen.portfolio.model.request.SignUpRequest;
 import com.listen.portfolio.model.response.AuthResponse;
@@ -254,18 +255,19 @@ public class AuthController {
      * @return ResponseEntity 成功（200 OK）或错误（404 Not Found）
      */
     @DeleteMapping("/delete-account")
-    public ResponseEntity<ApiResponse<Void>> deleteAccount(@RequestParam Long userId) {
-        logger.info("收到删除账户请求，用户 ID: {}", userId);
-        
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(
+            @RequestBody DeleteAccountRequest deleteAccountRequest) {
+        logger.info("收到删除账户请求，用户 ID: {}", deleteAccountRequest.getUserId());
+
         // 调用服务删除账户
-        boolean success = userInfoService.deleteAccount(userId);
+        boolean success = userInfoService.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));
         
         if (success) {
-            logger.info("用户 {} 账户删除成功", userId);
+            logger.info("用户 {} 账户删除成功", deleteAccountRequest.getUserId());
             return ResponseEntity.ok(ApiResponse.success(null));
         } else {
             // 用户未找到
-            logger.warn("用户 {} 未找到，删除失败", userId);
+            logger.warn("用户 {} 未找到，删除失败", deleteAccountRequest.getUserId());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiResponse.error("404", "User not found"));
         }
