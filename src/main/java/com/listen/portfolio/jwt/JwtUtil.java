@@ -42,7 +42,7 @@ public class JwtUtil {
      * @return 签名的 JWT 令牌字符串
      */
     public String generateToken(UserDetails userDetails) {
-        logger.debug("开始为用户 {} 生成 JWT 令牌", userDetails.getUsername());
+        logger.info("开始为用户 {} 生成 JWT 令牌", userDetails.getUsername());
         
         // 初始化空的 claims 映射以存储额外信息（如果需要）
         Map<String, Object> claims = new HashMap<>();
@@ -62,7 +62,7 @@ public class JwtUtil {
      * @return 紧凑的、签名的 JWT 令牌
      */
     private String createToken(Map<String, Object> claims, String subject) {
-        logger.debug("创建 JWT 令牌，主题: {}", subject);
+        logger.info("创建 JWT 令牌，主题: {}", subject);
         
         // 使用 HMAC SHA 算法从密钥字符串生成安全密钥
         // 此密钥用于签名令牌
@@ -83,7 +83,7 @@ public class JwtUtil {
                 // 将令牌序列化并压缩为紧凑字符串格式
                 .compact();
         
-        logger.debug("JWT 令牌创建完成，主题: {}", subject);
+        logger.info("JWT 令牌创建完成，主题: {}", subject);
         return token;
     }
 
@@ -95,7 +95,7 @@ public class JwtUtil {
      * @return 如果令牌有效则返回 true，否则返回 false
      */
     public Boolean validateToken(String token, UserDetails userDetails) {
-        logger.debug("开始验证 JWT 令牌，用户: {}", userDetails.getUsername());
+        logger.info("开始验证 JWT 令牌，用户: {}", userDetails.getUsername());
         
         try {
             // 从令牌中提取用户名
@@ -124,10 +124,10 @@ public class JwtUtil {
      * @return 存储在令牌主题字段中的用户名
      */
     public String extractUsername(String token) {
-        logger.debug("从 JWT 令牌中提取用户名");
+        logger.info("从 JWT 令牌中提取用户名");
         // 从令牌中提取主题 claim（即用户名）
         String username = extractClaim(token, Claims::getSubject);
-        logger.debug("提取到用户名: {}", username);
+        logger.info("提取到用户名: {}", username);
         return username;
     }
 
@@ -138,10 +138,10 @@ public class JwtUtil {
      * @return 令牌的过期日期
      */
     public Date extractExpiration(String token) {
-        logger.debug("从 JWT 令牌中提取过期日期");
+        logger.info("从 JWT 令牌中提取过期日期");
         // 从令牌中提取过期 claim
         Date expirationDate = extractClaim(token, Claims::getExpiration);
-        logger.debug("提取到过期日期: {}", expirationDate);
+        logger.info("提取到过期日期: {}", expirationDate);
         return expirationDate;
     }
 
@@ -152,7 +152,7 @@ public class JwtUtil {
      * @return 如果令牌已过期则返回 true，否则返回 false
      */
     public Boolean isTokenExpired(String token) {
-        logger.debug("检查 JWT 令牌是否过期");
+        logger.info("检查 JWT 令牌是否过期");
         // 获取当前日期
         final Date currentDate = new Date();
         // 获取令牌过期日期
@@ -163,7 +163,7 @@ public class JwtUtil {
         if (isExpired) {
             logger.warn("JWT 令牌已过期，过期时间: {}", expirationDate);
         } else {
-            logger.debug("JWT 令牌未过期，过期时间: {}", expirationDate);
+            logger.info("JWT 令牌未过期，过期时间: {}", expirationDate);
         }
         
         return isExpired;
@@ -179,12 +179,12 @@ public class JwtUtil {
      * @return 提取的 claim 值
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        logger.debug("从 JWT 令牌中提取自定义 claim");
+        logger.info("从 JWT 令牌中提取自定义 claim");
         // 从令牌获取所有 claims
         final Claims claims = extractAllClaims(token);
         // 应用解析器函数以提取特定 claim
         T claimValue = claimsResolver.apply(claims);
-        logger.debug("提取到 claim 值: {}", claimValue);
+        logger.info("提取到 claim 值: {}", claimValue);
         return claimValue;
     }
 
@@ -197,7 +197,7 @@ public class JwtUtil {
      * @throws io.jsonwebtoken.JwtException 如果令牌无效或签名验证失败
      */
     private Claims extractAllClaims(String token) {
-        logger.debug("从 JWT 令牌中提取所有 claims");
+        logger.info("从 JWT 令牌中提取所有 claims");
         
         try {
             // 生成用于签名令牌的相同安全密钥
@@ -215,7 +215,7 @@ public class JwtUtil {
                     // 从解析的令牌中提取主体（claims）
                     .getBody();
             
-            logger.debug("成功提取所有 claims");
+            logger.info("成功提取所有 claims");
             return claims;
         } catch (Exception e) {
             logger.error("提取 JWT 令牌 claims 时发生错误: {}", e.getMessage());

@@ -120,7 +120,7 @@ public class AuthController {
                             authRequest.getPassword()
                     )
             );
-            logger.debug("用户 {} 凭据验证成功", authRequest.getUserName());
+            logger.info("用户 {} 凭据验证成功", authRequest.getUserName());
         } catch (BadCredentialsException e) {
             // 认证失败（无效用户名或密码）
             logger.error("用户 {} 凭据无效", authRequest.getUserName());
