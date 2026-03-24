@@ -33,6 +33,9 @@ public class JwtUtil {
     // 从 application.properties 注入 jwt.expiration（例如：86400000 表示 24 小时，以毫秒为单位）
     @Value("${jwt.expiration}")
     private Long expiration;
+        
+    @Value("${jwt.refresh-expiration}")
+    private Long refreshExpiration;
 
     /**
      * 从 UserDetails 对象生成 JWT 令牌。
@@ -48,7 +51,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         
         // 使用用户名作为主题创建并返回令牌
-        String token = createToken(claims, userDetails.getUsername());
+        String token = createToken(claims, userDetails.getUsername(), new Date(System.currentTimeMillis() + expiration));
         logger.info("成功为用户 {} 生成 JWT 令牌", userDetails.getUsername());
         return token;
     }
@@ -61,7 +64,7 @@ public class JwtUtil {
      * @param subject 要设置为令牌主题的用户名
      * @return 紧凑的、签名的 JWT 令牌
      */
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, Date expirationDate) {
         logger.info("创建 JWT 令牌，主题: {}", subject);
         
         // 使用 HMAC SHA 算法从密钥字符串生成安全密钥
@@ -77,7 +80,7 @@ public class JwtUtil {
                 // 将令牌创建时间设置为当前时间
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 // 设置令牌过期时间（当前时间 + 过期持续时间）
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(expirationDate)
                 // 使用生成的密钥以 HS256 算法（HMAC SHA-256）签名令牌
                 .signWith(key, SignatureAlgorithm.HS256)
                 // 将令牌序列化并压缩为紧凑字符串格式
@@ -188,6 +191,24 @@ public class JwtUtil {
         return claimValue;
     }
 
+
+    public String generateRefreshToken(String token) {
+        logger.info("开始为用户 {} 生成 JWT 刷新令牌", token);
+        
+        // 从令牌中提取用户名
+        String userName = extractUsername(token);
+        logger.info("从令牌提取到用户名: {}", userName);
+        
+        // 初始化空的 claims 映射以存储额外信息（如果需要）
+        Map<String, Object> claims = new HashMap<>();
+        
+        // 使用用户名作为主题创建并返回刷新令牌
+        // 刷新令牌过期时间更长，例如 7 天
+        String refreshToken = createToken(claims, userName, new Date(System.currentTimeMillis() + refreshExpiration)); 
+        logger.info("成功为用户 {} 生成 JWT 刷新令牌", userName);
+        return refreshToken;
+    }
+
     /**
      * 从 JWT 令牌中提取并解析所有 claims。
      * 此方法解码令牌并验证其签名。
@@ -219,6 +240,27 @@ public class JwtUtil {
             return claims;
         } catch (Exception e) {
             logger.error("提取 JWT 令牌 claims 时发生错误: {}", e.getMessage());
+            throw e; // 重新抛出异常，让调用者处理
+        }
+    }
+
+    public String refreshToken(String refreshToken) {
+        logger.info("刷新 JWT 令牌，刷新令牌: {}", refreshToken);
+        
+        try {
+            // 从刷新令牌中提取用户名
+            String username = extractUsername(refreshToken);
+            logger.info("从刷新令牌提取到用户名: {}", username);
+            
+            // 这里可以添加额外的验证，例如检查刷新令牌是否在数据库中有效
+            
+            // 创建新的访问令牌
+            Map<String, Object> claims = new HashMap<>();
+            String newToken = createToken(claims, username, new Date(System.currentTimeMillis() + expiration));
+            logger.info("成功刷新 JWT 令牌，用户: {}", username);
+            return newToken;
+        } catch (Exception e) {
+            logger.error("刷新 JWT 令牌失败: {}", e.getMessage());
             throw e; // 重新抛出异常，让调用者处理
         }
     }

@@ -134,6 +134,9 @@ public class AuthController {
         
         // 使用用户名作为主题生成 JWT 令牌
         final String jwt = jwtUtil.generateToken(userDetails);
+
+        // 生成刷新令牌
+        final String refreshToken = jwtUtil.generateRefreshToken(jwt);
         
         // 获取用户的数据库 ID 以在响应中返回
         final Long userId = userInfoService.getUserByName(authRequest.getUserName())
@@ -143,7 +146,7 @@ public class AuthController {
         logger.info("用户 {} 登录成功", authRequest.getUserName());
 
         // 返回 JWT 令牌和用户 ID（客户端将在后续请求的 Authorization 头中使用令牌）
-        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, null, userId)));
+        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, refreshToken, userId)));
     }
 
     /**
@@ -162,6 +165,27 @@ public class AuthController {
         // 此端点是约定性的，从客户端角度确认登出。
         logger.info("登出成功");
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+    }
+
+    /**
+     * 端点：POST /v1/auth/refresh
+     * 刷新 JWT 令牌（无状态方法）。
+     * 在无状态 JWT 系统中，刷新由客户端处理，通过使用现有令牌获取新令牌。
+     * 此端点为 API 约定而存在，但不执行任何服务器端操作。
+     * 
+     * @return ResponseEntity 成功消息
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<?>> refresh(@RequestParam String refreshToken) {
+        logger.info("收到令牌刷新请求 {}", refreshToken);
+        String jwt = jwtUtil.refreshToken(refreshToken);
+        String newRefreshToken = jwtUtil.generateRefreshToken(jwt);
+        String username = jwtUtil.extractUsername(refreshToken);
+        Long userId = userInfoService.getUserByName(username)
+                .map(u -> u.getId())  // 如果用户存在，提取 ID
+                .orElse(null);  // 如果用户未找到，返回 null（不应该发生）
+        logger.info("令牌刷新成功，用户: {}", username);
+        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, newRefreshToken, userId)));
     }
 
     /**
