@@ -18,4 +18,6 @@ public interface UserRepository extends JpaRepository<UserResponse, Long> {
 
     @Query("SELECT u FROM UserResponse u WHERE BINARY(u.name) = BINARY(:name)")
     Optional<UserResponse> findByNameCaseSensitive(@Param("name") String name);
+
+    Optional<UserResponse> findByEmail(String email);
 }

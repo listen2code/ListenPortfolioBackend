@@ -221,26 +221,26 @@ public class AuthController {
     /**
      * 端点：POST /v1/auth/forgot-password
      * 当用户忘记密码时重置密码。
-     * 出于安全考虑，验证邮箱是否匹配注册邮箱。
+     * 通过邮箱查找用户并重置密码。
      * 将密码设置为默认重置密码。
      * 
-     * @param forgotPasswordRequest JSON 体，包含 userId 和 email
+     * @param forgotPasswordRequest JSON 体，包含 email
      * @return ResponseEntity 成功（200 OK）或错误（400 Bad Request）
      */
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        logger.info("收到忘记密码请求，用户 ID: {}", forgotPasswordRequest.getUserId());
+        logger.info("收到忘记密码请求，邮箱: {}", forgotPasswordRequest.getEmail());
         
-        // 调用服务重置密码（验证邮箱）
+        // 调用服务重置密码
         boolean success = userInfoService.forgotPassword(forgotPasswordRequest);
         
         if (success) {
-            logger.info("用户 {} 密码重置成功", forgotPasswordRequest.getUserId());
+            logger.info("邮箱 {} 密码重置成功", forgotPasswordRequest.getEmail());
             return ResponseEntity.ok(ApiResponse.success(null));
         } else {
-            // 密码重置失败（邮箱不匹配或用户未找到）
-            logger.warn("用户 {} 密码重置失败", forgotPasswordRequest.getUserId());
+            // 密码重置失败（用户未找到）
+            logger.warn("邮箱 {} 密码重置失败", forgotPasswordRequest.getEmail());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error("400", "Password change failed"));
         }

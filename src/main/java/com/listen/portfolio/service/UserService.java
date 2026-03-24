@@ -201,21 +201,15 @@ public class UserService implements UserDetailsService {
      * @return true if password reset successfully, false if email doesn't match or user not found
      */
     public boolean forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
-        logger.info("Attempting to reset password for user: {}", forgotPasswordRequest.getUserId());
+        logger.info("Attempting to reset password for email: {}", forgotPasswordRequest.getEmail());
         
-        return repo.findById(Long.parseLong(forgotPasswordRequest.getUserId()))
+        return repo.findByEmail(forgotPasswordRequest.getEmail())
                 .map(userInfo -> {
-                    // Verify that the email matches the user's registered email (security check)
-                    if (!userInfo.getEmail().equals(forgotPasswordRequest.getEmail())) {
-                        logger.warn("Email does not match for user: {}", forgotPasswordRequest.getUserId());
-                        return false;
-                    }
-                    
                     // Reset password to the default reset password (e.g., "888888" from Constants)
                     userInfo.setPassword(passwordEncoder.encode(Constants.DEFAULT_RESET_PASSWORD));
                     // Save the reset password to database
                     repo.save(userInfo);
-                    logger.info("Password reset successfully for user: {}", forgotPasswordRequest.getUserId());
+                    logger.info("Password reset successfully for user: {}", userInfo.getId());
                     return true;
                 })
                 // If user not found, return false
