@@ -94,7 +94,7 @@ public class AuthController {
             // 用户名已存在，返回 400 Bad Request 和错误消息
             logger.warn("用户名 {} 已存在，注册失败", signUpRequest.getUserName());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error("1001", "Username already exists"));
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Username already exists"));
         }
     }
 
@@ -214,7 +214,7 @@ public class AuthController {
             // 密码更改失败（旧密码不匹配或用户未找到）
             logger.warn("用户 {} 密码更改失败", changePasswordRequest.getUserId());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error("400", "Password change failed"));
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
         }
     }
 
@@ -242,7 +242,7 @@ public class AuthController {
             // 密码重置失败（用户未找到）
             logger.warn("邮箱 {} 密码重置失败", forgotPasswordRequest.getEmail());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error("400", "Password change failed"));
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
         }
     }
 
@@ -269,7 +269,7 @@ public class AuthController {
             // 用户未找到
             logger.warn("用户 {} 未找到，删除失败", deleteAccountRequest.getUserId());
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error("404", "User not found"));
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
         }
     }
 }
