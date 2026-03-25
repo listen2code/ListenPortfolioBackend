@@ -4,10 +4,9 @@ import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
+import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
-
-import utils.Constants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

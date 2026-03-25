@@ -1,6 +1,8 @@
 package com.listen.portfolio.api.v1.about;
 
 import com.listen.portfolio.api.v1.about.dto.AboutMeDto;
+import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.AboutMeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,8 +11,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import utils.ApiResponse;
-import utils.Constants;
 
 @RestController
 @RequestMapping("/v1/aboutMe")

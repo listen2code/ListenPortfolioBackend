@@ -1,4 +1,4 @@
-package utils;
+package com.listen.portfolio.common;
 
 public class ApiResponse<T> {
     private String result;

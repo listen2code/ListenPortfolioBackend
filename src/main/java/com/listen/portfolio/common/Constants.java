@@ -1,4 +1,4 @@
-package utils;
+package com.listen.portfolio.common;
 
 public class Constants {
     // Password constants
@@ -6,9 +6,6 @@ public class Constants {
     
     // Error codes
     public static final String DEFAULT_SERVER_ERROR = "1";
-    public static final String ERROR_USERNAME_EXISTS = "1001";
-    public static final String ERROR_INVALID_CREDENTIALS = "1002";
-    public static final String ERROR_EMAIL_MISMATCH = "1003";
     
     private Constants() {
         // Private constructor to prevent instantiation

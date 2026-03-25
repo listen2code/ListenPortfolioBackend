@@ -31,53 +31,111 @@
 		<java.version>17</java.version>
 	</properties>
 	<dependencies>
+		<!--
+			说明：Spring Boot JPA 启动器，集成 Hibernate 与 Spring Data JPA
+			原理：自动配置 EntityManagerFactory、TransactionManager、JPA 属性，
+			      提供 Repository 接口支持，实现 ORM 与数据库交互
+			使用场景：所有需要数据库持久化操作的实体类、Repository 接口、事务管理
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+		<!--
+			说明：Thymeleaf 模板引擎启动器，支持服务器端渲染
+			原理：自动配置 ThymeleafViewResolver、TemplateEngine，
+			      提供 HTML 模板解析与动态内容渲染能力
+			使用场景：需要服务端渲染的页面、邮件模板、动态HTML生成
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
+		<!--
+			说明：Spring MVC 启动器，提供Web MVC框架支持
+			原理：自动配置 DispatcherServlet、HandlerMapping、ViewResolver，
+			      实现 RESTful API 与 MVC 模式的请求处理
+			使用场景：RESTful接口开发、控制器层、请求映射与参数绑定
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!--
+			说明：Lombok 代码生成工具，减少样板代码编写
+			原理：通过注解处理器在编译期自动生成 getter、setter、构造函数等代码
+			使用场景：实体类、DTO、VO 等需要大量样板代码的类，提高开发效率
+		-->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<!--
+			说明：MySQL JDBC 驱动连接器，提供数据库连接支持
+			原理：实现 JDBC 规范，建立 Java 应用与 MySQL 数据库的连接通道
+			使用场景：所有需要连接 MySQL 数据库的操作，数据持久化与查询
+		-->
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<!--
+			说明：内嵌 Tomcat 服务器，支持将应用打包为 WAR 文件部署
+			原理：提供 Servlet 容器运行时环境，scope=provided 表示由外部容器提供
+			使用场景：传统 WAR 包部署模式，需要部署到独立 Tomcat 服务器
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-tomcat</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<!--
+			说明：Spring Boot JPA 测试启动器，提供数据层测试支持
+			原理：自动配置内存数据库和测试事务，支持 Repository 层单元测试
+			使用场景：Repository 接口测试、数据库操作测试、事务回滚测试
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!--
+			说明：Thymeleaf 测试启动器，提供模板引擎的测试支持
+			原理：配置测试环境下的模板解析器，支持模板渲染测试
+			使用场景：页面模板测试、邮件模板验证、服务端渲染测试
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!--
+			说明：Spring MVC 测试启动器，提供 Web 层测试支持
+			原理：MockMvc 测试框架，无需启动服务器即可测试控制器
+			使用场景：Controller 单元测试、REST API 测试、请求响应验证
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!--
+			说明：Spring Boot Web 启动器，提供完整的Web开发支持
+			原理：包含Spring MVC、Jackson、Tomcat等，支持RESTful API开发
+			使用场景：Web应用开发、RESTful接口、HTTP请求处理与响应
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<!--
+			说明：Spring Security 安全框架启动器，提供认证与授权功能
+			原理：基于过滤器链实现安全控制，支持JWT、OAuth2等多种认证方式
+			使用场景：用户登录认证、权限控制、接口安全保护、防止未授权访问
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
@@ -124,27 +182,52 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.5.0</version>
 		</dependency>
+		<!--
+			说明：Jackson JSON 处理库，提供 JSON 序列化与反序列化功能
+			原理：基于流式 API 和树模型，高效处理 JSON 数据的读写转换
+			使用场景：RESTful API 的 JSON 响应、请求体解析、对象与 JSON 互转
+		-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
+		<!--
+			说明：JJWT API 库，提供 JWT 令牌创建与验证的标准接口
+			原理：定义 JWT 相关的接口和异常，实现 JWT 的构建、解析和验证功能
+			使用场景：用户认证授权、访问令牌生成、API 安全保护、单点登录
+		-->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
 			<version>0.11.5</version>
 		</dependency>
+		<!--
+			说明：JJWT 实现库，提供 JWT 的具体实现算法和功能
+			原理：runtime 作用域，包含 JWT 的签名、验证、解析等核心实现
+			使用场景：JWT 令牌的签名验证、密钥处理、算法实现
+		-->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-impl</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<!--
+			说明：JJWT Jackson 集成，提供 JWT 与 JSON 的转换支持
+			原理：runtime 作用域，使用 Jackson 处理 JWT 中的 JSON 数据序列化
+			使用场景：JWT claims 的 JSON 序列化、反序列化，复杂数据结构支持
+		-->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+		<!--
+			说明：Spring Boot 开发工具，提供热部署和开发时便利功能
+			原理：监控 classpath 变化，自动重启应用，提供 LiveReload 浏览器插件支持
+			使用场景：开发环境热部署、代码修改自动重启、提升开发效率
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -155,6 +238,11 @@
 
 	<build>
 		<plugins>
+			<!--
+				说明：Spring Boot Maven 插件，提供打包和运行支持
+				原理：重新打包生成可执行的 JAR/WAR 文件，包含所有依赖和内嵌服务器
+				使用场景：项目打包、内嵌服务器运行、生产环境部署
+			-->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

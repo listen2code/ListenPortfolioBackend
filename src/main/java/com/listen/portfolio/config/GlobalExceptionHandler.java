@@ -1,5 +1,7 @@
 package com.listen.portfolio.config;
 
+import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.common.error.ErrorCode;
 import com.listen.portfolio.common.exception.BusinessException;
 
@@ -15,9 +17,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import utils.ApiResponse;
-import utils.Constants;
 
 @RestControllerAdvice
 /**
