@@ -1,7 +1,7 @@
 package com.listen.portfolio.api.v1.about;
 
+import com.listen.portfolio.api.v1.about.dto.AboutMeDto;
 import com.listen.portfolio.model.ApiResponse;
-import com.listen.portfolio.model.response.AboutMeResponse;
 import com.listen.portfolio.service.AboutMeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,9 +33,9 @@ public class AboutMeController {
 
     @GetMapping
     @Operation(summary = "Get about-me", description = "Get about-me information")
-    public ApiResponse<AboutMeResponse> getAboutMe() {
+    public ApiResponse<AboutMeDto> getAboutMe() {
         logger.info("Get about-me information");
-        return aboutMeService.getAboutMe()
+        return aboutMeService.getAboutMeDto()
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "About me not found"));
     }
