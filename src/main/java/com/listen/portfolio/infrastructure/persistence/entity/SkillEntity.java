@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * SkillEntity（JPA Entity）。
  *
- * 说明（中文）：
+ * 说明：
  * - 对应 skills 表
  * - items 为值类型集合，存储在 skill_items 表
  */

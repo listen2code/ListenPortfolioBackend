@@ -14,7 +14,7 @@ import jakarta.persistence.Table;
 /**
  * ExperienceEntity（JPA Entity）。
  *
- * 说明（中文）：
+ * 说明：
  * - 对应 experiences 表
  * - 归属用户通过 user_id 关联 UserEntity（多对一）
  */

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<!--
-		说明（中文）：
+		说明：
 		1) 采用 LogstashEncoder 将日志输出为 JSON 结构化格式，便于接入 ELK/Loki 等日志平台，支持字段检索与聚合
 		2) 控制台输出（ConsoleAppender）即可满足开发/测试场景；生产可按需追加异步/文件/远端 Appender
 		3) 结合应用内的 MDC（如 requestId），日志平台可实现按请求链路精确定位

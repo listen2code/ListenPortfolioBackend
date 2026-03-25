@@ -6,7 +6,7 @@
 
 ## 🧾 修订记录
 
-> 说明（中文）：本区块用于保留关键架构设计修订痕迹，避免“文档与代码现状不一致”导致新成员误解或误用。
+> 说明：本区块用于保留关键架构设计修订痕迹，避免“文档与代码现状不一致”导致新成员误解或误用。
 
 | 日期 | 修订内容 | 修订原因 |
 |---|---|---|
@@ -52,7 +52,7 @@ spring.datasource.password=${DB_PASSWORD:Ls-88888888}
 
 #### 2. **实体设计问题**
 
-> 修订说明（中文）：下方代码片段为“原文问题示例（已过时）”。当前代码已将 Entity 归位到 `infrastructure/persistence/entity`（例如 UserEntity），API 层返回 DTO，避免实体透传。
+> 修订说明：下方代码片段为“原文问题示例（已过时）”。当前代码已将 Entity 归位到 `infrastructure/persistence/entity`（例如 UserEntity），API 层返回 DTO，避免实体透传。
 
 ```java
 // UserResponse作为实体类但命名像DTO
@@ -288,7 +288,7 @@ src/test/
 
 #### ✅ 现状目录结构（已落地：模块化单体）
 
-> 说明（中文）：下方结构为当前代码仓库的真实结构（会持续演进）。目标是“API 只返回 DTO；Entity 只存在于持久化层；Service 在事务内完成装配；Repository 只做数据访问”。
+> 说明：下方结构为当前代码仓库的真实结构（会持续演进）。目标是“API 只返回 DTO；Entity 只存在于持久化层；Service 在事务内完成装配；Repository 只做数据访问”。
 
 ```
 src/main/java/com/listen/portfolio/
@@ -322,7 +322,7 @@ src/main/java/com/listen/portfolio/
   - 只做参数校验、调用 Service、返回 ApiResponse，不写业务规则、不直接访问 Repository
 - Service 层
   - 负责事务边界（@Transactional）、业务规则与 Entity→DTO 的装配
-  - 说明（中文）：项目已关闭 OSIV（`spring.jpa.open-in-view=false`），因此必须在 Service（事务内）完成装配，避免序列化阶段懒加载
+  - 说明：项目已关闭 OSIV（`spring.jpa.open-in-view=false`），因此必须在 Service（事务内）完成装配，避免序列化阶段懒加载
 - Repository 层
   - 只做数据访问，返回 Entity/投影，不拼装业务响应
 - Entity（持久化层）
@@ -584,7 +584,7 @@ src/test/
 
 ## ✅ 下一步行动清单（可执行）
 
-> 说明（中文）：责任人与截止时间为项目管理字段，可按团队实际调整；验收标准用于避免“做了但不可验证”的情况。
+> 说明：责任人与截止时间为项目管理字段，可按团队实际调整；验收标准用于避免“做了但不可验证”的情况。
 
 | 任务 | 责任人 | 截止时间 | 验收标准 |
 |---|---|---|---|

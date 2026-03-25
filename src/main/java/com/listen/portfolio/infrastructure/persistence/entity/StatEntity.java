@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * StatEntity（JPA Entity）。
  *
- * 说明（中文）：
+ * 说明：
  * - 对应 stats 表
  * - tags 为值类型集合，存储在 stat_tags 表
  */

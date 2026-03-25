@@ -62,6 +62,7 @@ public class AuthController {
         this.userInfoService = userInfoService;
     }
 
+    
     @PostMapping("/signUp")
     @Operation(summary = "Sign up", description = "Register a new user account")
     public ResponseEntity<ApiResponse<Void>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
@@ -94,8 +95,8 @@ public class AuthController {
             );
             logger.info("Credentials verified for user {}", authRequest.getUserName());
         } catch (BadCredentialsException e) {
-            // 说明（中文）：登录失败统一按“凭据无效”处理，避免区分“用户不存在/密码错误”导致用户枚举风险
-            // 日志（英文）：记录 user 与 reason，便于排查（不会打印密码/token 等敏感信息）
+            // 登录失败统一按“凭据无效”处理，避免区分“用户不存在/密码错误”导致用户枚举风险
+            // 记录 user 与 reason，便于排查（不会打印密码/token 等敏感信息）
             logger.warn("Invalid credentials for user {}, reason: {}", authRequest.getUserName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Invalid credentials"));
@@ -116,6 +117,7 @@ public class AuthController {
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Stateless logout; client should discard tokens")
     public ResponseEntity<ApiResponse<String>> logout() {
+        // todo Logout
         logger.info("Received logout request");
         logger.info("Logout successful");
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));

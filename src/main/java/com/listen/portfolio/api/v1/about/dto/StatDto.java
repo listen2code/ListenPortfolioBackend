@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Stat DTO（API 返回对象）。
  *
- * 说明（中文）：
+ * 说明：
  * - 对应 stats 表的“只读展示数据”
  * - 不包含 user 反向引用字段，避免 JSON 循环引用与实体耦合
  */

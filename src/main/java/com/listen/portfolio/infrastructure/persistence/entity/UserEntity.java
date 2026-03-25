@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * UserEntity（JPA Entity）。
  *
- * 说明（中文）：
+ * 说明：
  * - 该类是 users 表的持久化映射对象，属于“数据访问层/持久化层”模型
  * - 之前项目使用 UserResponse 作为 Entity，命名与职责混淆（看起来像 API Response，但实际是表映射）
  * - 这里调整为 UserEntity：API 层统一返回 DTO，避免实体透传与事务外懒加载风险

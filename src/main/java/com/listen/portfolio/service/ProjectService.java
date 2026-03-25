@@ -22,16 +22,16 @@ public class ProjectService {
     }
 
     /**
-     * 事务说明（中文）：
+     * 事务说明：
      * - 使用 @Transactional(readOnly = true) 开启只读事务
      * - 目的：降低事务开销、避免不必要的脏检查；在同一持久化上下文中完成查询与 DTO 装配
      * - 注意：只读事务中不执行写操作；DTO 转换在事务内完成，避免序列化阶段触发懒加载
      */
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjects() {
-        // 说明（中文）：只读查询使用 readOnly=true，避免无意义的脏检查，提高性能并减少锁竞争
+        // 只读查询使用 readOnly=true，避免无意义的脏检查，提高性能并减少锁竞争
         logger.info("Fetching all projects from the database.");
-        // 说明（中文）：不要直接把 JPA Entity 透传给 Controller/序列化层，避免 Lazy 字段在事务外触发导致报错
+        // 不要直接把 JPA Entity 透传给 Controller/序列化层，避免 Lazy 字段在事务外触发导致报错
         // 原理：在事务内完成实体到 DTO 的转换，序列化只依赖 DTO 的普通字段，不依赖 Hibernate Session
         return projectRepository.findAll()
                 .stream()

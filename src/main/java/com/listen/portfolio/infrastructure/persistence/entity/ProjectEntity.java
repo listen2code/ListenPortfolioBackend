@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * ProjectEntity（JPA Entity）。
  *
- * 说明（中文）：
+ * 说明：
  * - 该类是数据库 projects 表的映射对象，属于“数据访问层/持久化层”的核心模型
  * - 之前项目使用 ProjectResponse 作为 Entity，命名与职责混淆（看起来像 API Response，但实际是表映射）
  * - 这里调整为 ProjectEntity：明确它是 Entity，API 层通过 DTO 暴露数据，避免实体透传

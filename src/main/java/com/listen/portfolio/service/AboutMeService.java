@@ -34,7 +34,7 @@ public class AboutMeService {
     }
 
     /**
-     * 说明（中文）：
+     * 说明：
      * - 新版接口建议返回 DTO（AboutMeDto），避免 JPA Entity 直接暴露到 API 层导致耦合与懒加载风险
      * - 原理：在 Service 的只读事务内完成实体到 DTO 的转换，Controller 只返回 DTO
      */
