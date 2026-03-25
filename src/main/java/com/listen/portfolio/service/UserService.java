@@ -5,7 +5,6 @@ import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.model.response.UserResponse;
-import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.repository.UserRepository;
 
 import utils.Constants;
@@ -125,20 +124,6 @@ public class UserService implements UserDetailsService {
             logger.warn("User with id: {} not found", id);
         }
         return user;
-    }
-
-    /**
-     * Get a simplified version of user information (fewer fields).
-     * Useful for endpoints that don't need all user details.
-     * 
-     * @param id The user's ID
-     * @return Optional containing the simplified user response
-     */
-    public Optional<UserSimpleResponse> getSimpleUserById(Long id) {
-        logger.info("Fetching simple user by id: {}", id);
-        return repo.findById(id)
-                // Transform UserResponse to UserSimpleResponse using constructor
-                .map(UserSimpleResponse::new);
     }
 
     /**
