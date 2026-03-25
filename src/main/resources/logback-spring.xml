@@ -9,6 +9,11 @@
 		- Logback 通过 Encoder 将日志事件序列化；LogstashEncoder 会输出含 @timestamp、logger_name、level 等标准字段的 JSON
 	-->
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<!--
+			说明（中文）：
+			- 使用 LogstashEncoder 输出 JSON 结构化日志，便于日志平台检索与聚合
+			- 编码层面：日志内容是 Unicode，最终由终端/IDE 控制台按其编码渲染；如需显示中文，建议将终端切换为 UTF-8
+		-->
 		<encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
 	</appender>
 

@@ -1,7 +1,7 @@
 -- Data for users table
 -- Columns are reordered to match schema.sql for consistency
 INSERT INTO users (id, name, email, password, location, avatar_url, status, job_title, bio, graduation_year, github_url, major) VALUES
-(1, 'Listen', 'listen2code@gmail.com', '888888', 'Japan / Tokyo', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Full Stack Mobile Architect', 'A seasoned mobile developer with over 10 years of experience in Android and 2+ years in Flutter. Specialized in high-performance application development, clean architecture, and reactive programming. Proven track record of leading cross-functional teams and delivering complex enterprise solutions.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
+(1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK', 'Japan / Tokyo', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Full Stack Mobile Architect', 'A seasoned mobile developer with over 10 years of experience in Android and 2+ years in Flutter. Specialized in high-performance application development, clean architecture, and reactive programming. Proven track record of leading cross-functional teams and delivering complex enterprise solutions.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
 
 -- Data for projects table
 -- Added business_id to match schema

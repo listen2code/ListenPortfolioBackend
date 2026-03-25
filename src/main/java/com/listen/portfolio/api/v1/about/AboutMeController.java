@@ -30,10 +30,9 @@ public class AboutMeController {
 
     @GetMapping
     public ApiResponse<AboutMeResponse> getAboutMe() {
-        logger.info("获取关于我的信息");
+        logger.info("Get about-me information");
         return aboutMeService.getAboutMe()
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "About me not found"));
     }
 }
-

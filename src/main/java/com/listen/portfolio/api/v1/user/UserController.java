@@ -31,10 +31,9 @@ public class UserController {
 
     @GetMapping
     public ApiResponse<UserSimpleResponse> getUserById(@RequestParam Long id) {
-        logger.info("获取用户信息，用户ID: {}", id);
+        logger.info("Get user info, userId: {}", id);
         return service.getSimpleUserById(id)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
     }
 }
-

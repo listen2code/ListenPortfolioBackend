@@ -67,7 +67,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         
         // 记录开始处理请求
-        logger.info("开始处理 JWT 过滤器请求: {}", request.getRequestURI());
+        logger.debug("Start JWT filter for URI: {}", request.getRequestURI());
         
         // 从请求头中获取 Authorization 头的值
         final String authorizationHeader = request.getHeader("Authorization");
@@ -80,34 +80,34 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             // 提取 JWT 令牌（去掉 "Bearer " 前缀）
             jwt = authorizationHeader.substring(7);
-            logger.info("从请求头提取到 JWT 令牌");
+            logger.debug("Extracted JWT from Authorization header");
             
             try {
                 // 使用 JWT 工具从令牌中提取用户名
                 username = jwtUtil.extractUsername(jwt);
-                logger.info("从 JWT 令牌中提取用户名: {}", username);
+                logger.debug("Extracted username from JWT: {}", username);
             } catch (Exception e) {
                 // 如果令牌无效，返回标准 ApiResponse
-                logger.warn("JWT 令牌无效，无法提取用户名: {}", e.getMessage());
+                logger.warn("Invalid JWT, cannot extract username: {}", e.getMessage());
                 writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
                 return;
             }
         } else {
             // 如果没有有效的 Authorization 头，记录警告
-            logger.info("请求中没有有效的 Authorization 头");
+            logger.debug("No valid Authorization header present");
         }
 
         // 如果用户名已提取且当前上下文没有认证信息
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            logger.info("用户名已提取且上下文未认证，开始验证令牌");
+            logger.debug("Username extracted and context unauthenticated, validating token");
             
             // 从数据库加载用户详情
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            logger.info("从数据库加载用户详情: {}", username);
+            logger.debug("Loaded user details for: {}", username);
 
             // 验证 JWT 令牌是否有效
             if (jwtUtil.validateToken(jwt, userDetails)) {
-                logger.info("JWT 令牌验证成功，用户 {} 已认证", username);
+                logger.debug("JWT validated successfully, user {} authenticated", username);
                 
                 // 创建认证令牌
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
@@ -122,20 +122,20 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 
                 // 将认证信息设置到 Spring Security 上下文中
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                logger.info("用户 {} 的认证信息已设置到安全上下文中", username);
+                logger.debug("Authentication set in security context for user {}", username);
             } else {
                 // 令牌验证失败，返回标准 ApiResponse
-                logger.warn("JWT 令牌验证失败，用户: {}", username);
+                logger.warn("JWT validation failed for user: {}", username);
                 writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
                 return;
             }
         } else {
             // 如果没有用户名或已认证，记录调试信息
-            logger.info("跳过 JWT 验证：用户名为空或上下文已认证");
+            logger.debug("Skip JWT validation: username is null or context already authenticated");
         }
         
         // 继续过滤器链，将请求传递给下一个过滤器或控制器
-        logger.info("JWT 过滤器处理完成，继续过滤器链");
+        logger.debug("JWT filter completed, proceed with filter chain");
         chain.doFilter(request, response);
     }
 

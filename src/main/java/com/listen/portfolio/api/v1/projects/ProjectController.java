@@ -32,7 +32,7 @@ public class ProjectController {
 
     @GetMapping
     public ApiResponse<List<ProjectResponse>> getProjects() {
-        logger.info("获取项目列表");
+        logger.info("Get project list");
         List<ProjectResponse> projects = projectService.getProjects();
         if (projects.isEmpty()) {
             return ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "No projects found");
@@ -40,4 +40,3 @@ public class ProjectController {
         return ApiResponse.success(projects);
     }
 }
-
