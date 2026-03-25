@@ -143,8 +143,20 @@ public class JwtUtil {
         return expirationDate;
     }
 
-    /**
-     * 检查令牌是否已过期。
+/**
+     * 检查JWT令牌是否已过期
+     * 
+     * 说明（中文）：
+     * - 通过比较当前时间与令牌过期时间，判断令牌是否失效
+     * - 如果当前时间在过期时间之后，则令牌已过期
+     * - 这是令牌验证的重要步骤，确保令牌仍在有效期内
+     * - 过期检查与用户名验证共同确保令牌有效性
+     * 
+     * 判断逻辑：
+     * - 获取当前系统时间作为参考点
+     * - 从令牌中提取过期时间
+     * - 比较当前时间是否在过期时间之后
+     * - 如果是，则令牌已过期；否则令牌仍有效
      * 
      * @param token JWT 令牌字符串
      * @return 如果令牌已过期则返回 true，否则返回 false
@@ -164,9 +176,19 @@ public class JwtUtil {
         return isExpired;
     }
 
-    /**
-     * 使用自定义解析器函数从 JWT 令牌中提取任何 claim。
-     * 可以提取令牌中任何 claim 的通用方法。
+/**
+     * 从 JWT 令牌中提取指定类型的声明（通用提取方法）
+     * 
+     * 说明（中文）：
+     * - 这是提取JWT声明的通用模板方法，支持提取任意类型的声明
+     * - 使用Function函数式接口，可以传入不同的声明提取器
+     * - 先提取所有声明，再应用特定的提取函数获取目标声明
+     * - 支持提取标准声明（sub、iat、exp等）和自定义声明
+     * 
+     * 使用示例：
+     * - extractClaim(token, Claims::getSubject) 提取用户名
+     * - extractClaim(token, Claims::getExpiration) 提取过期时间
+     * - extractClaim(token, claims -> claims.get("custom", String.class)) 提取自定义声明
      * 
      * @param token JWT 令牌字符串
      * @param claimsResolver 指定要提取哪个 claim 的函数

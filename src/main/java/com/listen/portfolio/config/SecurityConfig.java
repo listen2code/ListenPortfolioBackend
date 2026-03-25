@@ -72,7 +72,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 说明：公开认证入口、项目列表与静态资源，便于前端与未登录访问
-                        .requestMatchers("/v1/auth/**", "/v1/projects/**", "/images/**", "/static/**").permitAll()
+                        // todo change-password, delete-account
+                        .requestMatchers("/auth/**", "/projects/**").permitAll()
+                        // 说明：对图片与静态资源放行，便于前端与未登录访问
+                        .requestMatchers("/images/**", "/static/**").permitAll()
                         // 说明：对健康检查与 Prometheus 指标端点放行，便于探活与监控系统抓取
                         // 原理：这些端点由 Spring Boot Actuator 提供，本身不包含业务敏感数据
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
