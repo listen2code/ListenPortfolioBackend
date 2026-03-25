@@ -4,7 +4,7 @@ import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
-import com.listen.portfolio.model.response.UserResponse;
+import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 
 import utils.Constants;
@@ -72,7 +72,7 @@ public class UserService implements UserDetailsService {
         logger.info("Loading user by username for security context: {}", username);
         
         // Search for user in database by username (case-sensitive search)
-        UserResponse user = repo.findByNameCaseSensitive(username)
+        UserEntity user = repo.findByNameCaseSensitive(username)
                 // If user not found, throw exception
                 .orElseThrow(() -> {
                     logger.warn("User not found with username: {}", username);
@@ -87,12 +87,13 @@ public class UserService implements UserDetailsService {
     }
 
     /**
-     * Get user by username (returns custom UserResponse object, not Spring Security's UserDetails).
+     * Get user by username (returns JPA Entity, not Spring Security's UserDetails).
      * 
      * @param username The username to search for (case-sensitive)
      * @return Optional containing the user if found
      */
-    public Optional<UserResponse> getUserByName(String username) {
+    @Transactional(readOnly = true)
+    public Optional<UserEntity> getUserByName(String username) {
         logger.info("Fetching user by name: {}", username);
         return repo.findByNameCaseSensitive(username);
     }
@@ -102,9 +103,10 @@ public class UserService implements UserDetailsService {
      * 
      * @return List of all user objects
      */
-    public List<UserResponse> getAllUsers() {
+    @Transactional(readOnly = true)
+    public List<UserEntity> getAllUsers() {
         logger.info("Fetching all users");
-        List<UserResponse> users = repo.findAll();
+        List<UserEntity> users = repo.findAll();
         logger.info("Found {} users", users.size());
         return users;
     }
@@ -115,9 +117,10 @@ public class UserService implements UserDetailsService {
      * @param id The user's ID (primary key)
      * @return Optional containing the user if found
      */
-    public Optional<UserResponse> getUserById(Long id) {
+    @Transactional(readOnly = true)
+    public Optional<UserEntity> getUserById(Long id) {
         logger.info("Fetching user by id: {}", id);
-        Optional<UserResponse> user = repo.findById(id);
+        Optional<UserEntity> user = repo.findById(id);
         if (user.isPresent()) {
             logger.info("Found user: {}", user.get());
         } else {
@@ -138,7 +141,7 @@ public class UserService implements UserDetailsService {
                 .map(this::toUserSummaryDto);
     }
 
-    private UserSummaryDto toUserSummaryDto(UserResponse entity) {
+    private UserSummaryDto toUserSummaryDto(UserEntity entity) {
         UserSummaryDto dto = new UserSummaryDto();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
@@ -175,7 +178,7 @@ public class UserService implements UserDetailsService {
         }
         
         // Create new user object
-        UserResponse userInfo = new UserResponse();
+        UserEntity userInfo = new UserEntity();
         userInfo.setName(signUpRequest.getUserName());
         
         // Encrypt the password using BCrypt algorithm before storing

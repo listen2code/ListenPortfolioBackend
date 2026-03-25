@@ -1,11 +1,24 @@
-package com.listen.portfolio.model.response;
+package com.listen.portfolio.infrastructure.persistence.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "education")
-public class EducationResponse {
+/**
+ * EducationEntity（JPA Entity）。
+ *
+ * 说明（中文）：
+ * - 对应 education 表
+ * - 归属用户通过 user_id 关联 UserEntity（多对一）
+ */
+public class EducationEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,11 +28,8 @@ public class EducationResponse {
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id", nullable=false)
-    @JsonBackReference
-    private UserResponse user;
-
-    // Getters and Setters
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserEntity user;
 
     public Long getId() {
         return id;
@@ -61,11 +71,12 @@ public class EducationResponse {
         this.description = description;
     }
 
-    public UserResponse getUser() {
+    public UserEntity getUser() {
         return user;
     }
 
-    public void setUser(UserResponse user) {
+    public void setUser(UserEntity user) {
         this.user = user;
     }
 }
+
