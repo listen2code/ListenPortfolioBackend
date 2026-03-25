@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<!--
+		说明（中文）：
+		1) 采用 LogstashEncoder 将日志输出为 JSON 结构化格式，便于接入 ELK/Loki 等日志平台，支持字段检索与聚合
+		2) 控制台输出（ConsoleAppender）即可满足开发/测试场景；生产可按需追加异步/文件/远端 Appender
+		3) 结合应用内的 MDC（如 requestId），日志平台可实现按请求链路精确定位
+		原理简述：
+		- Logback 通过 Encoder 将日志事件序列化；LogstashEncoder 会输出含 @timestamp、logger_name、level 等标准字段的 JSON
+	-->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+	</appender>
+
+	<!--
+		日志级别说明：
+		- 默认 root 级别为 INFO，避免 DEBUG 级别在生产刷屏
+		- 如需排查问题可在运行时通过配置中心/环境变量调整 logger 级别
+	-->
+	<root level="INFO">
+		<appender-ref ref="STDOUT"/>
+	</root>
+</configuration>

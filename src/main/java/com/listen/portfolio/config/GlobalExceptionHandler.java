@@ -1,5 +1,7 @@
 package com.listen.portfolio.config;
 
+import com.listen.portfolio.common.error.ErrorCode;
+import com.listen.portfolio.common.exception.BusinessException;
 import com.listen.portfolio.model.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -9,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.BindException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import utils.Constants;
@@ -24,6 +28,27 @@ import utils.Constants;
 public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
+            BusinessException e,
+            HttpServletRequest request
+    ) {
+        logger.warn("Business error: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        ErrorCode errorCode = e.getErrorCode();
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .body(ApiResponse.error(errorCode.getMessageId(), e.getMessage()));
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(
+            Exception e,
+            HttpServletRequest request
+    ) {
+        logger.warn("Validation error: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getMessageId(), "Validation failed"));
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
             HttpMessageNotReadableException e,
@@ -31,7 +56,7 @@ public class GlobalExceptionHandler {
     ) {
         logger.warn("Bad request: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("400", "Malformed request body"));
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getMessageId(), "Malformed request body"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -41,7 +66,7 @@ public class GlobalExceptionHandler {
     ) {
         logger.warn("Bad request: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("400", e.getMessage()));
+                .body(ApiResponse.error(ErrorCode.BAD_REQUEST.getMessageId(), e.getMessage()));
     }
 
     @ExceptionHandler({AuthenticationException.class})
@@ -51,7 +76,7 @@ public class GlobalExceptionHandler {
     ) {
         logger.warn("Unauthorized: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("401", "Unauthorized"));
+                .body(ApiResponse.error(ErrorCode.UNAUTHORIZED.getMessageId(), "Unauthorized"));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -61,7 +86,7 @@ public class GlobalExceptionHandler {
     ) {
         logger.warn("Forbidden: {} {} - {}", request.getMethod(), request.getRequestURI(), e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("403", "Forbidden"));
+                .body(ApiResponse.error(ErrorCode.FORBIDDEN.getMessageId(), "Forbidden"));
     }
 
     @ExceptionHandler(Exception.class)

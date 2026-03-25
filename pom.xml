@@ -82,6 +82,39 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		<!--
+			说明：引入 Actuator，提供健康检查、应用信息与指标端点（/actuator/**）
+			原理：通过暴露标准管理端点，配合探活与监控系统实现可观测性
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<!--
+			说明：Micrometer Prometheus 注册表，将应用指标导出为 /actuator/prometheus
+			原理：Micrometer 作为度量门面，PrometheusRegistry 负责以 Prometheus 格式输出
+		-->
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<!--
+			说明：Spring Validation，支持 @Valid/@NotNull 等注解，结合全局异常处理返回统一错误
+			原理：方法参数校验失败抛出 MethodArgumentNotValidException，由全局异常处理器转换为 ApiResponse
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<!--
+			说明：Logstash Logback Encoder，将日志输出为 JSON 结构化格式
+			原理：替换默认 PatternEncoder 为 JSON Encoder，便于日志平台检索与聚合
+		-->
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>8.1</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
