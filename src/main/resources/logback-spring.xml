@@ -8,21 +8,30 @@
 		原理简述：
 		- Logback 通过 Encoder 将日志事件序列化；LogstashEncoder 会输出含 @timestamp、logger_name、level 等标准字段的 JSON
 	-->
+	<!-- 开发环境控制台日志：彩色可读格式 -->
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-		<!--
-			说明（中文）：
-			- 使用 LogstashEncoder 输出 JSON 结构化日志，便于日志平台检索与聚合
-			- 编码层面：日志内容是 Unicode，最终由终端/IDE 控制台按其编码渲染；如需显示中文，建议将终端切换为 UTF-8
-		-->
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<!-- 说明：使用彩色模式输出，%highlight 会根据日志级别自动着色，%cyan/magenta 等为固定颜色 -->
+			<pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- 生产环境日志：JSON 结构化格式（便于日志平台解析） -->
+	<appender name="STDOUT-PROD" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
 	</appender>
 
-	<!--
-		日志级别说明：
-		- 默认 root 级别为 INFO，避免 DEBUG 级别在生产刷屏
-		- 如需排查问题可在运行时通过配置中心/环境变量调整 logger 级别
-	-->
-	<root level="INFO">
-		<appender-ref ref="STDOUT"/>
-	</root>
+	<!-- 默认使用彩色控制台日志（开发环境） -->
+	<springProfile name="!prod">
+		<root level="INFO">
+			<appender-ref ref="STDOUT"/>
+		</root>
+	</springProfile>
+
+	<!-- 生产环境使用 JSON 结构化日志 -->
+	<springProfile name="prod">
+		<root level="INFO">
+			<appender-ref ref="STDOUT-PROD"/>
+		</root>
+	</springProfile>
 </configuration>
