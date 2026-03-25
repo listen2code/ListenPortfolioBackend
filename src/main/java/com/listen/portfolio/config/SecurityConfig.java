@@ -76,6 +76,8 @@ public class SecurityConfig {
                         // 说明：对健康检查与 Prometheus 指标端点放行，便于探活与监控系统抓取
                         // 原理：这些端点由 Spring Boot Actuator 提供，本身不包含业务敏感数据
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
+                        // 说明：开放 OpenAPI 文档与 Swagger UI，便于联调与自测
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
                 );
 

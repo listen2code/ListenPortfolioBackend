@@ -1,0 +1,15 @@
+# 说明：测试环境配置（CI/自动化测试用）
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+

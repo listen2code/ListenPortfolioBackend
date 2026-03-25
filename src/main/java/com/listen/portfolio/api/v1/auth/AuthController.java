@@ -19,6 +19,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -36,6 +39,7 @@ import utils.Constants;
  * 1) 以“功能模块”组织包结构：api/v1/auth
  * 2) 保持对外接口路径不变，逐步迁移，不影响既存功能
  */
+@Validated
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -56,7 +60,7 @@ public class AuthController {
     }
 
     @PostMapping("/signUp")
-    public ResponseEntity<ApiResponse<Void>> signUp(@RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<ApiResponse<Void>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         logger.info("收到注册请求，用户: {}", signUpRequest.getUserName());
 
         boolean success = userInfoService.signUp(signUpRequest);
@@ -72,7 +76,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
         logger.info("收到登录请求，用户: {}", authRequest.getUserName());
 
         try {
@@ -109,7 +113,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<?>> refresh(@RequestParam String refreshToken) {
+    public ResponseEntity<ApiResponse<?>> refresh(@RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
         logger.info("收到令牌刷新请求");
 
         String jwt = jwtUtil.refreshToken(refreshToken);
@@ -125,7 +129,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest changePasswordRequest) {
+    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         logger.info("收到密码更改请求，用户 ID: {}", changePasswordRequest.getUserId());
 
         boolean success = userInfoService.changePassword(changePasswordRequest);
@@ -141,7 +145,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         logger.info("收到忘记密码请求，邮箱: {}", forgotPasswordRequest.getEmail());
 
         boolean success = userInfoService.forgotPassword(forgotPasswordRequest);
@@ -157,7 +161,7 @@ public class AuthController {
     }
 
     @DeleteMapping("/delete-account")
-    public ResponseEntity<ApiResponse<Void>> deleteAccount(@RequestBody DeleteAccountRequest deleteAccountRequest) {
+    public ResponseEntity<ApiResponse<Void>> deleteAccount(@Valid @RequestBody DeleteAccountRequest deleteAccountRequest) {
         logger.info("收到删除账户请求，用户 ID: {}", deleteAccountRequest.getUserId());
 
         boolean success = userInfoService.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));

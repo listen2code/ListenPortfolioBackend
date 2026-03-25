@@ -1,0 +1,15 @@
+# 说明：生产环境配置（谨慎修改）
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+

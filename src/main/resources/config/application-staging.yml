@@ -1,0 +1,15 @@
+# 说明：预生产/灰度环境配置（接近生产参数）
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+

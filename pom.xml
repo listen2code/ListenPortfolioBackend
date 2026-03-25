@@ -115,6 +115,15 @@
 			<artifactId>logstash-logback-encoder</artifactId>
 			<version>8.1</version>
 		</dependency>
+		<!--
+			说明：OpenAPI (Swagger UI) 集成，自动生成 API 文档并提供可交互的文档页面
+			原理：通过扫描 Spring Web 注解与模型，生成 /v3/api-docs 与 /swagger-ui 页面
+		-->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.5.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
