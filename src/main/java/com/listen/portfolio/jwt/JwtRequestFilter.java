@@ -1,7 +1,7 @@
 package com.listen.portfolio.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.listen.portfolio.model.ApiResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +17,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import utils.ApiResponse;
+
 import java.io.IOException;
 
 /**

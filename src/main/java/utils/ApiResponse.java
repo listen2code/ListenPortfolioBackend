@@ -1,4 +1,4 @@
-package com.listen.portfolio.model;
+package utils;
 
 public class ApiResponse<T> {
     private String result;

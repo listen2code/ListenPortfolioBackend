@@ -2,7 +2,7 @@ package com.listen.portfolio.config;
 
 import com.listen.portfolio.common.error.ErrorCode;
 import com.listen.portfolio.common.exception.BusinessException;
-import com.listen.portfolio.model.ApiResponse;
+
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +15,8 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import utils.ApiResponse;
 import utils.Constants;
 
 @RestControllerAdvice

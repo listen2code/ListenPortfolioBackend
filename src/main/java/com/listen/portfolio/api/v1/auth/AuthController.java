@@ -7,7 +7,6 @@ import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.DeleteAccountRequest;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
-import com.listen.portfolio.model.ApiResponse;
 import com.listen.portfolio.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import utils.ApiResponse;
 import utils.Constants;
 
 @RestController
