@@ -11,7 +11,7 @@ public class ChangePasswordRequest {
     @NotBlank(message = "oldPassword must not be blank")
     private String oldPassword;
     @NotBlank(message = "newPassword must not be blank")
-    @Size(min = 8, message = "newPassword length must be at least 8")
+    @Size(min = 6, message = "newPassword length must be at least 6")
     private String newPassword;
 }
 
