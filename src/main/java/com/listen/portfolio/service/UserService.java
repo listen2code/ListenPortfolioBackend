@@ -3,6 +3,7 @@ package com.listen.portfolio.service;
 import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
+import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.model.response.UserResponse;
 import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.repository.UserRepository;
@@ -138,6 +139,28 @@ public class UserService implements UserDetailsService {
         return repo.findById(id)
                 // Transform UserResponse to UserSimpleResponse using constructor
                 .map(UserSimpleResponse::new);
+    }
+
+    /**
+     * 说明（中文）：
+     * - API 层推荐使用 DTO 返回（UserSummaryDto），避免直接暴露 JPA Entity 或历史遗留的 model/response“伪 DTO”
+     * - 原理：在 Service 的只读事务内完成实体到 DTO 的转换，Controller 只负责返回 DTO
+     */
+    @Transactional(readOnly = true)
+    public Optional<UserSummaryDto> getUserSummaryById(Long id) {
+        logger.info("Fetching user summary by id: {}", id);
+        return repo.findById(id)
+                .map(this::toUserSummaryDto);
+    }
+
+    private UserSummaryDto toUserSummaryDto(UserResponse entity) {
+        UserSummaryDto dto = new UserSummaryDto();
+        dto.setId(entity.getId());
+        dto.setName(entity.getName());
+        dto.setLocation(entity.getLocation());
+        dto.setEmail(entity.getEmail());
+        dto.setAvatarUrl(entity.getAvatarUrl());
+        return dto;
     }
 
     /**

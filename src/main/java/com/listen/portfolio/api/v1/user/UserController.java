@@ -1,7 +1,7 @@
 package com.listen.portfolio.api.v1.user;
 
+import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.model.ApiResponse;
-import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +37,9 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Get user", description = "Get basic user information by userId")
-    public ApiResponse<UserSimpleResponse> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
+    public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
         logger.info("Get user info, userId: {}", id);
-        return service.getSimpleUserById(id)
+        return service.getUserSummaryById(id)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
     }
