@@ -1,8 +1,8 @@
 package com.listen.portfolio.service;
 
-import com.listen.portfolio.model.request.ChangePasswordRequest;
-import com.listen.portfolio.model.request.ForgotPasswordRequest;
-import com.listen.portfolio.model.request.SignUpRequest;
+import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
+import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
+import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.model.response.UserResponse;
 import com.listen.portfolio.model.response.UserSimpleResponse;
 import com.listen.portfolio.repository.UserRepository;

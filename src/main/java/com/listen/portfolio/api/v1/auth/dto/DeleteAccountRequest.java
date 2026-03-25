@@ -1,4 +1,4 @@
-package com.listen.portfolio.model.request;
+package com.listen.portfolio.api.v1.auth.dto;
 
 import lombok.Data;
 
@@ -6,3 +6,4 @@ import lombok.Data;
 public class DeleteAccountRequest {
     private String userId;
 }
+

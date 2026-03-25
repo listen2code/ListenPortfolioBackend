@@ -1,4 +1,4 @@
-package com.listen.portfolio.model.response;
+package com.listen.portfolio.api.v1.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,3 +12,4 @@ public class AuthResponse {
     private String refreshToken;
     private Long userId;
 }
+

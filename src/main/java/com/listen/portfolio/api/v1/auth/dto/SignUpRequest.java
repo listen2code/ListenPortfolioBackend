@@ -1,4 +1,4 @@
-package com.listen.portfolio.model.request;
+package com.listen.portfolio.api.v1.auth.dto;
 
 import lombok.Data;
 
@@ -8,3 +8,4 @@ public class SignUpRequest {
     private String password;
     private String email;
 }
+

@@ -1,13 +1,13 @@
 package com.listen.portfolio.api.v1.auth;
 
 import com.listen.portfolio.jwt.JwtUtil;
+import com.listen.portfolio.api.v1.auth.dto.AuthRequest;
+import com.listen.portfolio.api.v1.auth.dto.AuthResponse;
+import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
+import com.listen.portfolio.api.v1.auth.dto.DeleteAccountRequest;
+import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
+import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.model.ApiResponse;
-import com.listen.portfolio.model.request.AuthRequest;
-import com.listen.portfolio.model.request.ChangePasswordRequest;
-import com.listen.portfolio.model.request.DeleteAccountRequest;
-import com.listen.portfolio.model.request.ForgotPasswordRequest;
-import com.listen.portfolio.model.request.SignUpRequest;
-import com.listen.portfolio.model.response.AuthResponse;
 import com.listen.portfolio.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
