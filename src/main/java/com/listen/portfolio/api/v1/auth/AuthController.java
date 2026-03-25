@@ -28,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import utils.Constants;
 
 @RestController
@@ -40,6 +42,7 @@ import utils.Constants;
  * 2) 保持对外接口路径不变，逐步迁移，不影响既存功能
  */
 @Validated
+@Tag(name = "Auth", description = "Authentication and account management APIs")
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -60,8 +63,10 @@ public class AuthController {
     }
 
     @PostMapping("/signUp")
+    @Operation(summary = "Sign up", description = "Register a new user account")
     public ResponseEntity<ApiResponse<Void>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         logger.info("Received sign-up request, user: {}", signUpRequest.getUserName());
+
 
         boolean success = userInfoService.signUp(signUpRequest);
 
@@ -76,6 +81,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login", description = "Authenticate user and issue JWT access token and refresh token")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
         logger.info("Received login request, user: {}", authRequest.getUserName());
 
@@ -108,6 +114,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Stateless logout; client should discard tokens")
     public ResponseEntity<ApiResponse<String>> logout() {
         logger.info("Received logout request");
         logger.info("Logout successful");
@@ -115,6 +122,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "Refresh token", description = "Refresh JWT access token using refresh token")
     public ResponseEntity<ApiResponse<?>> refresh(@RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
         logger.info("Received token refresh request");
 
@@ -131,6 +139,7 @@ public class AuthController {
     }
 
     @PostMapping("/change-password")
+    @Operation(summary = "Change password", description = "Change password for an existing user")
     public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         logger.info("Received change-password request, userId: {}", changePasswordRequest.getUserId());
 
@@ -147,6 +156,7 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot password", description = "Reset password to default value based on email")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         logger.info("Received forgot-password request, email: {}", forgotPasswordRequest.getEmail());
 
@@ -163,6 +173,7 @@ public class AuthController {
     }
 
     @DeleteMapping("/delete-account")
+    @Operation(summary = "Delete account", description = "Permanently delete user account by userId")
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@Valid @RequestBody DeleteAccountRequest deleteAccountRequest) {
         logger.info("Received delete-account request, userId: {}", deleteAccountRequest.getUserId());
 

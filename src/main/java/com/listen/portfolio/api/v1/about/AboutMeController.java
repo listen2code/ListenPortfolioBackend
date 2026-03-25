@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import utils.Constants;
 
 @RestController
@@ -19,6 +21,7 @@ import utils.Constants;
  * 1) 以“功能模块”组织包结构：api/v1/about
  * 2) 保持对外接口路径不变，逐步迁移，不影响既存功能
  */
+@Tag(name = "About", description = "About-me APIs")
 public class AboutMeController {
     private static final Logger logger = LoggerFactory.getLogger(AboutMeController.class);
 
@@ -29,6 +32,7 @@ public class AboutMeController {
     }
 
     @GetMapping
+    @Operation(summary = "Get about-me", description = "Get about-me information")
     public ApiResponse<AboutMeResponse> getAboutMe() {
         logger.info("Get about-me information");
         return aboutMeService.getAboutMe()

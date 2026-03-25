@@ -6,6 +6,7 @@ import com.listen.portfolio.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -19,7 +20,15 @@ public class AboutMeService {
         this.userInfoRepository = userInfoRepository;
     }
 
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional(readOnly = true) 开启只读事务
+     * - 目的：控制查询在同一持久化上下文中完成，降低事务开销，避免无意义的 flush/脏检查
+     * - 注意：仅进行读操作；从实体装配到响应对象在事务内完成，避免后续序列化阶段二次查询
+     */
+    @Transactional(readOnly = true)
     public Optional<AboutMeResponse> getAboutMe() {
+        // 说明（中文）：关于我页面查询属于只读操作，标记为只读事务以减少持久化上下文开销
         // Assuming we are fetching a specific user's "About Me" page, e.g., user with ID 1.
         long userId = 1L;
         Optional<UserResponse> userInfoOptional = userInfoRepository.findById(userId);

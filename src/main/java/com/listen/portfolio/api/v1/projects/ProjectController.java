@@ -1,13 +1,15 @@
 package com.listen.portfolio.api.v1.projects;
 
+import com.listen.portfolio.api.v1.projects.dto.ProjectDto;
 import com.listen.portfolio.model.ApiResponse;
-import com.listen.portfolio.model.response.ProjectResponse;
 import com.listen.portfolio.service.ProjectService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import utils.Constants;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
  * 1) 以“功能模块”组织包结构：api/v1/projects
  * 2) 保持对外接口路径不变，逐步迁移，不影响既存功能
  */
+@Tag(name = "Projects", description = "Project APIs")
 public class ProjectController {
     private static final Logger logger = LoggerFactory.getLogger(ProjectController.class);
 
@@ -31,9 +34,10 @@ public class ProjectController {
     }
 
     @GetMapping
-    public ApiResponse<List<ProjectResponse>> getProjects() {
+    @Operation(summary = "List projects", description = "Get all projects")
+    public ApiResponse<List<ProjectDto>> getProjects() {
         logger.info("Get project list");
-        List<ProjectResponse> projects = projectService.getProjects();
+        List<ProjectDto> projects = projectService.getProjects();
         if (projects.isEmpty()) {
             return ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "No projects found");
         }

@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +61,13 @@ public class UserService implements UserDetailsService {
      * @throws UsernameNotFoundException if user is not found
      */
     @Override
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional(readOnly = true) 开启只读事务
+     * - 目的：避免不必要的脏检查与 flush，降低开销；保证读取在同一持久化上下文中完成
+     * - 注意：只读事务不等于强制不可写，但约定不在该方法内进行写操作
+     */
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         logger.info("Loading user by username for security context: {}", username);
         
@@ -139,7 +147,17 @@ public class UserService implements UserDetailsService {
      * @param signUpRequest Request object containing username, password and email
      * @return true if signup successful, false if username already exists
      */
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional 开启读写事务
+     * - 目的：将“查重 + 新增用户”置于同一原子操作中，发生运行时异常时整体回滚，保证一致性
+     * - 原理：Spring 默认对 RuntimeException 回滚；同一事务共享持久化上下文，避免中途可见性问题
+     */
+    @Transactional
     public boolean signUp(SignUpRequest signUpRequest) {
+        // 说明（中文）：注册流程包含“检查用户名是否存在 + 写入用户记录”两个步骤，需要原子性，避免并发下产生脏数据
+        // 原理：@Transactional 会将方法内数据库操作放在同一事务中，发生异常会回滚
+        // 注意：日志为英文，且不打印密码等敏感信息
         logger.info("Signing up new user: {}", signUpRequest.getUserName());
         
         // Check if username already exists (prevents duplicate usernames)
@@ -170,6 +188,12 @@ public class UserService implements UserDetailsService {
      * @param changePasswordRequest Request containing userId, oldPassword, and newPassword
      * @return true if password changed successfully, false if old password doesn't match
      */
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional 开启读写事务，确保“校验旧密码 + 写入新密码”要么全部成功、要么全部回滚
+     * - 默认在 RuntimeException 时回滚，保证密码更新的原子性与一致性
+     */
+    @Transactional
     public boolean changePassword(ChangePasswordRequest changePasswordRequest) {
         logger.info("Attempting to change password for user: {}", changePasswordRequest.getUserId());
         
@@ -200,6 +224,12 @@ public class UserService implements UserDetailsService {
      * @param forgotPasswordRequest Request containing userId and email
      * @return true if password reset successfully, false if email doesn't match or user not found
      */
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional 开启读写事务，保证“根据邮箱查询 + 重置密码写回”在同一事务中完成
+     * - 异常时整体回滚，避免部分状态更新导致的不一致
+     */
+    @Transactional
     public boolean forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
         logger.info("Attempting to reset password for email: {}", forgotPasswordRequest.getEmail());
         
@@ -222,6 +252,12 @@ public class UserService implements UserDetailsService {
      * @param userId The ID of the user to delete
      * @return true if account deleted successfully, false if user not found
      */
+    /**
+     * 事务说明（中文）：
+     * - 使用 @Transactional 开启读写事务，确保删除操作在事务内执行，异常自动回滚
+     * - 若未来切换为软删除，也可在同一事务内完成多表一致性更新
+     */
+    @Transactional
     public boolean deleteAccount(Long userId) {
         logger.info("Attempting to delete account for user: {}", userId);
         
