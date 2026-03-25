@@ -31,9 +31,13 @@
 
 #### 1. **配置管理问题**
 ```yaml
-# 当前application.properties中的硬编码敏感信息
-jwt.secret=your-super-strong-secret-key-that-is-at-least-256-bits-long  # ⚠️ 弱密钥
-spring.datasource.password=Ls-88888888  # ⚠️ 硬编码密码
+# 旧版：application.properties 中硬编码敏感信息（不建议提交到仓库）
+# jwt.secret=...
+# spring.datasource.password=...
+#
+# 已改进：支持用环境变量覆盖（本地可保留默认值，生产务必设置环境变量并移除默认值）
+jwt.secret=${JWT_SECRET:your-super-strong-secret-key-that-is-at-least-256-bits-long}
+spring.datasource.password=${DB_PASSWORD:Ls-88888888}
 ```
 
 #### 2. **实体设计问题**
@@ -495,7 +499,7 @@ src/test/
 ## 📋 技术栈推荐
 
 ### 核心框架
-- **Spring Boot 3.x** - 最新稳定版本
+- **Spring Boot 4.x** - 当前项目已使用（见 pom.xml）
 - **Spring Security 6.x** - 安全框架
 - **Spring Data JPA** - 数据访问
 - **Hibernate 6.x** - ORM框架

@@ -23,7 +23,6 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // 日志记录器，用于记录 JWT 操作
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
     // 从 application.properties 注入 jwt.secret（例如："my-secret-key-12345"）
@@ -65,7 +64,7 @@ public class JwtUtil {
      * @return 紧凑的、签名的 JWT 令牌
      */
     private String createToken(Map<String, Object> claims, String subject, Date expirationDate) {
-        logger.info("创建 JWT 令牌，主题: {}", subject);
+        logger.debug("创建 JWT 令牌，主题: {}", subject);
         
         // 使用 HMAC SHA 算法从密钥字符串生成安全密钥
         // 此密钥用于签名令牌
@@ -86,7 +85,7 @@ public class JwtUtil {
                 // 将令牌序列化并压缩为紧凑字符串格式
                 .compact();
         
-        logger.info("JWT 令牌创建完成，主题: {}", subject);
+        logger.debug("JWT 令牌创建完成，主题: {}", subject);
         return token;
     }
 
@@ -98,7 +97,7 @@ public class JwtUtil {
      * @return 如果令牌有效则返回 true，否则返回 false
      */
     public Boolean validateToken(String token, UserDetails userDetails) {
-        logger.info("开始验证 JWT 令牌，用户: {}", userDetails.getUsername());
+        logger.debug("开始验证 JWT 令牌，用户: {}", userDetails.getUsername());
         
         try {
             // 从令牌中提取用户名
@@ -108,7 +107,7 @@ public class JwtUtil {
             boolean isValid = (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
             
             if (isValid) {
-                logger.info("JWT 令牌验证成功，用户: {}", username);
+                logger.debug("JWT 令牌验证成功，用户: {}", username);
             } else {
                 logger.warn("JWT 令牌验证失败，用户: {}", username);
             }
@@ -127,10 +126,8 @@ public class JwtUtil {
      * @return 存储在令牌主题字段中的用户名
      */
     public String extractUsername(String token) {
-        logger.info("从 JWT 令牌中提取用户名");
-        // 从令牌中提取主题 claim（即用户名）
         String username = extractClaim(token, Claims::getSubject);
-        logger.info("提取到用户名: {}", username);
+        logger.debug("从 JWT 令牌中提取到用户名: {}", username);
         return username;
     }
 
@@ -141,10 +138,8 @@ public class JwtUtil {
      * @return 令牌的过期日期
      */
     public Date extractExpiration(String token) {
-        logger.info("从 JWT 令牌中提取过期日期");
-        // 从令牌中提取过期 claim
         Date expirationDate = extractClaim(token, Claims::getExpiration);
-        logger.info("提取到过期日期: {}", expirationDate);
+        logger.debug("从 JWT 令牌中提取到过期日期: {}", expirationDate);
         return expirationDate;
     }
 
@@ -155,7 +150,6 @@ public class JwtUtil {
      * @return 如果令牌已过期则返回 true，否则返回 false
      */
     public Boolean isTokenExpired(String token) {
-        logger.info("检查 JWT 令牌是否过期");
         // 获取当前日期
         final Date currentDate = new Date();
         // 获取令牌过期日期
@@ -165,8 +159,6 @@ public class JwtUtil {
         
         if (isExpired) {
             logger.warn("JWT 令牌已过期，过期时间: {}", expirationDate);
-        } else {
-            logger.info("JWT 令牌未过期，过期时间: {}", expirationDate);
         }
         
         return isExpired;
@@ -182,22 +174,22 @@ public class JwtUtil {
      * @return 提取的 claim 值
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        logger.info("从 JWT 令牌中提取自定义 claim");
         // 从令牌获取所有 claims
         final Claims claims = extractAllClaims(token);
         // 应用解析器函数以提取特定 claim
         T claimValue = claimsResolver.apply(claims);
-        logger.info("提取到 claim 值: {}", claimValue);
         return claimValue;
     }
 
 
     public String generateRefreshToken(String token) {
-        logger.info("开始为用户 {} 生成 JWT 刷新令牌", token);
+        logger.debug("开始生成 JWT 刷新令牌");
+        // 注意：不要在日志中输出任何 access/refresh token 内容，避免泄露
+        logger.debug("刷新令牌生成过程中不会记录任何 token 内容");
         
         // 从令牌中提取用户名
         String userName = extractUsername(token);
-        logger.info("从令牌提取到用户名: {}", userName);
+        logger.debug("从访问令牌提取到用户名: {}", userName);
         
         // 初始化空的 claims 映射以存储额外信息（如果需要）
         Map<String, Object> claims = new HashMap<>();
@@ -205,7 +197,7 @@ public class JwtUtil {
         // 使用用户名作为主题创建并返回刷新令牌
         // 刷新令牌过期时间更长，例如 7 天
         String refreshToken = createToken(claims, userName, new Date(System.currentTimeMillis() + refreshExpiration)); 
-        logger.info("成功为用户 {} 生成 JWT 刷新令牌", userName);
+        logger.debug("成功为用户 {} 生成 JWT 刷新令牌", userName);
         return refreshToken;
     }
 
@@ -218,8 +210,6 @@ public class JwtUtil {
      * @throws io.jsonwebtoken.JwtException 如果令牌无效或签名验证失败
      */
     private Claims extractAllClaims(String token) {
-        logger.info("从 JWT 令牌中提取所有 claims");
-        
         try {
             // 生成用于签名令牌的相同安全密钥
             SecretKey key = Keys.hmacShaKeyFor(secret.getBytes());
@@ -236,7 +226,6 @@ public class JwtUtil {
                     // 从解析的令牌中提取主体（claims）
                     .getBody();
             
-            logger.info("成功提取所有 claims");
             return claims;
         } catch (Exception e) {
             logger.error("提取 JWT 令牌 claims 时发生错误: {}", e.getMessage());
@@ -245,19 +234,19 @@ public class JwtUtil {
     }
 
     public String refreshToken(String refreshToken) {
-        logger.info("刷新 JWT 令牌，刷新令牌: {}", refreshToken);
+        logger.debug("刷新 JWT 令牌");
         
         try {
             // 从刷新令牌中提取用户名
             String username = extractUsername(refreshToken);
-            logger.info("从刷新令牌提取到用户名: {}", username);
+            logger.debug("从刷新令牌提取到用户名: {}", username);
             
             // 这里可以添加额外的验证，例如检查刷新令牌是否在数据库中有效
             
             // 创建新的访问令牌
             Map<String, Object> claims = new HashMap<>();
             String newToken = createToken(claims, username, new Date(System.currentTimeMillis() + expiration));
-            logger.info("成功刷新 JWT 令牌，用户: {}", username);
+            logger.debug("成功刷新 JWT 令牌，用户: {}", username);
             return newToken;
         } catch (Exception e) {
             logger.error("刷新 JWT 令牌失败: {}", e.getMessage());
