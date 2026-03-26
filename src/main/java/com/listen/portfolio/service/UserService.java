@@ -308,10 +308,9 @@ public class UserService implements UserDetailsService {
      * 
      * @param forgotPasswordRequest 忘记密码请求，包含用户邮箱信息
      * @return 密码重置成功返回true，邮箱对应的用户不存在返回false
-     */
-    /**
+     * 
      * 事务说明：
-     * - 使用 @Transactional 开启读写事务，保证“根据邮箱查询 + 重置密码写回”在同一事务中完成
+     * - 使用 @Transactional 开启读写事务，保证"根据邮箱查询 + 重置密码写回"在同一事务中完成
      * - 异常时整体回滚，避免部分状态更新导致的不一致
      */
     @Transactional
