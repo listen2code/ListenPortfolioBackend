@@ -1,0 +1,70 @@
+# ===================================================================
+# Prometheus 监控配置文件（支持环境变量）
+# ===================================================================
+# 说明：支持本地和 Docker 两种监控模式，可通过环境变量配置
+# - local 模式：监控 localhost:8080 的本地应用
+# - full 模式：监控 Docker 网络中的 app:8080 服务
+# ===================================================================
+
+# ===================================================================
+# 全局配置
+# ===================================================================
+global:
+  scrape_interval: ${PROMETHEUS_GLOBAL_INTERVAL:-15s}
+  evaluation_interval: ${PROMETHEUS_EVAL_INTERVAL:-15s}
+
+# ===================================================================
+# 告警规则文件
+# ===================================================================
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# ===================================================================
+# 监控目标配置
+# ===================================================================
+scrape_configs:
+  # ===================================================================
+  # Prometheus 自身监控
+  # ===================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['${PROMETHEUS_HOST:-localhost}:${PROMETHEUS_PORT:-9090}']
+
+  # ===================================================================
+  # Portfolio 应用监控 - 本地模式
+  # ===================================================================
+  # 作用：监控本地运行的 Spring Boot 应用
+  # 使用场景：开发环境、本地调试
+  - job_name: 'portfolio-app-local'
+    static_configs:
+      - targets: ['${PROMETHEUS_TARGET_HOST:-host.docker.internal}:${APP_PORT:-8080}']  # Docker 容器访问宿主机
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: ${PROMETHEUS_SCRAPE_INTERVAL:-10s}
+    scrape_timeout: ${PROMETHEUS_SCRAPE_TIMEOUT:-5s}
+    params:
+      # 可选参数，用于区分不同环境
+      environment: ['${ENVIRONMENT:-local}']
+
+  # ===================================================================
+  # Portfolio 应用监控 - Docker 模式
+  # ===================================================================
+  # 作用：监控 Docker 网络中的应用服务
+  # 使用场景：完整栈部署、生产环境
+  - job_name: 'portfolio-app-docker'
+    static_configs:
+      - targets: ['${APP_SERVICE_NAME:-app}:${APP_PORT:-8080}']  # Docker 网络中的应用服务名
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: ${PROMETHEUS_SCRAPE_INTERVAL:-10s}
+    scrape_timeout: ${PROMETHEUS_SCRAPE_TIMEOUT:-5s}
+    params:
+      environment: ['${ENVIRONMENT:-docker}']
+
+# ===================================================================
+# 告警管理器配置
+# ===================================================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093

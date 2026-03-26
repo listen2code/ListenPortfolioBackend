@@ -1,42 +1,175 @@
+# ===================================================================
+# Portfolio 应用监控系统 Docker Compose 统一配置
+# ===================================================================
+# 说明：通过 profile 控制启动的服务组合
+# - local: 仅监控服务 (Prometheus + Grafana)
+# - full:  完整栈 (App + DB + Monitoring)
+# - aws:   AWS 兼容监控
+# - staging: 预发布环境
+# - prod:   生产环境
+# ===================================================================
+
 version: '3.8'
 
 services:
+  # ===================================================================
+  # Portfolio 主应用服务
+  # ===================================================================
+  # 作用：Spring Boot 应用，提供 REST API 和业务功能
+  # 端口：8080 (HTTP API)
+  # 依赖：数据库服务必须健康才能启动
+  # JVM 优化：配置了堆内存和 G1GC 垃圾收集器
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: Ls-88888888
+      # 数据库连接配置
+      SPRING_DATASOURCE_URL: ${DATABASE_URL}
+      SPRING_DATASOURCE_USERNAME: ${DATABASE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DATABASE_PASSWORD}
+      # JVM 性能优化参数
+      JAVA_OPTS: ${JAVA_OPTS}
+      # AWS 特定配置
+      AWS_REGION: ${AWS_REGION}
+      ENVIRONMENT: ${ENVIRONMENT}
     networks:
       - portfolio-network
+    restart: unless-stopped
+    profiles:
+      - local
+      - test
+      - staging
+      - prod
 
+  # ===================================================================
+  # MySQL 数据库服务
+  # ===================================================================
+  # 作用：提供数据持久化存储
+  # 端口：3307 (主机) -> 3306 (容器)
+  # 版本：MySQL 8.0
+  # 健康检查：通过 mysqladmin ping 命令检查数据库可用性
   db:
     image: mysql:8.0
-    restart: always
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: portfolio
-      MYSQL_ROOT_PASSWORD: Ls-88888888
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD:-Ls-88888888}
+      MYSQL_USER: ${DATABASE_USERNAME:-root}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD:-Ls-88888888}
     ports:
-      - "3307:3306"
+      - "${DB_PORT:-3307}:3306"
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - portfolio-network
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pLs-88888888"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DATABASE_USERNAME:-root}", "-p${DATABASE_PASSWORD:-Ls-88888888}"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
+    profiles:
+      - local
+      - test
+      - staging
+      - prod
 
+  # ===================================================================
+  # Prometheus 监控服务
+  # ===================================================================
+  # 作用：收集和存储应用指标数据
+  # 端口：9090 (Web UI)
+  # 数据保留：200 小时的历史数据
+  # 配置：从外部配置文件加载监控目标
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-${ENVIRONMENT:-local}
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-200h}'
+      - '--web.enable-lifecycle'
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - ENVIRONMENT=${ENVIRONMENT}
+    profiles:
+      - local
+      - test
+      - staging
+      - prod
+
+  # ===================================================================
+  # Grafana 可视化服务
+  # ===================================================================
+  # 作用：提供监控数据的可视化仪表板
+  # 端口：3000 (Web UI)
+  # 认证：admin/admin123
+  # 配置：自动加载数据源和仪表板
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-${ENVIRONMENT:-local}
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN:-localhost}
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
+      - AWS_REGION=${AWS_REGION}
+      - ENVIRONMENT=${ENVIRONMENT}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - portfolio-network
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_started
+    profiles:
+      - local
+      - test
+      - staging
+      - prod
+
+# ===================================================================
+# 网络配置
+# ===================================================================
+# portfolio-network：自定义桥接网络，确保服务间可以通过服务名通信
+# 例如：app 可以通过 http://db:3306 访问数据库
 networks:
   portfolio-network:
     driver: bridge
 
+# ===================================================================
+# 数据卷配置
+# ===================================================================
+# db_data：MySQL 数据持久化
+# prometheus_data：Prometheus 指标数据持久化
+# grafana_data：Grafana 配置和仪表板持久化
 volumes:
   db_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

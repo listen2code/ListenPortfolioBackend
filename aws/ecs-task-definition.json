@@ -1,0 +1,54 @@
+{
+  "family": "portfolio-monitoring",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "portfolio-app",
+      "image": "YOUR_ACCOUNT.dkr.ecr.REGION.amazonaws.com/portfolio:latest",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:mysql://DATABASE_ENDPOINT:3306/portfolio"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "portfolio_user"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "value": "${DATABASE_PASSWORD}"
+        },
+        {
+          "name": "JAVA_OPTS",
+          "value": "-Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/portfolio",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}
