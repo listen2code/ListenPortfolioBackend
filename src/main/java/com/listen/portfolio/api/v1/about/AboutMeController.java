@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/v1/aboutMe")
@@ -32,7 +33,8 @@ public class AboutMeController {
     }
 
     @GetMapping
-    @Operation(summary = "Get about-me", description = "Get about-me information")
+    @Operation(summary = "Get about-me", description = "Get about-me information",
+              security = @SecurityRequirement(name = "bearerAuth"))
     public ApiResponse<AboutMeDto> getAboutMe() {
         logger.info("Get about-me information");
         return aboutMeService.getAboutMeDto()

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/v1/user")
@@ -36,7 +37,8 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "Get user", description = "Get basic user information by userId")
+    @Operation(summary = "Get user", description = "Get basic user information by userId", 
+              security = @SecurityRequirement(name = "bearerAuth"))
     public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
         logger.info("Get user info, userId: {}", id);
         return service.getUserSummaryById(id)
