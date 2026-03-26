@@ -1,10 +1,10 @@
 # 说明：开发环境配置（本地开发调试用）
 spring:
   jpa:
-    show-sql: true
+    show-sql: true          # 显示SQL，便于调试
   output:
     ansi:
-      enabled: always
+      enabled: always      # 启用彩色日志，提升可读性
 
 logging:
   level:
@@ -16,4 +16,3 @@ management:
     web:
       exposure:
         include: health,info,prometheus
-

@@ -1,7 +1,7 @@
 # 说明：测试环境配置（CI/自动化测试用）
 spring:
   jpa:
-    show-sql: false
+    show-sql: false         # 关闭SQL显示，减少日志噪音
 
 logging:
   level:
@@ -12,4 +12,3 @@ management:
     web:
       exposure:
         include: health,info,prometheus
-
