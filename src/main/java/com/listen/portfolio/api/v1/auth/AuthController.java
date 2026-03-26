@@ -3,9 +3,6 @@ package com.listen.portfolio.api.v1.auth;
 import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.api.v1.auth.dto.AuthRequest;
 import com.listen.portfolio.api.v1.auth.dto.AuthResponse;
-import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
-import com.listen.portfolio.api.v1.auth.dto.DeleteAccountRequest;
-import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
@@ -23,7 +20,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -114,15 +110,6 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, refreshToken, userId)));
     }
 
-    @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Stateless logout; client should discard tokens")
-    public ResponseEntity<ApiResponse<String>> logout() {
-        // todo Logout
-        logger.info("Received logout request");
-        logger.info("Logout successful");
-        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
-    }
-
     @PostMapping("/refresh")
     @Operation(summary = "Refresh token", description = "Refresh JWT access token using refresh token")
     public ResponseEntity<ApiResponse<?>> refresh(@RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
@@ -138,57 +125,6 @@ public class AuthController {
 
         logger.info("Token refreshed successfully, user: {}", username);
         return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, newRefreshToken, userId)));
-    }
-
-    @PostMapping("/change-password")
-    @Operation(summary = "Change password", description = "Change password for an existing user")
-    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
-        logger.info("Received change-password request, userId: {}", changePasswordRequest.getUserId());
-
-        boolean success = userInfoService.changePassword(changePasswordRequest);
-
-        if (success) {
-            logger.info("Password changed successfully for user {}", changePasswordRequest.getUserId());
-            return ResponseEntity.ok(ApiResponse.success(null));
-        }
-
-        logger.warn("Password change failed for user {}", changePasswordRequest.getUserId());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
-    }
-
-    @PostMapping("/forgot-password")
-    @Operation(summary = "Forgot password", description = "Reset password to default value based on email")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        logger.info("Received forgot-password request, email: {}", forgotPasswordRequest.getEmail());
-
-        boolean success = userInfoService.forgotPassword(forgotPasswordRequest);
-
-        if (success) {
-            logger.info("Password reset to default for email {}", forgotPasswordRequest.getEmail());
-            return ResponseEntity.ok(ApiResponse.success(null));
-        }
-
-        logger.warn("Password reset failed for email {}", forgotPasswordRequest.getEmail());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
-    }
-
-    @DeleteMapping("/delete-account")
-    @Operation(summary = "Delete account", description = "Permanently delete user account by userId")
-    public ResponseEntity<ApiResponse<Void>> deleteAccount(@Valid @RequestBody DeleteAccountRequest deleteAccountRequest) {
-        logger.info("Received delete-account request, userId: {}", deleteAccountRequest.getUserId());
-
-        boolean success = userInfoService.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));
-
-        if (success) {
-            logger.info("Account deleted successfully for user {}", deleteAccountRequest.getUserId());
-            return ResponseEntity.ok(ApiResponse.success(null));
-        }
-
-        logger.warn("User {} not found, delete failed", deleteAccountRequest.getUserId());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
     }
 }
 
