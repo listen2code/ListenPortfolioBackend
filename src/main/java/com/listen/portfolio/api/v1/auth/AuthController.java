@@ -3,10 +3,11 @@ package com.listen.portfolio.api.v1.auth;
 import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.api.v1.auth.dto.AuthRequest;
 import com.listen.portfolio.api.v1.auth.dto.AuthResponse;
+import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
-import com.listen.portfolio.service.UserService;
+import com.listen.portfolio.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,10 +53,10 @@ public class AuthController {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    private final UserService userInfoService;
+    private final AuthService authService;
 
-    public AuthController(UserService userInfoService) {
-        this.userInfoService = userInfoService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
     
@@ -65,7 +66,7 @@ public class AuthController {
         logger.info("Received sign-up request, user: {}", signUpRequest.getUserName());
 
 
-        boolean success = userInfoService.signUp(signUpRequest);
+        boolean success = authService.signUp(signUpRequest);
 
         if (success) {
             logger.info("User {} signed up successfully", signUpRequest.getUserName());
@@ -102,7 +103,7 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         final String refreshToken = jwtUtil.generateRefreshToken(jwt);
 
-        final Long userId = userInfoService.getUserByName(authRequest.getUserName())
+        final Long userId = authService.getUserByName(authRequest.getUserName())
                 .map(u -> u.getId())
                 .orElse(null);
 
@@ -119,12 +120,29 @@ public class AuthController {
         String newRefreshToken = jwtUtil.generateRefreshToken(jwt);
 
         String username = jwtUtil.extractUsername(refreshToken);
-        Long userId = userInfoService.getUserByName(username)
+        Long userId = authService.getUserByName(username)
                 .map(u -> u.getId())
                 .orElse(null);
 
         logger.info("Token refreshed successfully, user: {}", username);
         return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, newRefreshToken, userId)));
+    }
+    
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot password", description = "Reset password to default value based on email")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        logger.info("Received forgot-password request, email: {}", forgotPasswordRequest.getEmail());
+
+        boolean success = authService.forgotPassword(forgotPasswordRequest);
+
+        if (success) {
+            logger.info("Password reset to default for email {}", forgotPasswordRequest.getEmail());
+            return ResponseEntity.ok(ApiResponse.success(null));
+        }
+
+        logger.warn("Password reset failed for email {}", forgotPasswordRequest.getEmail());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
     }
 }
 

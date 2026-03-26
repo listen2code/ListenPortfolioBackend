@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import jakarta.validation.constraints.Min;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 
 @RestController
 @RequestMapping("/v1/user")
@@ -38,10 +38,10 @@ import jakarta.validation.Valid;
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
-    private final UserService service;
+    private final UserService userService;
 
-    public UserController(UserService service) {
-        this.service = service;
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping
@@ -49,7 +49,7 @@ public class UserController {
               security = @SecurityRequirement(name = "bearerAuth"))
     public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
         logger.info("Get user info, userId: {}", id);
-        return service.getUserSummaryById(id)
+        return userService.getUserSummaryById(id)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
     }
@@ -70,7 +70,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         logger.info("Received change-password request, userId: {}", changePasswordRequest.getUserId());
 
-        boolean success = service.changePassword(changePasswordRequest);
+        boolean success = userService.changePassword(changePasswordRequest);
 
         if (success) {
             logger.info("Password changed successfully for user {}", changePasswordRequest.getUserId());
@@ -88,7 +88,7 @@ public class UserController {
     public ResponseEntity<ApiResponse<Void>> deleteAccount(@Valid @RequestBody DeleteAccountRequest deleteAccountRequest) {
         logger.info("Received delete-account request, userId: {}", deleteAccountRequest.getUserId());
 
-        boolean success = service.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));
+        boolean success = userService.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));
 
         if (success) {
             logger.info("Account deleted successfully for user {}", deleteAccountRequest.getUserId());
