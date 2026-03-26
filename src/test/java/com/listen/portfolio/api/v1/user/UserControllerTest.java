@@ -5,7 +5,6 @@ import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

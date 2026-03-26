@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AuthController Refactored Unit Tests")
-class AuthControllerRefactoredTest {
+class AuthControllerTest {
 
     @Mock
     private AuthService authService;
