@@ -4,18 +4,6 @@
 
 这是一个基于Spring Boot的个人作品集管理后端系统，采用JWT认证、MySQL数据库、JPA持久化的RESTful API架构。
 
-## 🧾 修订记录
-
-> 说明：本区块用于保留关键架构设计修订痕迹，避免“文档与代码现状不一致”导致新成员误解或误用。
-
-| 日期 | 修订内容 | 修订原因 |
-|---|---|---|
-| 2026-03-25 | 新增结构化日志（JSON）、Actuator/Prometheus、OpenAPI/Swagger、多环境配置、关闭 OSIV | 企业级可观测性与可维护性基线；降低隐式懒加载与实体透传风险 |
-| 2026-03-25 | 落地“模块化单体”目录：API(v1) + Service + Repository + Infrastructure(Persistence Entity) | 明确分层职责，降低耦合；为后续缓存/迁移/网关等能力打基础 |
-| 2026-03-25 | Entity 归位：将历史上放在 model/response 下的 Entity 迁到 infrastructure/persistence/entity | 消除命名混淆（Response ≠ Entity）；避免实体透传到 API 层 |
-
----
-
 ## 🔍 当前架构分析
 
 ### ✅ 架构优势
@@ -38,37 +26,6 @@
    - Spring Security集成
 
 ### ⚠️ 架构问题识别
-
-#### 1. **配置管理问题**
-```yaml
-# 旧版：application.properties 中硬编码敏感信息（不建议提交到仓库）
-# jwt.secret=...
-# spring.datasource.password=...
-#
-# 已改进：支持用环境变量覆盖（本地可保留默认值，生产务必设置环境变量并移除默认值）
-jwt.secret=${JWT_SECRET:your-super-strong-secret-key-that-is-at-least-256-bits-long}
-spring.datasource.password=${DB_PASSWORD:Ls-88888888}
-```
-
-#### 2. **实体设计问题**
-
-> 修订说明：下方代码片段为“原文问题示例（已过时）”。当前代码已将 Entity 归位到 `infrastructure/persistence/entity`（例如 UserEntity），API 层返回 DTO，避免实体透传。
-
-```java
-// UserResponse作为实体类但命名像DTO
-@Entity
-@Table(name = "users")
-public class UserResponse {  // ⚠️ 命名混淆
-    // 缺少审计字段（created_at, updated_at）
-    // 缺少软删除支持
-    // 字段验证不完整
-}
-```
-
-#### 3. **异常处理缺失**
-- ~~缺少全局异常处理器~~（已补齐 GlobalExceptionHandler）
-- ~~缺少自定义业务异常~~（已补齐 BusinessException + ErrorCode）
-- ~~错误响应格式不统一~~（已统一为 ApiResponse）
 
 #### 4. **日志和监控缺失**
 - ~~缺少结构化日志~~（已补齐 logback-spring.xml JSON 输出）

@@ -1,7 +1,7 @@
 # 说明：生产环境配置（谨慎修改）
 spring:
   jpa:
-    show-sql: false
+    show-sql: false         # 关闭SQL显示，保护敏感信息
 
 logging:
   level:
@@ -12,4 +12,3 @@ management:
     web:
       exposure:
         include: health,info,prometheus
-
