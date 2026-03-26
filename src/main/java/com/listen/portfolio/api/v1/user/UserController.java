@@ -2,14 +2,16 @@ package com.listen.portfolio.api.v1.user;
 
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
-import com.listen.portfolio.api.v1.auth.dto.DeleteAccountRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.UserService;
+import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/v1/user")
@@ -65,38 +68,72 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    @Operation(summary = "Change password", description = "Change password for an existing user",
+    @Operation(summary = "Change password", description = "Change password for current user",
               security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
-        logger.info("Received change-password request, userId: {}", changePasswordRequest.getUserId());
+        // 获取当前认证用户的用户名
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        
+        logger.info("Received change-password request for current user: {}", username);
 
-        boolean success = userService.changePassword(changePasswordRequest);
-
-        if (success) {
-            logger.info("Password changed successfully for user {}", changePasswordRequest.getUserId());
-            return ResponseEntity.ok(ApiResponse.success(null));
+        // 根据用户名查找用户
+        Optional<UserEntity> userOpt = userService.getUserByName(username);
+        if (userOpt.isEmpty()) {
+            logger.warn("User not found for change-password request: {}", username);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
         }
 
-        logger.warn("Password change failed for user {}", changePasswordRequest.getUserId());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
+        var user = userOpt.get();
+        
+        // 验证请求中的userId是否与当前用户ID匹配
+        if (!user.getId().toString().equals(changePasswordRequest.getUserId())) {
+            logger.warn("User {} attempted to change password for different user ID: {}", 
+                       username, changePasswordRequest.getUserId());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Cannot change password for other users"));
+        }
+        
+        boolean success = userService.changePassword(changePasswordRequest);
+        if (success) {
+            logger.info("Password changed successfully for user: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } else {
+            logger.warn("Password change failed for user: {}", username);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
+        }
     }
 
     @DeleteMapping("/delete-account")
-    @Operation(summary = "Delete account", description = "Permanently delete user account by userId",
+    @Operation(summary = "Delete account", description = "Permanently delete current user's account",
               security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponse<Void>> deleteAccount(@Valid @RequestBody DeleteAccountRequest deleteAccountRequest) {
-        logger.info("Received delete-account request, userId: {}", deleteAccountRequest.getUserId());
+    public ResponseEntity<ApiResponse<Void>> deleteAccount() {
+        // 获取当前认证用户的用户名
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        
+        logger.info("Received delete-account request for current user: {}", username);
 
-        boolean success = userService.deleteAccount(Long.parseLong(deleteAccountRequest.getUserId()));
-
-        if (success) {
-            logger.info("Account deleted successfully for user {}", deleteAccountRequest.getUserId());
-            return ResponseEntity.ok(ApiResponse.success(null));
+        // 根据用户名查找用户
+        Optional<UserEntity> userOpt = userService.getUserByName(username);
+        if (userOpt.isEmpty()) {
+            logger.warn("User not found for delete-account request: {}", username);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
         }
 
-        logger.warn("User {} not found, delete failed", deleteAccountRequest.getUserId());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
+        var user = userOpt.get();
+        boolean success = userService.deleteAccount(user.getId());
+        
+        if (success) {
+            logger.info("Account deleted successfully for user: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(null));
+        } else {
+            logger.warn("Account deletion failed for user: {}", username);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Account deletion failed"));
+        }
     }
 }
