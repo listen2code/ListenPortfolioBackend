@@ -2,6 +2,7 @@ package com.listen.portfolio.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.service.TokenBlacklistService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
      */
     @Autowired
     private JwtUtil jwtUtil;
+    
+    /**
+     * Token 黑名单服务，用于检查 token 是否已被登出
+     */
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     /**
      * 此方法每个 HTTP 请求调用一次。
@@ -107,6 +114,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             logger.debug("Loaded user details for: {}", username);
 
+            // 检查 token 是否在黑名单中
+            if (tokenBlacklistService.isBlacklisted(jwt)) {
+                logger.warn("Token is blacklisted for user: {}", username);
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Token has been invalidated");
+                return;
+            }
+            
             // 验证 JWT 令牌是否有效
             if (jwtUtil.validateToken(jwt, userDetails)) {
                 logger.debug("JWT validated successfully, user {} authenticated", username);

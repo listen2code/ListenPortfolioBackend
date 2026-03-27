@@ -22,6 +22,8 @@ services:
     ports:
       - "${APP_PORT:-8080}:8080"
     depends_on:
+      redis:
+        condition: service_healthy
       db:
         condition: service_healthy
     environment:
@@ -37,6 +39,35 @@ services:
     networks:
       - portfolio-network
     restart: unless-stopped
+    profiles:
+      - local
+      - test
+      - staging
+      - prod
+
+  # ===================================================================
+  # Redis 缓存和黑名单服务
+  # ===================================================================
+  # 作用：提供缓存存储和 Token 黑名单功能
+  # 端口：6379 (主机) -> 6379 (容器)
+  # 版本：Redis 7.2
+  # 特性：持久化、内存优化、健康检查
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis-${ENVIRONMENT:-local}
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - portfolio-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     profiles:
       - local
       - test
@@ -71,6 +102,9 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+    depends_on:
+      redis:
+        condition: service_healthy
     profiles:
       - local
       - test
@@ -162,10 +196,13 @@ networks:
 # 数据卷配置
 # ===================================================================
 # db_data：MySQL 数据持久化
+# redis_data：Redis 数据持久化
 # prometheus_data：Prometheus 指标数据持久化
 # grafana_data：Grafana 配置和仪表板持久化
 volumes:
   db_data:
+    driver: local
+  redis_data:
     driver: local
   prometheus_data:
     driver: local

@@ -5,7 +5,10 @@ import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.UserService;
+import com.listen.portfolio.service.TokenBlacklistService;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
+import com.listen.portfolio.jwt.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,12 +23,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.Optional;
+import java.util.Date;
 
 @RestController
 @RequestMapping("/v1/user")
@@ -42,9 +48,15 @@ public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtUtil jwtUtil;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, 
+                      TokenBlacklistService tokenBlacklistService,
+                      JwtUtil jwtUtil) {
         this.userService = userService;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.jwtUtil = jwtUtil;
     }
 
     @GetMapping
@@ -58,13 +70,96 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Stateless logout; client should discard tokens",
+    @Operation(summary = "Logout", description = "Logout current user and invalidate token",
               security = @SecurityRequirement(name = "bearerAuth"))
     public ResponseEntity<ApiResponse<String>> logout() {
-        // todo Logout
         logger.info("Received logout request");
-        logger.info("Logout successful");
-        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+        
+        try {
+            // 获取当前认证用户的用户名
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = (authentication != null) ? authentication.getName() : "unknown";
+            
+            logger.info("Received logout request for user: {}", username);
+            
+            // 从请求头中获取当前 token
+            String token = extractTokenFromRequest();
+            
+            if (token != null) {
+                // 获取 token 的过期时间
+                Date expiration = jwtUtil.extractExpiration(token);
+                
+                // 将 token 加入黑名单
+                tokenBlacklistService.addToBlacklist(token, expiration.getTime());
+                
+                logger.info("User {} logged out successfully, token added to blacklist", username);
+                
+                // 清除当前用户的认证上下文
+                SecurityContextHolder.clearContext();
+                
+                return ResponseEntity.ok(new ApiResponse<>("0", "", "Logout successful", null));
+            } else {
+                logger.warn("No token found in request during logout for user: {}", username);
+                return ResponseEntity.ok(new ApiResponse<>("0", "", "Logout successful", null));
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error during logout: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Logout failed"));
+        }
+    }
+    
+    /**
+     * 从当前请求中提取 JWT token
+     * 
+     * @return JWT token 字符串，如果没有找到则返回 null
+     */
+    private String extractTokenFromRequest() {
+        try {
+            // 方法1：从 SecurityContext 中获取
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getCredentials() != null) {
+                String credentials = authentication.getCredentials().toString();
+                if (credentials != null && !credentials.isEmpty() && !credentials.equals("N/A")) {
+                    logger.debug("Token extracted from SecurityContext credentials: {}", maskToken(credentials));
+                    return credentials;
+                }
+            }
+            
+            // 方法2：从 HTTP 请求头中直接获取
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String bearerToken = request.getHeader("Authorization");
+                
+                if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+                    String token = bearerToken.substring(7); // 移除 "Bearer " 前缀
+                    logger.debug("Token extracted from Authorization header: {}", maskToken(token));
+                    return token;
+                }
+            }
+            
+            logger.debug("No token found in SecurityContext or Authorization header");
+            return null;
+            
+        } catch (Exception e) {
+            logger.warn("Error extracting token from request: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * 遮盖 token 用于日志输出
+     * 
+     * @param token 原始 token
+     * @return 遮盖后的 token
+     */
+    private String maskToken(String token) {
+        if (token == null || token.length() < 10) {
+            return "***";
+        }
+        return token.substring(0, 6) + "***" + token.substring(token.length() - 4);
     }
 
     @PostMapping("/change-password")

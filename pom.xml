@@ -247,6 +247,15 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+		<!--
+			说明：Spring Data Redis，提供 Redis 数据访问支持
+			原理：基于 Redis 客户端库，提供 Redis 操作的高级抽象
+			使用场景：缓存、会话存储、分布式锁、消息队列、Token 黑名单
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
  </dependencies>
 
 	<build>
