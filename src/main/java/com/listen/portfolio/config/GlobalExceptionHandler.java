@@ -30,7 +30,7 @@ public class GlobalExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
+    public ResponseEntity<ApiResponse<Object>> handleBusinessException(
             BusinessException e,
             HttpServletRequest request
     ) {
@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(
             Exception e,
             HttpServletRequest request
     ) {
@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(
+    public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadable(
             HttpMessageNotReadableException e,
             HttpServletRequest request
     ) {
@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(
+    public ResponseEntity<ApiResponse<Object>> handleIllegalArgumentException(
             IllegalArgumentException e,
             HttpServletRequest request
     ) {
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({AuthenticationException.class})
-    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(
+    public ResponseEntity<ApiResponse<Object>> handleAuthenticationException(
             AuthenticationException e,
             HttpServletRequest request
     ) {
@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(
+    public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(
             AccessDeniedException e,
             HttpServletRequest request
     ) {
@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnhandledException(
+    public ResponseEntity<ApiResponse<Object>> handleUnhandledException(
             Exception e,
             HttpServletRequest request
     ) {

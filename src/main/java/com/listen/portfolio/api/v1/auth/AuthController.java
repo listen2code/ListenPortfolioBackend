@@ -77,7 +77,7 @@ public class AuthController {
     
     @PostMapping("/signUp")
     @Operation(summary = "Sign up", description = "Register a new user account")
-    public ResponseEntity<ApiResponse<Void>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
+    public ResponseEntity<ApiResponse<Object>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         logger.info("Received sign-up request, user: {}", signUpRequest.getUserName());
 
         boolean success = authService.signUp(signUpRequest);
@@ -144,7 +144,7 @@ public class AuthController {
     
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Reset password to default value based on email")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+    public ResponseEntity<ApiResponse<Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         logger.info("Received forgot-password request, email: {}", forgotPasswordRequest.getEmail());
 
         boolean success = authService.forgotPassword(forgotPasswordRequest);

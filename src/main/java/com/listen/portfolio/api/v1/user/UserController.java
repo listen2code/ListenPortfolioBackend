@@ -70,7 +70,7 @@ public class UserController {
     @PostMapping("/change-password")
     @Operation(summary = "Change password", description = "Change password for current user",
               security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponse<Void>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+    public ResponseEntity<ApiResponse<Object>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         // 获取当前认证用户的用户名
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -109,7 +109,7 @@ public class UserController {
     @DeleteMapping("/delete-account")
     @Operation(summary = "Delete account", description = "Permanently delete current user's account",
               security = @SecurityRequirement(name = "bearerAuth"))
-    public ResponseEntity<ApiResponse<Void>> deleteAccount() {
+    public ResponseEntity<ApiResponse<Object>> deleteAccount() {
         // 获取当前认证用户的用户名
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();

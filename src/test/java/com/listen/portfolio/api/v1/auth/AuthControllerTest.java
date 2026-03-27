@@ -94,7 +94,7 @@ class AuthControllerTest {
                 .thenReturn(true);
 
         // When
-        ResponseEntity<ApiResponse<Void>> response = authController.signUp(mockSignUpRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.signUp(mockSignUpRequest);
 
         // Then
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -114,7 +114,7 @@ class AuthControllerTest {
                 .thenReturn(false);
 
         // When
-        ResponseEntity<ApiResponse<Void>> response = authController.signUp(mockSignUpRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.signUp(mockSignUpRequest);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -234,7 +234,7 @@ class AuthControllerTest {
                 .thenReturn(true);
 
         // When
-        ResponseEntity<ApiResponse<Void>> response = authController.forgotPassword(mockForgotPasswordRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -254,7 +254,7 @@ class AuthControllerTest {
                 .thenReturn(false);
 
         // When
-        ResponseEntity<ApiResponse<Void>> response = authController.forgotPassword(mockForgotPasswordRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());

@@ -133,7 +133,7 @@ class UserControllerTest {
                     .thenReturn(true);
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.changePassword(mockChangePasswordRequest);
+            ResponseEntity<ApiResponse<Object>> response = userController.changePassword(mockChangePasswordRequest);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -159,7 +159,7 @@ class UserControllerTest {
                     .thenReturn(Optional.empty());
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.changePassword(mockChangePasswordRequest);
+            ResponseEntity<ApiResponse<Object>> response = userController.changePassword(mockChangePasswordRequest);
 
             // Then
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -189,7 +189,7 @@ class UserControllerTest {
                     .thenReturn(Optional.of(mockUserEntity));
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.changePassword(mockChangePasswordRequest);
+            ResponseEntity<ApiResponse<Object>> response = userController.changePassword(mockChangePasswordRequest);
 
             // Then
             assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -217,7 +217,7 @@ class UserControllerTest {
                     .thenReturn(false);
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.changePassword(mockChangePasswordRequest);
+            ResponseEntity<ApiResponse<Object>> response = userController.changePassword(mockChangePasswordRequest);
 
             // Then
             assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -245,7 +245,7 @@ class UserControllerTest {
                     .thenReturn(true);
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.deleteAccount();
+            ResponseEntity<ApiResponse<Object>> response = userController.deleteAccount();
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -271,7 +271,7 @@ class UserControllerTest {
                     .thenReturn(Optional.empty());
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.deleteAccount();
+            ResponseEntity<ApiResponse<Object>> response = userController.deleteAccount();
 
             // Then
             assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -299,7 +299,7 @@ class UserControllerTest {
                     .thenReturn(false);
 
             // When
-            ResponseEntity<ApiResponse<Void>> response = userController.deleteAccount();
+            ResponseEntity<ApiResponse<Object>> response = userController.deleteAccount();
 
             // Then
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
