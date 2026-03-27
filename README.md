@@ -1,8 +1,60 @@
-# Listen Portfolio Backend - 架构分析与改进建议
+# Listen Portfolio Backend
 
 ## 📊 项目概述
 
-这是一个基于Spring Boot的个人作品集管理后端系统，采用JWT认证、MySQL数据库、JPA持久化的RESTful API架构。
+基于 Spring Boot 4.0.1 的个人作品集管理后端系统，采用 RESTful API 架构，支持 JWT 认证、MySQL 数据库和 Flyway 数据库版本管理。
+
+### 🚀 核心特性
+
+- **🔐 JWT 认证** - 安全的用户认证和授权机制
+- **🗄️ MySQL 数据库** - 完整的数据持久化和关系管理
+- **🔄 Flyway 迁移** - 数据库版本控制和自动化迁移
+- **🔗 HikariCP 连接池** - 高性能数据库连接管理
+- **📊 索引优化** - 完整的数据库索引体系
+- **📝 OpenAPI 文档** - 自动生成的 API 文档和交互界面
+- **📈 监控指标** - Prometheus 指标和健康检查
+
+## 🚀 快速开始
+
+### 📋 环境要求
+
+- **Java 17+**
+- **Maven 3.6+**
+- **MySQL 8.0+**
+
+### 🛠️ 安装和运行
+
+#### 1. **克隆项目**
+```bash
+git clone <repository-url>
+cd ListenPortfolioBackend
+```
+
+#### 2. **配置数据库**
+```bash
+# 2.1 创建空数据库
+mysql -u root -p
+CREATE DATABASE portfolio CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+EXIT;
+
+# 2.2 执行 Flyway 迁移（自动创建表结构和初始数据）
+./mvnw flyway:migrate
+```
+
+**说明**：
+- 项目使用 Flyway 管理数据库版本
+- 表结构和初始数据都在 `src/main/resources/db/migration/V1__Create_initial_tables.sql` 中
+- Flyway 会自动创建所有表、索引和插入测试数据
+
+#### 3. **启动应用**
+```bash
+./mvnw spring-boot:run -DskipTests
+```
+
+#### 4. **访问应用**
+- **API 文档**: http://localhost:8080/swagger-ui.html
+- **健康检查**: http://localhost:8080/actuator/health
+- **Prometheus 指标**: http://localhost:8080/actuator/prometheus
 
 ## 🔍 当前架构分析
 
@@ -25,16 +77,11 @@
    - BCrypt密码加密
    - Spring Security集成
 
-### ⚠️ 架构问题识别
-
-#### 5. **数据库设计问题**
-- 缺少连接池配置
-
 ## 🏗️ 企业级Spring后端架构标准
 
 ### 1. **推荐目录结构**
 
-#### ~~📁 标准企业级目录结构（模板示例，未完全落地）~~
+#### 📁 标准企业级目录结构（模板示例，未完全落地）
 
 ```
 src/main/java/com/listen/portfolio/
