@@ -247,4 +247,64 @@ INSERT INTO stat_tags (stat_id, tag_name) VALUES
 (1, 'archDesign'),
 (1, 'perfOptimization'),
 (2, 'stateManagement'),
-(3, 'fullStack');
+(2, 'riverpod'),
+(2, 'cleanArchitecture'),
+(3, 'springBoot'),
+(3, 'jpa'),
+(3, 'aws');
+
+-- ===================================================================
+-- 索引优化
+-- ===================================================================
+-- 说明：为提升查询性能，添加缺失的关键索引
+
+-- ===================================================================
+-- project_tech_stack 表索引优化
+-- ===================================================================
+-- 说明：项目技术栈关联表，经常按项目ID查询技术栈
+CREATE INDEX idx_project_tech_stack_project_id ON project_tech_stack(project_id);
+-- 说明：经常按技术名称查询项目
+CREATE INDEX idx_project_tech_stack_tech_name ON project_tech_stack(tech_name);
+
+-- ===================================================================
+-- skill_items 表索引优化
+-- ===================================================================
+-- 说明：技能项目关联表，经常按技能ID查询具体项目
+CREATE INDEX idx_skill_items_skill_id ON skill_items(skill_id);
+
+-- ===================================================================
+-- stat_tags 表索引优化
+-- ===================================================================
+-- 说明：统计标签关联表，经常按统计ID查询标签
+CREATE INDEX idx_stat_tags_stat_id ON stat_tags(stat_id);
+-- 说明：经常按标签名称查询统计
+CREATE INDEX idx_stat_tags_tag_name ON stat_tags(tag_name);
+
+-- ===================================================================
+-- 复合索引优化
+-- ===================================================================
+-- 说明：用户状态和位置组合查询（如查找可用的本地用户）
+CREATE INDEX idx_users_status_location ON users(status, location);
+
+-- 说明：用户工作经历组合查询（按用户ID和公司查询）
+CREATE INDEX idx_experiences_user_company ON experiences(user_id, company);
+
+-- 说明：项目业务ID和标题组合查询（按业务ID和标题搜索）
+CREATE INDEX idx_projects_business_title ON projects(business_id, title);
+
+-- 说明：用户技能组合查询（按用户ID和分类查询）
+CREATE INDEX idx_skills_user_category ON skills(user_id, category);
+
+-- 说明：用户教育经历组合查询（按用户ID和学校查询）
+CREATE INDEX idx_education_user_school ON education(user_id, school);
+
+-- 说明：用户语言组合查询（按用户ID和语言名称查询）
+CREATE INDEX idx_languages_user_name ON languages(user_id, name);
+
+-- ===================================================================
+-- 性能优化说明
+-- ===================================================================
+-- 1. 外键索引：提升 JOIN 查询性能
+-- 2. 复合索引：优化多条件查询
+-- 3. 单列索引：优化单字段查询
+-- 4. 索引选择：基于查询频率和数据量优化
