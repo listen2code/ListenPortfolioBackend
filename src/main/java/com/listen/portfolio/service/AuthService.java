@@ -1,6 +1,5 @@
 package com.listen.portfolio.service;
 
-import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.Constants;
@@ -167,42 +166,6 @@ public class AuthService implements UserDetailsService {
     }
 
     /**
-     * 修改用户密码
-     * 说明：验证旧密码正确性后更新为新密码，确保用户身份验证的安全性
-     * 事务要求：整个密码修改过程必须原子性执行，避免部分更新导致数据不一致
-     * 安全考虑：
-     * - 必须验证旧密码的正确性，防止未授权访问
-     * - 新密码同样使用BCrypt算法加密存储
-     * - 记录操作日志用于安全审计
-     * 使用场景：用户在个人中心修改密码，或管理员重置用户密码
-     * 
-     * @param changePasswordRequest 密码修改请求，包含用户ID、旧密码和新密码
-     * @return 密码修改成功返回true，旧密码不匹配或用户不存在返回false
-     */
-    @Transactional
-    public boolean changePassword(ChangePasswordRequest changePasswordRequest) {
-        logger.info("Attempting to change password for user: {}", changePasswordRequest.getUserId());
-        
-        return repo.findById(Long.parseLong(changePasswordRequest.getUserId()))
-                .map(userInfo -> {
-                    // 验证提供的旧密码是否与数据库中的加密密码匹配
-                    // passwordEncoder.matches()方法比较明文密码与数据库中的哈希密码
-                    if (passwordEncoder.matches(changePasswordRequest.getOldPassword(), userInfo.getPassword())) {
-                        // 旧密码正确，设置新的加密密码
-                        userInfo.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
-                        // 将更改持久化到数据库
-                        repo.save(userInfo);
-                        logger.info("Password changed successfully for user: {}", changePasswordRequest.getUserId());
-                        return true;
-                    }
-                    logger.warn("Old password does not match for user: {}", changePasswordRequest.getUserId());
-                    return false;
-                })
-            // 如果用户不存在，返回false
-                .orElse(false);
-    }
-
-    /**
      * 忘记密码重置服务
      * 说明：用户通过邮箱验证后重置密码为默认密码，用于密码找回功能
      * 安全考虑：
@@ -232,33 +195,4 @@ public class AuthService implements UserDetailsService {
                 .orElse(false);        
     }
 
-    /**
-     * 删除用户账户
-     * 说明：永久删除用户账户及其相关数据，操作不可恢复
-     * 安全考虑：
-     * - 执行前应该验证操作者权限，确保只有管理员或本人可以删除
-     * - 删除前建议进行数据备份，防止误操作导致数据丢失
-     * - 记录删除日志用于安全审计和合规要求
-     * 扩展考虑：
-     * - 可扩展为软删除，添加删除标记而非物理删除
-     * - 删除用户时需要考虑级联删除相关数据（如用户发布的文章、评论等）
-     * 使用场景：用户主动注销账户或管理员清理无效账户
-     * 
-     * @param userId 要删除的用户ID
-     * @return 删除成功返回true，用户不存在返回false
-     */
-    @Transactional
-    public boolean deleteAccount(Long userId) {
-        logger.info("Attempting to delete account for user: {}", userId);
-        
-        return repo.findById(userId)
-                .map(userInfo -> {
-                    // 从数据库中删除用户
-                    repo.delete(userInfo);
-                    logger.info("Account deleted successfully for user: {}", userId);
-                    return true;
-                })
-            // 如果用户不存在，返回false
-                .orElse(false);
-    }
 }

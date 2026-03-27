@@ -2,7 +2,6 @@ package com.listen.portfolio.service;
 
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
-import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 
@@ -13,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -81,43 +79,6 @@ public class UserService {
     }
 
     /**
-     * 查询所有用户列表
-     * 说明：获取系统中所有用户的完整列表，用于管理后台或数据统计
-     * 性能考虑：数据量大时建议分页处理，避免一次性加载过多数据
-     * 安全考虑：返回的用户实体包含敏感信息，调用方需要做好权限控制
-     * 
-     * @return 用户实体列表，如果无用户则返回空列表
-     */
-    @Transactional(readOnly = true)
-    public List<UserEntity> getAllUsers() {
-        logger.info("Fetching all users");
-        List<UserEntity> users = repo.findAll();
-        logger.info("Found {} users", users.size());
-        return users;
-    }
-
-    /**
-     * 根据用户ID查询用户信息
-     * 说明：通过主键ID查询用户，是最常用的用户查询方式
-     * 缓存考虑：高并发场景下可结合缓存使用，减少数据库访问压力
-     * 异常处理：用户不存在时返回空Optional，调用方需要处理这种情况
-     * 
-     * @param id 用户ID（主键）
-     * @return 包含用户实体的Optional对象，如果用户不存在则返回空Optional
-     */
-    @Transactional(readOnly = true)
-    public Optional<UserEntity> getUserById(Long id) {
-        logger.info("Fetching user by id: {}", id);
-        Optional<UserEntity> user = repo.findById(id);
-        if (user.isPresent()) {
-            logger.info("Found user: {}", user.get());
-        } else {
-            logger.warn("User with id: {} not found", id);
-        }
-        return user;
-    }
-
-    /**
      * 根据用户ID获取用户摘要信息
      * 说明：返回用户的基本信息，避免暴露敏感数据
      * 使用场景：前端显示用户列表、用户卡片等
@@ -149,43 +110,6 @@ public class UserService {
         dto.setEmail(entity.getEmail());
         dto.setAvatarUrl(entity.getAvatarUrl());
         return dto;
-    }
-
-    /**
-     * 用户注册服务
-     * 说明：处理新用户注册流程，包含用户名唯一性检查和密码加密存储
-     * 事务要求：整个注册流程必须原子性执行，避免并发注册产生重复用户
-     * 安全考虑：
-     * - 密码必须使用BCrypt算法加密存储，严禁明文保存
-     * - 用户名区分大小写，避免视觉混淆攻击
-     * - 记录操作日志但不包含敏感信息
-     * 
-     * @param signUpRequest 注册请求对象，包含用户名、密码、邮箱等信息
-     * @return 注册成功返回true，用户名已存在返回false
-     */
-    @Transactional
-    public boolean signUp(SignUpRequest signUpRequest) {
-        logger.info("Signing up new user: {}", signUpRequest.getUserName());
-        
-        // 检查用户名是否已存在（防止重复用户名）
-        if (repo.findByNameCaseSensitive(signUpRequest.getUserName()).isPresent()) {
-            logger.warn("Username {} already exists", signUpRequest.getUserName());
-            return false;
-        }
-        
-        // 创建新用户对象
-        UserEntity userInfo = new UserEntity();
-        userInfo.setName(signUpRequest.getUserName());
-        
-        // 使用BCrypt算法在存储前对密码进行加密
-        // 严禁存储明文密码！这确保了安全性
-        userInfo.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        userInfo.setEmail(signUpRequest.getEmail());
-        
-        // 将新用户保存到数据库
-        repo.save(userInfo);
-        logger.info("User {} signed up successfully", signUpRequest.getUserName());
-        return true;
     }
 
     /**

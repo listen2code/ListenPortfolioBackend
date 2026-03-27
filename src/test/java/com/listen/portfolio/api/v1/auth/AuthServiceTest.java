@@ -176,71 +176,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("changePassword - 成功修改密码")
-    void testChangePassword_Success() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(mockUserEntity));
-        when(passwordEncoder.matches("oldPassword", "encodedPassword"))
-                .thenReturn(true);
-        when(passwordEncoder.encode("newPassword"))
-                .thenReturn("newEncodedPassword");
-        when(userRepository.save(any(UserEntity.class)))
-                .thenReturn(mockUserEntity);
-
-        // When
-        boolean result = authService.changePassword(mockChangePasswordRequest);
-
-        // Then
-        assertTrue(result);
-        
-        verify(userRepository).findById(1L);
-        verify(passwordEncoder).matches("oldPassword", "encodedPassword");
-        verify(passwordEncoder).encode("newPassword");
-        verify(userRepository).save(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("changePassword - 旧密码不匹配修改失败")
-    void testChangePassword_OldPasswordMismatch() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(mockUserEntity));
-        when(passwordEncoder.matches("oldPassword", "encodedPassword"))
-                .thenReturn(false);
-
-        // When
-        boolean result = authService.changePassword(mockChangePasswordRequest);
-
-        // Then
-        assertFalse(result);
-        
-        verify(userRepository).findById(1L);
-        verify(passwordEncoder).matches("oldPassword", "encodedPassword");
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("changePassword - 用户不存在修改失败")
-    void testChangePassword_UserNotFound() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.empty());
-
-        // When
-        boolean result = authService.changePassword(mockChangePasswordRequest);
-
-        // Then
-        assertFalse(result);
-        
-        verify(userRepository).findById(1L);
-        verify(passwordEncoder, never()).matches(anyString(), anyString());
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
-    }
-
-    @Test
     @DisplayName("forgotPassword - 成功重置密码")
     void testForgotPassword_Success() {
         // Given
@@ -280,41 +215,6 @@ class AuthServiceTest {
         verify(userRepository).findByEmail("nonexistent@example.com");
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("deleteAccount - 成功删除账户")
-    void testDeleteAccount_Success() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(mockUserEntity));
-        doNothing().when(userRepository).delete(mockUserEntity);
-
-        // When
-        boolean result = authService.deleteAccount(1L);
-
-        // Then
-        assertTrue(result);
-        
-        verify(userRepository).findById(1L);
-        verify(userRepository).delete(mockUserEntity);
-    }
-
-    @Test
-    @DisplayName("deleteAccount - 用户不存在删除失败")
-    void testDeleteAccount_UserNotFound() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.empty());
-
-        // When
-        boolean result = authService.deleteAccount(1L);
-
-        // Then
-        assertFalse(result);
-        
-        verify(userRepository).findById(1L);
-        verify(userRepository, never()).delete(any(UserEntity.class));
     }
 
     @Test

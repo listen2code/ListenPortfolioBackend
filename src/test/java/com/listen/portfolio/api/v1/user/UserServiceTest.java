@@ -98,75 +98,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("getAllUsers - 成功获取所有用户")
-    void testGetAllUsers_Success() {
-        // Given
-        UserEntity user2 = new UserEntity();
-        user2.setId(2L);
-        user2.setName("user2");
-        user2.setEmail("user2@example.com");
-        
-        List<UserEntity> userList = Arrays.asList(mockUserEntity, user2);
-        when(userRepository.findAll()).thenReturn(userList);
-
-        // When
-        List<UserEntity> result = userService.getAllUsers();
-
-        // Then
-        assertEquals(2, result.size());
-        assertEquals("testuser", result.get(0).getName());
-        assertEquals("user2", result.get(1).getName());
-        
-        verify(userRepository).findAll();
-    }
-
-    @Test
-    @DisplayName("getAllUsers - 无用户时返回空列表")
-    void testGetAllUsers_EmptyList() {
-        // Given
-        when(userRepository.findAll()).thenReturn(Arrays.asList());
-
-        // When
-        List<UserEntity> result = userService.getAllUsers();
-
-        // Then
-        assertTrue(result.isEmpty());
-        verify(userRepository).findAll();
-    }
-
-    @Test
-    @DisplayName("getUserById - 成功获取用户")
-    void testGetUserById_Success() {
-        // Given
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(mockUserEntity));
-
-        // When
-        Optional<UserEntity> result = userService.getUserById(1L);
-
-        // Then
-        assertTrue(result.isPresent());
-        assertEquals("testuser", result.get().getName());
-        
-        verify(userRepository).findById(1L);
-    }
-
-    @Test
-    @DisplayName("getUserById - 用户不存在返回空Optional")
-    void testGetUserById_UserNotFound() {
-        // Given
-        when(userRepository.findById(999L))
-                .thenReturn(Optional.empty());
-
-        // When
-        Optional<UserEntity> result = userService.getUserById(999L);
-
-        // Then
-        assertFalse(result.isPresent());
-        verify(userRepository).findById(999L);
-    }
-
-    @Test
     @DisplayName("getUserSummaryById - 成功获取用户摘要")
     void testGetUserSummaryById_Success() {
         // Given
@@ -203,45 +134,6 @@ class UserServiceTest {
         verify(userRepository).findById(999L);
     }
 
-    @Test
-    @DisplayName("signUp - 成功注册新用户")
-    void testSignUp_Success() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.empty());
-        when(passwordEncoder.encode("password123"))
-                .thenReturn("encodedPassword");
-        when(userRepository.save(any(UserEntity.class)))
-                .thenReturn(mockUserEntity);
-
-        // When
-        boolean result = userService.signUp(mockSignUpRequest);
-
-        // Then
-        assertTrue(result);
-        
-        verify(userRepository).findByNameCaseSensitive("testuser");
-        verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(any(UserEntity.class));
-    }
-
-    @Test
-    @DisplayName("signUp - 用户名已存在注册失败")
-    void testSignUp_UsernameAlreadyExists() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.of(mockUserEntity));
-
-        // When
-        boolean result = userService.signUp(mockSignUpRequest);
-
-        // Then
-        assertFalse(result);
-        
-        verify(userRepository).findByNameCaseSensitive("testuser");
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
-    }
 
     @Test
     @DisplayName("changePassword - 成功修改密码")
