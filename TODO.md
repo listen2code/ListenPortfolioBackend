@@ -154,6 +154,7 @@ docs/
 
 | 任务 | 优先级 | 预估时间 | 验收标准 | 状态 |
 |------|--------|----------|----------|------|
+| **添加测试覆盖率报告** | 高 | 0.5天 | JaCoCo插件正常工作 | ✅ 已完成 |
 | 补全Repository测试 | 高 | 2天 | 覆盖率>80% | ⏳ 待办 |
 | 补全Service测试 | 高 | 2天 | 覆盖率>80% | ⏳ 待办 |
 | 添加Config测试 | 中 | 1天 | 关键配置测试 | ⏳ 待办 |
@@ -174,60 +175,6 @@ docs/
 | API文档完善 | 低 | 2天 | Swagger文档完整 | ⏳ 待办 |
 | 部署文档 | 低 | 1天 | Docker部署指南 | ⏳ 待办 |
 | 开发文档 | 低 | 1天 | 贡献指南 | ⏳ 待办 |
-
-## 🚀 立即可执行的优化
-
-### 🔧 今天就能做的改进
-
-#### 1. 添加测试覆盖率报告
-```xml
-<plugin>
-    <groupId>org.jacoco</groupId>
-    <artifactId>jacoco-maven-plugin</artifactId>
-    <version>0.8.8</version>
-    <executions>
-        <execution>
-            <goals>
-                <goal>prepare-agent</goal>
-            </goals>
-        </execution>
-        <execution>
-            <id>report</id>
-            <phase>test</phase>
-            <goals>
-                <goal>report</goal>
-            </goals>
-        </execution>
-    </executions>
-</plugin>
-```
-
-#### 2. 添加健康检查端点
-```properties
-# application.properties
-management.endpoints.web.exposure.include=health,info,metrics,prometheus
-management.endpoint.health.show-details=always
-```
-
-#### 3. 添加单元测试模板
-```java
-@ExtendWith(MockitoExtension.class)
-class TemplateTest {
-    @Mock
-    private Dependency dependency;
-    
-    @InjectMocks
-    private Service service;
-    
-    @Test
-    @DisplayName("测试场景描述")
-    void testScenario() {
-        // Given
-        // When
-        // Then
-    }
-}
-```
 
 ## 📋 检查清单
 
