@@ -27,23 +27,9 @@
 
 ### ⚠️ 架构问题识别
 
-#### 4. **日志和监控缺失**
-- ~~缺少结构化日志~~（已补齐 logback-spring.xml JSON 输出）
-- ~~缺少性能监控~~（已补齐 Prometheus 指标端点基础能力）
-- ~~缺少健康检查端点~~（已补齐 Actuator health）
-
 #### 5. **数据库设计问题**
-- 缺少数据库迁移工具（Flyway/Liquibase）
 - 缺少索引优化
 - 缺少连接池配置
-
-#### 6. **API设计问题**
-```java
-// 返回类型不够明确
-public ResponseEntity<ApiResponse<Void>> forgotPassword(...)  // ⚠️ Void类型
-```
-
----
 
 ## 🏗️ 企业级Spring后端架构标准
 

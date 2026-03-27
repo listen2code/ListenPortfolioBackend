@@ -6,8 +6,9 @@
 * prometheus: http://localhost:3000/
     * admin admin123
 * start project: .\mvnw spring-boot:run
-* clean project: .\mvnw clean install 
+* clean project: .\mvnw clean install
 * compile project: .\mvnw compile
 * package project: .\mvnw clean package
-
-
+* junit test: .\mvnw test
+* netstat -ano | findstr :8080
+* taskkill /F /IM java.exe
