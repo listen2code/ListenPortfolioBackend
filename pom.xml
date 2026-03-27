@@ -281,6 +281,76 @@
 					<outOfOrder>true</outOfOrder>
 				</configuration>
 			</plugin>
+			<!--
+				说明：JaCoCo Maven 插件，提供测试覆盖率分析
+				原理：在测试执行时收集代码覆盖率数据，生成HTML/XML报告
+				使用场景：测试覆盖率监控、代码质量评估、CI/CD质量门禁
+				配置：
+				- prepare-agent: 在测试前准备JaCoCo代理
+				- report: 在测试后生成覆盖率报告
+				- check: 设置覆盖率阈值检查
+			-->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.8</version>
+				<executions>
+					<!-- 在测试阶段前准备JaCoCo代理 -->
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<!-- 在测试阶段后生成报告 -->
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<!-- 生成HTML报告到target/site/jacoco目录 -->
+							<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+							<!-- 包含所有源代码 -->
+							<includes>
+								<include>**/*.class</include>
+							</includes>
+						</configuration>
+					</execution>
+					<!-- 检查覆盖率阈值 -->
+					<execution>
+						<id>check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<!-- 设置覆盖率规则 -->
+							<rules>
+								<rule>
+									<element>BUNDLE</element>
+									<limits>
+										<!-- 行覆盖率不低于70% -->
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.70</minimum>
+										</limit>
+										<!-- 分支覆盖率不低于60% -->
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.60</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+							<!-- 如果覆盖率不达标，构建失败 -->
+							<failOnViolation>true</failOnViolation>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
