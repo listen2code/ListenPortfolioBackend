@@ -218,20 +218,44 @@ if ($DeployType -eq "local") {
     
     # 等待服务启动
     Write-Host "[WAIT] Waiting for services to start..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 15
+    Start-Sleep -Seconds 30
     
     # 健康检查
     Write-Host "[HEALTH] Checking service health..." -ForegroundColor Cyan
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 10
-        $healthData = $response.Content | ConvertFrom-Json
-        if ($healthData.status -eq "UP") {
-            Write-Host "[OK] Application: Healthy" -ForegroundColor Green
-        } else {
-            Write-Host "[WARN] Application status: $($healthData.status)" -ForegroundColor Yellow
+    $maxRetries = 5
+    $retryCount = 0
+    $appHealthy = $false
+    
+    while ($retryCount -lt $maxRetries -and -not $appHealthy) {
+        try {
+            $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 10
+            $content = $response.Content
+            # 处理可能的字节数组响应
+            if ($content -is [byte[]]) {
+                $content = [System.Text.Encoding]::UTF8.GetString($content)
+            }
+            $healthData = $content | ConvertFrom-Json
+            if ($healthData.status -eq "UP") {
+                Write-Host "[OK] Application: Healthy" -ForegroundColor Green
+                $appHealthy = $true
+            } else {
+                Write-Host "[WARN] Application status: $($healthData.status) (attempt $($retryCount + 1)/$maxRetries)" -ForegroundColor Yellow
+                $retryCount++
+                if ($retryCount -lt $maxRetries) {
+                    Start-Sleep -Seconds 10
+                }
+            }
+        } catch {
+            Write-Host "[ERROR] Application health check failed (attempt $($retryCount + 1)/$maxRetries)" -ForegroundColor Red
+            $retryCount++
+            if ($retryCount -lt $maxRetries) {
+                Start-Sleep -Seconds 10
+            }
         }
-    } catch {
-        Write-Host "[ERROR] Application: Unhealthy" -ForegroundColor Red
+    }
+    
+    if (-not $appHealthy) {
+        Write-Host "[ERROR] Application: Unhealthy after $maxRetries attempts" -ForegroundColor Red
         Write-Host "[INFO] Check application logs: docker-compose logs app" -ForegroundColor Yellow
     }
     
