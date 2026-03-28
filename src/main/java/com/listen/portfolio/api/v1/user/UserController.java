@@ -1,5 +1,6 @@
 package com.listen.portfolio.api.v1.user;
 
+import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
@@ -16,9 +17,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -26,6 +29,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import java.util.Optional;
 import java.util.Date;
 
@@ -53,6 +57,16 @@ public class UserController {
         this.userService = userService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.jwtUtil = jwtUtil;
+    }
+
+    @GetMapping
+    @Operation(summary = "Get user", description = "Get basic user information by userId", 
+              security = @SecurityRequirement(name = "bearerAuth"))
+    public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
+        logger.info("Get user info, userId: {}", id);
+        return userService.getUserSummaryById(id)
+                .map(ApiResponse::success)
+                .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
     }
 
     @PostMapping("/logout")

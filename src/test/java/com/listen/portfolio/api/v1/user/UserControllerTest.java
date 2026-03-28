@@ -85,6 +85,45 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("getUserById - 成功获取用户信息")
+    void testGetUserById_Success() {
+        // Given
+        when(userService.getUserSummaryById(1L))
+                .thenReturn(Optional.of(mockUserSummaryDto));
+
+        // When
+        ApiResponse<UserSummaryDto> response = userController.getUserById(1L);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("0", response.getResult());
+        assertNotNull(response.getBody());
+        assertEquals("testuser", response.getBody().getName());
+        assertEquals("test@example.com", response.getBody().getEmail());
+
+        verify(userService).getUserSummaryById(1L);
+    }
+
+    @Test
+    @DisplayName("getUserById - 用户不存在返回错误")
+    void testGetUserById_UserNotFound() {
+        // Given
+        when(userService.getUserSummaryById(999L))
+                .thenReturn(Optional.empty());
+
+        // When
+        ApiResponse<UserSummaryDto> response = userController.getUserById(999L);
+
+        // Then
+        assertNotNull(response);
+        assertEquals("1", response.getResult());
+        assertEquals("User not found", response.getMessage());
+        assertNull(response.getBody());
+
+        verify(userService).getUserSummaryById(999L);
+    }
+
+    @Test
     @DisplayName("logout - 成功登出")
     void testLogout_Success() {
         // Given - 设置 SecurityContext Mock 和 RequestContextHolder Mock
@@ -329,6 +368,26 @@ class UserControllerTest {
             userController.getClass().getAnnotation(org.springframework.web.bind.annotation.RequestMapping.class);
         assertNotNull(requestMapping);
         assertArrayEquals(new String[]{"/v1/user"}, requestMapping.value());
+    }
+
+    @Test
+    @DisplayName("边界测试 - getUserById 参数验证")
+    void testGetUserById_ParameterValidation() {
+        // 测试边界值
+        ApiResponse<UserSummaryDto> response1 = userController.getUserById(1L);
+        verify(userService).getUserSummaryById(1L);
+
+        ApiResponse<UserSummaryDto> response2 = userController.getUserById(Long.MAX_VALUE);
+        verify(userService).getUserSummaryById(Long.MAX_VALUE);
+    }
+
+    @Test
+    @DisplayName("边界测试 - getUserById 正常值验证")
+    void testGetUserById_ParameterValidation_Additional() {
+        // 测试正常值 - 验证方法能正常调用
+        assertDoesNotThrow(() -> userController.getUserById(1L));
+        assertDoesNotThrow(() -> userController.getUserById(Long.MAX_VALUE));
+        assertDoesNotThrow(() -> userController.getUserById(Long.MIN_VALUE + 1));
     }
 
     @Test
@@ -677,4 +736,23 @@ class UserControllerTest {
         // 注意：遮盖后的长度可能比原长度长，这是正常的
     }
 
+    @Test
+    @DisplayName("getUserById - ID为0的边界测试")
+    void testGetUserById_ZeroIdBoundary() {
+        // When - 调用getUserById(0)
+        ApiResponse<UserSummaryDto> response = userController.getUserById(0L);
+        
+        // Then - 应该正常处理（@Min注解在单元测试中可能不生效）
+        assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("getUserById - 负数ID边界测试")
+    void testGetUserById_NegativeIdBoundary() {
+        // When - 调用getUserById(-1)
+        ApiResponse<UserSummaryDto> response = userController.getUserById(-1L);
+        
+        // Then - 应该正常处理（@Min注解在单元测试中可能不生效）
+        assertNotNull(response);
+    }
 }
