@@ -236,3 +236,4 @@ docs/
 ## TODO
 
 * forgotPassword发送email
+* docker mysql, flyway auto

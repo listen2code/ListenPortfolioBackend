@@ -39,11 +39,10 @@ public class AboutMeService {
      * - 原理：在 Service 的只读事务内完成实体到 DTO 的转换，Controller 只返回 DTO
      */
     @Transactional(readOnly = true)
-    public Optional<AboutMeDto> getAboutMeDto() {
-        long userId = 1L;
-        Optional<UserEntity> userInfoOptional = userInfoRepository.findById(userId);
+    public Optional<AboutMeDto> getAboutMeDto(String username) {
+        Optional<UserEntity> userInfoOptional = userInfoRepository.findByName(username);
         if (userInfoOptional.isEmpty()) {
-            logger.warn("User with id {} not found for AboutMe page.", userId);
+            logger.warn("User with username {} not found for AboutMe page.", username);
             return Optional.empty();
         }
 
