@@ -25,6 +25,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
+import java.util.Date;
 import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -163,11 +164,17 @@ class UserControllerTest {
             securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
             when(securityContext.getAuthentication()).thenReturn(authentication);
             when(authentication.getName()).thenReturn("testuser");
+            when(authentication.getCredentials()).thenReturn("mock-jwt-token");
 
             when(userService.getUserByName("testuser"))
                     .thenReturn(Optional.of(mockUserEntity));
             when(userService.changePassword(any(ChangePasswordRequest.class)))
                     .thenReturn(true);
+            
+            // Mock token extraction and blacklist operations
+            when(jwtUtil.extractExpiration(anyString()))
+                    .thenReturn(new Date(System.currentTimeMillis() + 3600000)); // 1 hour later
+            doNothing().when(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
 
             // When
             ResponseEntity<ApiResponse<Object>> response = userController.changePassword(mockChangePasswordRequest);
@@ -176,10 +183,11 @@ class UserControllerTest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals("0", response.getBody().getResult());
-            assertNull(response.getBody().getBody());
+            assertEquals("Password changed successfully. Please login again.", response.getBody().getBody());
 
             verify(userService).getUserByName("testuser");
             verify(userService).changePassword(mockChangePasswordRequest);
+            verify(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
         }
     }
 

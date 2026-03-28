@@ -9,6 +9,7 @@ import com.listen.portfolio.service.TokenBlacklistService;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.jwt.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -193,7 +194,21 @@ public class UserController {
         boolean success = userService.changePassword(changePasswordRequest);
         if (success) {
             logger.info("Password changed successfully for user: {}", username);
-            return ResponseEntity.ok(ApiResponse.success(null));
+            
+            // 密码修改成功后，清空当前用户的 token
+            String currentToken = extractTokenFromRequest();
+            if (currentToken != null) {
+                // 将当前 token 加入黑名单，强制用户重新登录
+                Date expiration = jwtUtil.extractExpiration(currentToken);
+                tokenBlacklistService.addToBlacklist(currentToken, expiration.getTime());
+                logger.info("Current token added to blacklist after password change for user: {}", username);
+                
+                // 清除当前用户的认证上下文
+                SecurityContextHolder.clearContext();
+                logger.info("Security context cleared after password change for user: {}", username);
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success("Password changed successfully. Please login again."));
         } else {
             logger.warn("Password change failed for user: {}", username);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
