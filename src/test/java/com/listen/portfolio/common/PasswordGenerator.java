@@ -1,4 +1,4 @@
-package com.listen.portfolio;
+package com.listen.portfolio.common;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
