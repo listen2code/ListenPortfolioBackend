@@ -25,6 +25,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -378,5 +379,360 @@ class UserControllerTest {
 
         ApiResponse<UserSummaryDto> response2 = userController.getUserById(Long.MAX_VALUE);
         verify(userService).getUserSummaryById(Long.MAX_VALUE);
+    }
+
+    @Test
+    @DisplayName("边界测试 - getUserById 正常值验证")
+    void testGetUserById_ParameterValidation_Additional() {
+        // 测试正常值 - 验证方法能正常调用
+        assertDoesNotThrow(() -> userController.getUserById(1L));
+        assertDoesNotThrow(() -> userController.getUserById(Long.MAX_VALUE));
+        assertDoesNotThrow(() -> userController.getUserById(Long.MIN_VALUE + 1));
+    }
+
+    @Test
+    @DisplayName("logout - 无认证用户返回成功")
+    void testLogout_NoAuthentication() {
+        // Given - 无认证用户
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(null);
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals("Logout successful", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("logout - 无token返回成功")
+    void testLogout_NoToken() {
+        // Given - 有认证但无token
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            // 模拟无Authorization头
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn(null);
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals("Logout successful", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("logout - 空token返回成功")
+    void testLogout_EmptyToken() {
+        // Given - 空token
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("");
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals("Logout successful", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("logout - 无效token格式返回成功")
+    void testLogout_InvalidTokenFormat() {
+        // Given - 无效token格式（无Bearer前缀）
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("invalid-token");
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals("Logout successful", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("logout - JwtUtil异常处理")
+    void testLogout_JwtUtilException() {
+        // Given - JwtUtil抛出异常
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("Bearer valid-jwt-token");
+            
+            // 模拟JwtUtil抛出异常
+            when(jwtUtil.extractExpiration(anyString())).thenThrow(new RuntimeException("JWT processing error"));
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("1", response.getBody().getResult());
+            assertEquals("Logout failed", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("logout - TokenBlacklistService异常处理")
+    void testLogout_TokenBlacklistServiceException() {
+        // Given - TokenBlacklistService抛出异常
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("Bearer valid-jwt-token");
+            
+            when(jwtUtil.extractExpiration(anyString())).thenReturn(new java.util.Date());
+            // 模拟TokenBlacklistService抛出异常
+            doThrow(new RuntimeException("Redis error")).when(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
+
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("1", response.getBody().getResult());
+            assertEquals("Logout failed", response.getBody().getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("extractTokenFromRequest - 从SecurityContext获取token成功")
+    void testExtractTokenFromRequest_FromSecurityContext_Success() throws Exception {
+        // Given - 模拟SecurityContext中有有效token
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getCredentials()).thenReturn("valid-token-from-context");
+
+            // When - 使用反射调用私有方法
+            Method method = UserController.class.getDeclaredMethod("extractTokenFromRequest");
+            method.setAccessible(true);
+            String token = (String) method.invoke(userController);
+
+            // Then
+            assertEquals("valid-token-from-context", token);
+        }
+    }
+
+    @Test
+    @DisplayName("extractTokenFromRequest - 从Authorization头获取token成功")
+    void testExtractTokenFromRequest_FromAuthorizationHeader_Success() throws Exception {
+        // Given - SecurityContext无token，但Authorization头有
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getCredentials()).thenReturn(null);
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("Bearer token-from-header");
+
+            // When - 使用反射调用私有方法
+            Method method = UserController.class.getDeclaredMethod("extractTokenFromRequest");
+            method.setAccessible(true);
+            String token = (String) method.invoke(userController);
+
+            // Then
+            assertEquals("token-from-header", token);
+        }
+    }
+
+    @Test
+    @DisplayName("extractTokenFromRequest - 无token返回null")
+    void testExtractTokenFromRequest_NoToken_ReturnsNull() throws Exception {
+        // Given - SecurityContext和Authorization头都无token
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getCredentials()).thenReturn(null);
+            
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn(null);
+
+            // When - 使用反射调用私有方法
+            Method method = UserController.class.getDeclaredMethod("extractTokenFromRequest");
+            method.setAccessible(true);
+            String token = (String) method.invoke(userController);
+
+            // Then
+            assertNull(token);
+        }
+    }
+
+    @Test
+    @DisplayName("extractTokenFromRequest - RequestContextHolder异常处理")
+    void testExtractTokenFromRequest_RequestContextHolderException() throws Exception {
+        // Given - RequestContextHolder抛出异常
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getCredentials()).thenReturn(null);
+            
+            // 模拟RequestContextHolder抛出异常
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenThrow(new RuntimeException("Request context error"));
+
+            // When - 使用反射调用私有方法
+            Method method = UserController.class.getDeclaredMethod("extractTokenFromRequest");
+            method.setAccessible(true);
+            String token = (String) method.invoke(userController);
+
+            // Then
+            assertNull(token);
+        }
+    }
+
+    @Test
+    @DisplayName("maskToken - 正常token遮盖")
+    void testMaskToken_NormalToken() throws Exception {
+        // Given
+        String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then
+        assertTrue(masked.startsWith("eyJhbG"));
+        assertTrue(masked.endsWith("w5c"));
+        assertTrue(masked.contains("***"));
+        assertTrue(masked.length() < token.length());
+    }
+
+    @Test
+    @DisplayName("maskToken - 短token处理")
+    void testMaskToken_ShortToken() throws Exception {
+        // Given - 短token
+        String token = "short";
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then
+        assertEquals("***", masked);
+    }
+
+    @Test
+    @DisplayName("maskToken - null token处理")
+    void testMaskToken_NullToken() throws Exception {
+        // Given - null token
+        String token = null;
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then
+        assertEquals("***", masked);
+    }
+
+    @Test
+    @DisplayName("maskToken - 空token处理")
+    void testMaskToken_EmptyToken() throws Exception {
+        // Given - 空token
+        String token = "";
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then
+        assertEquals("***", masked);
+    }
+
+    @Test
+    @DisplayName("maskToken - 10字符token边界测试")
+    void testMaskToken_TenCharToken() throws Exception {
+        // Given - 正好10字符的token
+        String token = "1234567890";
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then - 10字符应该被遮盖: 前6位 + *** + 后4位
+        assertEquals("123456***7890", masked);
+        assertTrue(masked.contains("***"));
+    }
+
+    @Test
+    @DisplayName("maskToken - 11字符token边界测试")
+    void testMaskToken_ElevenCharToken() throws Exception {
+        // Given - 11字符的token
+        String token = "12345678901";
+
+        // When - 使用反射调用私有方法
+        Method method = UserController.class.getDeclaredMethod("maskToken", String.class);
+        method.setAccessible(true);
+        String masked = (String) method.invoke(userController, token);
+
+        // Then - 11字符应该被遮盖: 前6位 + *** + 后4位
+        assertEquals("123456***8901", masked);
+        assertTrue(masked.contains("***"));
+        // 注意：遮盖后的长度可能比原长度长，这是正常的
     }
 }
