@@ -1,6 +1,6 @@
 package com.listen.portfolio.api.v1.user;
 
-import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
+import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.UserService;

@@ -1,7 +1,7 @@
 package com.listen.portfolio.service;
 
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
-import com.listen.portfolio.api.v1.auth.dto.ChangePasswordRequest;
+import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 

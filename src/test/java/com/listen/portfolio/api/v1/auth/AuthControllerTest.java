@@ -1,7 +1,7 @@
 package com.listen.portfolio.api.v1.auth;
 
-import com.listen.portfolio.api.v1.auth.dto.AuthRequest;
-import com.listen.portfolio.api.v1.auth.dto.AuthResponse;
+import com.listen.portfolio.api.v1.auth.dto.LoginRequest;
+import com.listen.portfolio.api.v1.auth.dto.LoginResponse;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
@@ -49,7 +49,7 @@ class AuthControllerTest {
 
     private AuthController authController;
     private SignUpRequest mockSignUpRequest;
-    private AuthRequest mockAuthRequest;
+    private LoginRequest mockLoginRequest;
     private ForgotPasswordRequest mockForgotPasswordRequest;
     private UserEntity mockUserEntity;
     private UserDetails mockUserDetails;
@@ -78,9 +78,9 @@ class AuthControllerTest {
         mockSignUpRequest.setPassword("password123");
         mockSignUpRequest.setEmail("test@example.com");
 
-        mockAuthRequest = new AuthRequest();
-        mockAuthRequest.setUserName("testuser");
-        mockAuthRequest.setPassword("password123");
+        mockLoginRequest = new LoginRequest();
+        mockLoginRequest.setUserName("testuser");
+        mockLoginRequest.setPassword("password123");
 
         mockForgotPasswordRequest = new ForgotPasswordRequest();
         mockForgotPasswordRequest.setEmail("test@example.com");
@@ -143,13 +143,13 @@ class AuthControllerTest {
                 .thenReturn(Optional.of(mockUserEntity));
 
         // When
-        ResponseEntity<?> response = authController.login(mockAuthRequest);
+        ResponseEntity<?> response = authController.login(mockLoginRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         
-        ApiResponse<AuthResponse> apiResponse = (ApiResponse<AuthResponse>) response.getBody();
+        ApiResponse<LoginResponse> apiResponse = (ApiResponse<LoginResponse>) response.getBody();
         assertEquals("0", apiResponse.getResult());
         assertNotNull(apiResponse.getBody());
         assertEquals("jwtToken", apiResponse.getBody().getToken());
@@ -172,7 +172,7 @@ class AuthControllerTest {
                 .when(authenticationManager).authenticate(any());
 
         // When
-        ResponseEntity<?> response = authController.login(mockAuthRequest);
+        ResponseEntity<?> response = authController.login(mockLoginRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -212,7 +212,7 @@ class AuthControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         
-        ApiResponse<AuthResponse> apiResponse = (ApiResponse<AuthResponse>) response.getBody();
+        ApiResponse<LoginResponse> apiResponse = (ApiResponse<LoginResponse>) response.getBody();
         assertEquals("0", apiResponse.getResult());
         assertNotNull(apiResponse.getBody());
         assertEquals(newJwtToken, apiResponse.getBody().getToken());

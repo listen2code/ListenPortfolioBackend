@@ -285,7 +285,7 @@ src/main/java/com/listen/portfolio/
 │   └── v1/
 │       ├── auth/
 │       │   ├── AuthController.java
-│       │   └── dto/ (AuthRequest/SignUpRequest/.../AuthResponse)
+│       │   └── dto/ (LoginRequest/SignUpRequest/.../LoginResponse)
 │       ├── user/
 │       │   ├── UserController.java
 │       │   └── dto/ (UserSummaryDto)

@@ -1,8 +1,8 @@
 package com.listen.portfolio.api.v1.auth;
 
 import com.listen.portfolio.jwt.JwtUtil;
-import com.listen.portfolio.api.v1.auth.dto.AuthRequest;
-import com.listen.portfolio.api.v1.auth.dto.AuthResponse;
+import com.listen.portfolio.api.v1.auth.dto.LoginRequest;
+import com.listen.portfolio.api.v1.auth.dto.LoginResponse;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
@@ -94,35 +94,35 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate user and issue JWT access token and refresh token")
-    public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
-        logger.info("Received login request, user: {}", authRequest.getUserName());
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest LoginRequest) {
+        logger.info("Received login request, user: {}", LoginRequest.getUserName());
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            authRequest.getUserName(),
-                            authRequest.getPassword()
+                            LoginRequest.getUserName(),
+                            LoginRequest.getPassword()
                     )
             );
-            logger.info("Credentials verified for user {}", authRequest.getUserName());
+            logger.info("Credentials verified for user {}", LoginRequest.getUserName());
         } catch (BadCredentialsException e) {
             // 登录失败统一按"凭据无效"处理，避免区分"用户不存在/密码错误"导致用户枚举风险
             // 记录 user 与 reason，便于排查（不会打印密码/token 等敏感信息）
-            logger.warn("Invalid credentials for user {}, reason: {}", authRequest.getUserName(), e.getMessage());
+            logger.warn("Invalid credentials for user {}, reason: {}", LoginRequest.getUserName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Invalid credentials"));
         }
 
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUserName());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(LoginRequest.getUserName());
         final String jwt = jwtUtil.generateToken(userDetails);
         final String refreshToken = jwtUtil.generateRefreshToken(jwt);
 
-        final Long userId = authService.getUserByName(authRequest.getUserName())
+        final Long userId = authService.getUserByName(LoginRequest.getUserName())
                 .map(u -> u.getId())
                 .orElse(null);
 
-        logger.info("User {} logged in successfully", authRequest.getUserName());
-        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, refreshToken, userId)));
+        logger.info("User {} logged in successfully", LoginRequest.getUserName());
+        return ResponseEntity.ok(ApiResponse.success(new LoginResponse(jwt, refreshToken, userId)));
     }
 
     @PostMapping("/refresh")
@@ -139,7 +139,7 @@ public class AuthController {
                 .orElse(null);
 
         logger.info("Token refreshed successfully, user: {}", username);
-        return ResponseEntity.ok(ApiResponse.success(new AuthResponse(jwt, newRefreshToken, userId)));
+        return ResponseEntity.ok(ApiResponse.success(new LoginResponse(jwt, newRefreshToken, userId)));
     }
     
     @PostMapping("/forgot-password")
