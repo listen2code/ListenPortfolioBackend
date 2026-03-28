@@ -70,7 +70,7 @@ if ($stoppedProcesses.Count -gt 0) {
 Write-Host ""
 Write-Host "[STOP] Stopping and removing containers..." -ForegroundColor Cyan
 
-$containerPatterns = @("portfolio-app", "portfolio-backend", "app", "mysql", "db", "prometheus", "grafana")
+$containerPatterns = @("portfolio-app", "portfolio-backend", "app", "mysql", "db", "redis", "prometheus", "grafana")
 $stoppedContainers = @()
 $removedContainers = @()
 
@@ -146,7 +146,7 @@ Write-Host ""
 if ($RemoveImages) {
     Write-Host "[CLEANUP] Cleaning up Docker images..." -ForegroundColor Cyan
     
-    $imagePatterns = @("portfolio*", "spring*", "mysql*", "prometheus*", "grafana*")
+    $imagePatterns = @("portfolio*", "spring*", "mysql*", "redis*", "prometheus*", "grafana*")
     $removedImages = @()
     
     foreach ($pattern in $imagePatterns) {
@@ -183,6 +183,7 @@ if ($Force) {
     
     $volumes = docker volume ls --filter "name=portfolio" --format "{{.Name}}" 2>$null
     $volumes += docker volume ls --filter "name=mysql" --format "{{.Name}}" 2>$null
+    $volumes += docker volume ls --filter "name=redis" --format "{{.Name}}" 2>$null
     
     $removedVolumes = @()
     foreach ($volume in $volumes) {
@@ -218,7 +219,7 @@ docker ps -a 2>$null | Select-Object -First 5
 
 Write-Host ""
 Write-Host "[CHECK] Port usage:" -ForegroundColor Cyan
-$ports = @(8080, 3307, 9090, 3000)
+$ports = @(8080, 3307, 6379, 9090, 3000)
 foreach ($port in $ports) {
     try {
         $connection = New-Object System.Net.Sockets.TcpClient

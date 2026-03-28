@@ -62,6 +62,7 @@ function New-Environment {
             $GrafanaUpdateInterval = $Config.grafana.update_interval
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
+            $RedisPort = $Config.ports.redis
         }
         
         "test" {
@@ -90,6 +91,7 @@ function New-Environment {
             $GrafanaUpdateInterval = $Config.grafana.update_interval
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
+            $RedisPort = $Config.ports.redis
         }
         
         "staging" {
@@ -118,6 +120,7 @@ function New-Environment {
             $GrafanaUpdateInterval = $Config.grafana.update_interval
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
+            $RedisPort = $Config.ports.redis
         }
         
         "prod" {
@@ -146,6 +149,7 @@ function New-Environment {
             $GrafanaUpdateInterval = $Config.grafana.update_interval
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
+            $RedisPort = $Config.ports.redis
         }
         
         default {
@@ -181,6 +185,7 @@ GRAFANA_FOLDER=$GrafanaFolder
 GRAFANA_UPDATE_INTERVAL=$GrafanaUpdateInterval
 GRAFANA_DASHBOARDS_PATH=$GrafanaDashboardsPath
 PROMETHEUS_RETENTION=$PrometheusRetention
+REDIS_PORT=$RedisPort
 "@
     
     # 写入 .env 文件
@@ -194,6 +199,7 @@ PROMETHEUS_RETENTION=$PrometheusRetention
     Write-Host "   AWS Region: $AwsRegion" -ForegroundColor White
     Write-Host "   Database: $DatabaseUsername@$($DatabaseUrl.Split('?')[0])..." -ForegroundColor White
     Write-Host "   App Port: $AppPort" -ForegroundColor White
+    Write-Host "   Redis Port: $RedisPort" -ForegroundColor White
     Write-Host "   Prometheus Host: $PrometheusHost" -ForegroundColor White
     Write-Host "   Prometheus Target Host: $PrometheusTargetHost" -ForegroundColor White
 }
@@ -305,15 +311,19 @@ Write-Host "[ACCESS] Service URLs:" -ForegroundColor Cyan
 if ($DeployType -eq "local") {
     Write-Host "   Application:   http://localhost:8080 (Docker)" -ForegroundColor White
     Write-Host "   Database:      localhost:3307" -ForegroundColor White
+    Write-Host "   Redis:         localhost:6379" -ForegroundColor White
 } elseif ($DeployType -eq "test") {
     Write-Host "   Application:   http://localhost:8080 (test)" -ForegroundColor White
     Write-Host "   Database:      localhost:3307" -ForegroundColor White
+    Write-Host "   Redis:         localhost:6379" -ForegroundColor White
 } elseif ($DeployType -eq "staging") {
     Write-Host "   Application:   http://localhost:8080 (staging)" -ForegroundColor White
     Write-Host "   Database:      localhost:3307" -ForegroundColor White
+    Write-Host "   Redis:         localhost:6379" -ForegroundColor White
 } elseif ($DeployType -eq "prod") {
     Write-Host "   Application:   http://localhost:8080 (production)" -ForegroundColor White
     Write-Host "   Database:      localhost:3307" -ForegroundColor White
+    Write-Host "   Redis:         localhost:6379" -ForegroundColor White
 }
 Write-Host "   Prometheus:    http://localhost:9090" -ForegroundColor White
 Write-Host "   Grafana:       http://localhost:3000" -ForegroundColor White
