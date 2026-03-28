@@ -59,16 +59,6 @@ public class UserController {
         this.jwtUtil = jwtUtil;
     }
 
-    @GetMapping
-    @Operation(summary = "Get user", description = "Get basic user information by userId", 
-              security = @SecurityRequirement(name = "bearerAuth"))
-    public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
-        logger.info("Get user info, userId: {}", id);
-        return userService.getUserSummaryById(id)
-                .map(ApiResponse::success)
-                .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
-    }
-
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Logout current user and invalidate token",
               security = @SecurityRequirement(name = "bearerAuth"))
