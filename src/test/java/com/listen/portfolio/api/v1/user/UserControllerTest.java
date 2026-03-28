@@ -5,6 +5,8 @@ import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
+import com.listen.portfolio.service.TokenBlacklistService;
+import com.listen.portfolio.jwt.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Optional;
 
@@ -38,6 +43,18 @@ class UserControllerTest {
 
     @Mock
     private SecurityContext securityContext;
+
+    @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private ServletRequestAttributes requestAttributes;
+
+    @Mock
+    private TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    private JwtUtil jwtUtil;
 
     @InjectMocks
     private UserController userController;
@@ -108,14 +125,33 @@ class UserControllerTest {
     @Test
     @DisplayName("logout - 成功登出")
     void testLogout_Success() {
-        // When
-        ResponseEntity<ApiResponse<String>> response = userController.logout();
+        // Given - 设置 SecurityContext Mock 和 RequestContextHolder Mock
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class);
+             MockedStatic<RequestContextHolder> requestContextHolderMock = mockStatic(RequestContextHolder.class)) {
+            
+            // 设置 SecurityContext
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            // 设置 RequestContextHolder 和 HttpServletRequest
+            requestContextHolderMock.when(RequestContextHolder::getRequestAttributes).thenReturn(requestAttributes);
+            when(requestAttributes.getRequest()).thenReturn(request);
+            when(request.getHeader("Authorization")).thenReturn("Bearer valid-jwt-token");
+            
+            // 模拟 JwtUtil 和 TokenBlacklistService
+            when(jwtUtil.extractExpiration(anyString())).thenReturn(new java.util.Date());
+            doNothing().when(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
 
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("0", response.getBody().getResult());
-        assertEquals("Logout successful", response.getBody().getBody());
+            // When
+            ResponseEntity<ApiResponse<String>> response = userController.logout();
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals("Logout successful", response.getBody().getMessage());
+        }
     }
 
     @Test
