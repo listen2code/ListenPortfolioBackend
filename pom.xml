@@ -86,6 +86,17 @@
 			<optional>true</optional>
 		</dependency>
 		<!--
+			说明：SpotBugs 注解库，提供静态分析相关的注解
+			原理：通过注解向 SpotBugs 提供额外信息，提高分析准确性
+			使用场景：标记 null 检查、线程安全、性能优化提示
+		-->
+		<dependency>
+			<groupId>com.github.spotbugs</groupId>
+			<artifactId>spotbugs-annotations</artifactId>
+			<version>4.7.3</version>
+			<optional>true</optional>
+		</dependency>
+		<!--
 			说明：MySQL JDBC 驱动连接器，提供数据库连接支持
 			原理：实现 JDBC 规范，建立 Java 应用与 MySQL 数据库的连接通道
 			使用场景：所有需要连接 MySQL 数据库的操作，数据持久化与查询
@@ -360,7 +371,85 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!--
+				说明：SpotBugs 静态代码分析工具
+				原理：通过字节码分析发现潜在的 bug、安全漏洞和代码质量问题
+				使用场景：代码质量检查、CI/CD 集成、代码审查辅助
+			-->
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.7.3.6</version>
+				<configuration>
+					<!-- SpotBugs 分析的最低级别 -->
+					<effort>Max</effort>
+					<!-- 报告阈值 -->
+					<threshold>Low</threshold>
+					<!-- 生成 HTML 报告 -->
+					<outputDirectory>${project.reporting.outputDirectory}/spotbugs</outputDirectory>
+					<!-- 包含的文件模式 -->
+					<includes>
+						<include>**/*.class</include>
+					</includes>
+					<!-- 排除的文件模式 -->
+					<excludes>
+						<exclude>**/test/**/*.class</exclude>
+						<exclude>**/*Test*.class</exclude>
+						<exclude>**/generated/**/*.class</exclude>
+					</excludes>
+					<!-- 排除配置文件 -->
+					<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+					<!-- 插件配置 -->
+					<plugins>
+						<!-- Find Security Bugs 插件 -->
+						<plugin>
+							<groupId>com.h3xstream.findsecbugs</groupId>
+							<artifactId>findsecbugs-plugin</artifactId>
+							<version>1.12.0</version>
+						</plugin>
+					</plugins>
+					<!-- XML 配置文件 -->
+					<xmlOutput>true</xmlOutput>
+					<!-- HTML 报告 -->
+					<htmlOutput>true</htmlOutput>
+					<!-- 只报告发现的问题 -->
+					<onlyAnalyze>${spotbugs.onlyAnalyze}</onlyAnalyze>
+					<!-- 失败阈值 -->
+					<failOnError>false</failOnError>
+					<!-- 最大警告数量 -->
+					<maxRank>15</maxRank>
+				</configuration>
+				<executions>
+					<!-- 在 compile 阶段后运行 SpotBugs -->
+					<execution>
+						<id>spotbugs-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+					<!-- 生成报告 -->
+					<execution>
+						<id>spotbugs-report</id>
+						<phase>site</phase>
+						<goals>
+							<goal>spotbugs</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+
+	<!-- SpotBugs 依赖管理 -->
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-annotations</artifactId>
+				<version>4.7.3</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 </project>

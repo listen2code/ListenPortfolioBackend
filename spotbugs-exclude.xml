@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- SpotBugs 排除配置 -->
+    <!-- 说明：排除一些常见的误报或不重要的警告 -->
+    
+    <!-- 排除测试类 -->
+    <Match>
+        <Class name="~.*Test.*" />
+        <Bug pattern="~.*" />
+    </Match>
+    
+    <!-- 排除 Lombok 生成的代码 -->
+    <Match>
+        <Class name="~.*\$.*" />
+        <Bug pattern="~.*" />
+    </Match>
+    
+    <!-- 排除 Spring Boot 自动配置 -->
+    <Match>
+        <Class name="~.*\$.*" />
+        <Method name="~.*" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+    
+    <!-- 排除序列化相关的警告 -->
+    <Match>
+        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
+        <Priority value="3" />
+    </Match>
+    
+    <!-- 排除 Hibernate 实体类的某些警告 -->
+    <Match>
+        <Class name="~.*Entity$" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    
+    <!-- 排除 JPA 相关的警告 -->
+    <Match>
+        <Class name="~.*Repository$" />
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
+    </Match>
+    
+    <!-- 排除 Controller 中的某些警告 -->
+    <Match>
+        <Class name="~.*Controller$" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+        <Priority value="3" />
+    </Match>
+    
+    <!-- 排除 Config 类中的警告 -->
+    <Match>
+        <Class name="~.*Config$" />
+        <Bug pattern="SE_BAD_FIELD" />
+        <Priority value="3" />
+    </Match>
+    
+    <!-- 排除 DTO 类中的序列化警告 -->
+    <Match>
+        <Class name="~.*Dto$" />
+        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
+        <Priority value="3" />
+    </Match>
+</FindBugsFilter>
