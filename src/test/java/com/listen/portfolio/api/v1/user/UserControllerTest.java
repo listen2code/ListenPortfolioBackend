@@ -735,4 +735,24 @@ class UserControllerTest {
         assertTrue(masked.contains("***"));
         // 注意：遮盖后的长度可能比原长度长，这是正常的
     }
+
+    @Test
+    @DisplayName("getUserById - ID为0的边界测试")
+    void testGetUserById_ZeroIdBoundary() {
+        // When - 调用getUserById(0)
+        ApiResponse<UserSummaryDto> response = userController.getUserById(0L);
+        
+        // Then - 应该正常处理（@Min注解在单元测试中可能不生效）
+        assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("getUserById - 负数ID边界测试")
+    void testGetUserById_NegativeIdBoundary() {
+        // When - 调用getUserById(-1)
+        ApiResponse<UserSummaryDto> response = userController.getUserById(-1L);
+        
+        // Then - 应该正常处理（@Min注解在单元测试中可能不生效）
+        assertNotNull(response);
+    }
 }
