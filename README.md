@@ -1,637 +1,293 @@
-# Listen Portfolio Backend
+﻿# ListenPortfolioBackend
 
-## 📊 项目概述
+ListenPortfolioBackend 是 [ListenPortfolioFlutter](README-app.md) 的后端 REST API，基于 Spring Boot 4.0.1 构建，提供安全的 JWT 认证、作品集数据管理和完整的可观测性支持。
 
-基于 Spring Boot 4.0.1 的个人作品集管理后端系统，采用 RESTful API 架构，支持 JWT 认证、MySQL 数据库和 Flyway 数据库版本管理。
+**生产环境 API**: `https://api.lPortfolio.com`
 
-### 🚀 核心特性
+**主要能力：**
+- **完整认证流程**：注册、登录、Token 刷新、忘记密码、修改密码（自动 Token 失效）、账号注销、退出登录
+- **作品集 API**：关于我（需登录）、项目列表（公开）、用户信息
+- **Token 黑名单**：基于 Redis 的 JWT 黑名单，支持退出登录和密码修改时立即失效
+- **可观测性**：Prometheus 指标、Grafana 仪表板、结构化 JSON 日志
+- **代码质量**：JaCoCo 覆盖率报告、SpotBugs + Find Security Bugs 静态分析
+- **Docker 就绪**：MySQL 8 + Redis 7 + Prometheus + Grafana 完整栈
 
-- **🔐 JWT 认证** - 安全的用户认证和授权机制
-- **🗄️ MySQL 数据库** - 完整的数据持久化和关系管理
-- **🔄 Flyway 迁移** - 数据库版本控制和自动化迁移
-- **🔗 HikariCP 连接池** - 高性能数据库连接管理
-- **📊 索引优化** - 完整的数据库索引体系
-- **📝 OpenAPI 文档** - 自动生成的 API 文档和交互界面
-- **📈 监控指标** - Prometheus 指标和健康检查
+## 🛠️ 技术栈
+
+| 类别 | 技术 | 版本 |
+|------|------|------|
+| 框架 | Spring Boot | 4.0.1 |
+| 语言 | Java | 17 |
+| 安全 | Spring Security + JWT (jjwt) | 6.x / 0.11.5 |
+| 数据库 | MySQL + Spring Data JPA + Hibernate | 8.0 / 6.x |
+| 连接池 | HikariCP | (内置) |
+| DB 迁移 | Flyway | 11.14.1 |
+| 缓存 / 黑名单 | Redis | 7.2 |
+| API 文档 | SpringDoc OpenAPI / Swagger UI | 2.7.0 |
+| 监控 | Actuator + Micrometer + Prometheus | — |
+| 日志 | Logstash Logback Encoder（JSON 结构化）| 8.1 |
+| 测试 | JUnit 5 + Mockito + JaCoCo | 0.8.8 |
+| 静态分析 | SpotBugs + Find Security Bugs | 4.7.3.6 / 1.12.0 |
+| 构建 | Maven Wrapper | — |
 
 ## 🚀 快速开始
 
-### 📋 环境要求
+### 环境要求
+- Java 17+
+- MySQL 8.0+
+- Redis 7.x（Token 黑名单）
 
-- **Java 17+**
-- **Maven 3.6+**
-- **MySQL 8.0+**
+### 1. 克隆与配置
 
-### 🛠️ 安装和运行
-
-#### 1. **克隆项目**
 ```bash
 git clone <repository-url>
 cd ListenPortfolioBackend
 ```
 
-#### 2. **配置数据库**
-```bash
-# 2.1 创建空数据库
-mysql -u root -p
-CREATE DATABASE portfolio CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
-EXIT;
+配置环境变量（`.env` 文件或系统环境变量）：
 
-# 2.2 执行 Flyway 迁移（自动创建表结构和初始数据）
+```bash
+DB_URL=jdbc:mysql://localhost:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&collation=utf8mb4_bin&allowPublicKeyRetrieval=true
+DB_USERNAME=root
+DB_PASSWORD=your_password
+JWT_SECRET=your-super-strong-secret-key-at-least-256-bits-long
+JWT_EXPIRATION=300000          # 5 分钟（毫秒）
+JWT_REFRESH_EXPIRATION=86400000   # 24 小时（毫秒）
+```
+
+### 2. 初始化数据库
+
+```bash
+# 创建空数据库
+mysql -u root -p -e "CREATE DATABASE portfolio CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;"
+
+# 执行 Flyway 迁移（自动创建表结构 + 初始数据）
 ./mvnw flyway:migrate
 ```
 
-**说明**：
-- 项目使用 Flyway 管理数据库版本
-- 表结构和初始数据都在 `src/main/resources/db/migration/V1__Create_initial_tables.sql` 中
-- Flyway 会自动创建所有表、索引和插入测试数据
+### 3. 启动应用
 
-#### 3. **启动应用**
 ```bash
 ./mvnw spring-boot:run -DskipTests
 ```
 
-#### 4. **访问应用**
-- **API 文档**: http://localhost:8080/swagger-ui.html
-- **健康检查**: http://localhost:8080/actuator/health
-- **Prometheus 指标**: http://localhost:8080/actuator/prometheus
+### 4. 访问地址
 
-## 🔍 当前架构分析
+| 说明 | 地址 |
+|------|------|
+| Swagger UI API 文档 | http://localhost:8080/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| 健康检查 | http://localhost:8080/actuator/health |
+| Prometheus 指标 | http://localhost:8080/actuator/prometheus |
 
-### ✅ 架构优势
+## 📡 API 接口
 
-1. **清晰的分层架构**
-   - Controller层：处理HTTP请求和响应
-   - Service层：业务逻辑处理
-   - Repository层：数据访问抽象
-   - Model层：实体和DTO定义
+### 认证 — `/v1/auth/**`（公开，无需 Token）
 
-2. **合理的依赖管理**
-   - Spring Boot 4.0.1（较新版本）
-   - JWT认证机制
-   - JPA + MySQL数据持久化
-   - Lombok简化代码
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/v1/auth/signUp` | 注册新用户 |
+| `POST` | `/v1/auth/login` | 登录 → 返回 `accessToken`、`refreshToken`、`userId` |
+| `POST` | `/v1/auth/refresh?refreshToken=` | 刷新 accessToken |
+| `POST` | `/v1/auth/forgot-password` | 通过邮箱重置密码 |
 
-3. **安全机制**
-   - JWT Token认证
-   - BCrypt密码加密
-   - Spring Security集成
+### 用户 — `/v1/user/**`（需要 Bearer Token）
 
-## 🏗️ 企业级Spring后端架构标准
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/v1/user?id={id}` | 根据 ID 获取用户摘要 |
+| `POST` | `/v1/user/logout` | 退出登录 — 将 Token 加入 Redis 黑名单 |
+| `POST` | `/v1/user/change-password` | 修改密码 — 立即失效当前 Token，需重新登录 |
+| `DELETE` | `/v1/user/delete-account` | 永久删除账号 |
 
-### 1. **推荐目录结构**
+### 作品集
 
-#### 📁 标准企业级目录结构（模板示例，未完全落地）
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| `GET` | `/v1/projects` | 公开 | 获取所有项目 |
+| `GET` | `/v1/about` | 需要 | 获取关于我信息（统计、经历、教育、技能、语言） |
+
+### 统一响应格式
+
+```json
+{
+  "result": "0",
+  "message": "Success",
+  "body": { ... }
+}
+```
+
+登录响应 body：
+
+```json
+{
+  "accessToken": "eyJ...",
+  "refreshToken": "eyJ...",
+  "userId": 1
+}
+```
+
+## 🏗️ 架构设计
+
+### 实际目录结构
 
 ```
 src/main/java/com/listen/portfolio/
-├── api/                          # API层（控制器）
-│   ├── v1/
-│   │   ├── auth/
-│   │   │   ├── AuthController.java
-│   │   │   └── dto/
-│   │   │       ├── LoginRequest.java
-│   │   │       └── LoginResponse.java
-│   │   ├── user/
-│   │   │   ├── UserController.java
-│   │   │   └── dto/
-│   │   │       ├── UserCreateRequest.java
-│   │   │       ├── UserUpdateRequest.java
-│   │   │       └── UserResponse.java
-│   │   └── project/
-│   │       ├── ProjectController.java
-│   │       └── dto/
-│   │           ├── ProjectRequest.java
-│   │           └── ProjectResponse.java
-│   └── common/
-│       ├── BaseController.java
-│       └── GlobalExceptionHandler.java
-├── application/                  # 应用层（用例）
-│   ├── command/
-│   │   ├── user/
-│   │   │   ├── CreateUserCommand.java
-│   │   │   ├── UpdateUserCommand.java
-│   │   │   └── DeleteUserCommand.java
-│   │   └── auth/
-│   │       ├── LoginCommand.java
-│   │       └── LogoutCommand.java
-│   ├── query/
-│   │   ├── user/
-│   │   │   ├── GetUserQuery.java
-│   │   │   └── GetUserListQuery.java
-│   │   └── project/
-│   │       ├── GetProjectQuery.java
-│   │       └── GetProjectListQuery.java
-│   └── service/
-│       ├── UserApplicationService.java
-│       ├── ProjectApplicationService.java
-│       └── AuthApplicationService.java
-├── domain/                       # 领域层（核心业务）
-│   ├── model/
-│   │   ├── user/
-│   │   │   ├── User.java
-│   │   │   ├── UserId.java
-│   │   │   └── UserProfile.java
-│   │   ├── project/
-│   │   │   ├── Project.java
-│   │   │   ├── ProjectId.java
-│   │   │   └── ProjectCategory.java
-│   │   └── common/
-│   │       ├── BaseEntity.java
-│   │       └── AggregateRoot.java
-│   ├── repository/
-│   │   ├── UserRepository.java
-│   │   ├── ProjectRepository.java
-│   │   └── common/
-│   │       └── BaseRepository.java
-│   └── service/
-│       ├── UserDomainService.java
-│       ├── ProjectDomainService.java
-│       └── common/
-│           ├── PasswordEncoder.java
-│           └── JwtService.java
-├── infrastructure/             # 基础设施层
-│   ├── config/
-│   │   ├── SecurityConfig.java
-│   │   ├── DatabaseConfig.java
-│   │   ├── CacheConfig.java
-│   │   ├── JwtConfig.java
-│   │   └── SwaggerConfig.java
-│   ├── persistence/
-│   │   ├── jpa/
-│   │   │   ├── JpaUserRepository.java
-│   │   │   ├── JpaProjectRepository.java
-│   │   │   └── entity/
-│   │   │       ├── UserEntity.java
-│   │   │       └── ProjectEntity.java
-│   │   └── repository/
-│   │       ├── UserRepositoryImpl.java
-│   │       └── ProjectRepositoryImpl.java
-│   ├── security/
-│   │   ├── JwtTokenProvider.java
-│   │   ├── JwtAuthenticationFilter.java
-│   │   ├── CustomUserDetailsService.java
-│   │   └── SecurityExceptionHandler.java
-│   └── web/
-│       ├── CorsConfig.java
-│       ├── WebMvcConfig.java
-│       └── interceptor/
-│           └── LoggingInterceptor.java
-└── common/                      # 通用组件
-    ├── exception/
-    │   ├── BusinessException.java
-    │   ├── ValidationException.java
-    │   ├── NotFoundException.java
-    │   └── ErrorCode.java
-    ├── response/
-    │   ├── ApiResponse.java
-    │   ├── ErrorResponse.java
-    │   └── PageResponse.java
-    ├── util/
-    │   ├── StringUtils.java
-    │   ├── DateUtils.java
-    │   └── ValidationUtils.java
-    ├── constant/
-    │   ├── AppConstants.java
-    │   ├── SecurityConstants.java
-    │   └── ErrorConstants.java
-    └── annotation/
-        ├── ValidEmail.java
-        ├── ValidPassword.java
-        └── RateLimit.java
-
-# 资源文件结构
-src/main/resources/
-├── config/
-│   ├── application-dev.yml
-│   ├── application-prod.yml
-│   ├── application-test.yml
-│   └── application-local.yml
-├── db/
-│   ├── migration/
-│   │   ├── V1__create_user_table.sql
-│   │   ├── V2__create_project_table.sql
-│   │   └── V3__add_indexes.sql
-│   └── data/
-│       ├── dev-data.sql
-│       └── test-data.sql
-├── static/                      # 静态资源
-│   ├── images/
-│   │   ├── avatars/
-│   │   ├── projects/
-│   │   └── logos/
-│   ├── css/
-│   ├── js/
-│   └── uploads/
-├── templates/                   # 模板文件（如使用Thymeleaf）
-├── i18n/                       # 国际化文件
-│   ├── messages_en.properties
-│   ├── messages_zh_CN.properties
-│   └── messages_ja.properties
-├── logback-spring.xml          # 日志配置
-└── application.yml             # 主配置文件
-
-# 测试文件结构
-src/test/
-├── java/com/listen/portfolio/
-│   ├── unit/                   # 单元测试
-│   │   ├── service/
-│   │   ├── util/
-│   │   └── repository/
-│   ├── integration/           # 集成测试
-│   │   ├── controller/
-│   │   ├── repository/
-│   │   └── config/
-│   ├── e2e/                   # 端到端测试
-│   │   └── api/
-│   └── TestApplication.java    # 测试启动类
-└── resources/
-    ├── application-test.yml    # 测试配置
-    ├── test-data.sql          # 测试数据
-    └── test-images/           # 测试图片资源
-
-# 文档和部署
-├── docs/                       # 项目文档
-│   ├── api/                   # API文档
-│   │   ├── swagger.json
-│   │   └── postman/
-│   ├── architecture/          # 架构文档
-│   │   ├── system-design.md
-│   │   └── database-design.md
-│   └── deployment/          # 部署文档
-│       ├── docker-compose.yml
-│       ├── kubernetes/
-│       └── ci-cd/
-├── docker/                    # Docker相关文件
-│   ├── Dockerfile
-│   ├── docker-entrypoint.sh
-│   └── healthcheck.sh
-└── scripts/                   # 脚本文件
-    ├── build.sh
-    ├── deploy.sh
-    ├── backup.sh
-    └── monitoring/
-        └── prometheus.yml
-    └── util/
+├── api/v1/                          # 表现层：Controller + DTO
+│   ├── auth/                        # AuthController + dto/
+│   ├── user/                        # UserController + dto/
+│   ├── projects/                    # ProjectController + dto/
+│   └── about/                       # AboutMeController + dto/
+├── service/                         # 业务逻辑：用例编排 + DTO 装配 + 事务边界
+│   ├── AuthService.java
+│   ├── UserService.java
+│   ├── AboutMeService.java
+│   ├── ProjectService.java
+│   └── TokenBlacklistService.java
+├── repository/                      # 数据访问：Spring Data JPA 接口
+├── infrastructure/
+│   └── persistence/entity/          # JPA 实体（仅属于持久化层）
+│       ├── UserEntity.java          # + Stat / Experience / Education / Language / Skill
+│       ├── ProjectEntity.java
+│       └── ...
+├── config/                          # 横切配置
+│   ├── SecurityConfig.java
+│   ├── GlobalExceptionHandler.java
+│   ├── OpenApiConfig.java
+│   ├── RedisConfig.java
+│   ├── RequestLoggingFilter.java
+│   └── WebConfig.java
+├── jwt/                             # JWT 工具
+│   ├── JwtUtil.java                 # Token 生成 / 验证 / 刷新
+│   └── JwtRequestFilter.java        # 每次请求的 JWT 校验过滤器
+└── common/                          # 共享模型
+    ├── ApiResponse.java
+    └── Constants.java
 ```
 
-#### ✅ 现状目录结构（已落地：模块化单体）
+### 分层原则
 
-> 说明：下方结构为当前代码仓库的真实结构（会持续演进）。目标是“API 只返回 DTO；Entity 只存在于持久化层；Service 在事务内完成装配；Repository 只做数据访问”。
+- **Controller**：参数校验 → 调用 Service → 返回 `ApiResponse`。不写业务规则，不直接访问 Repository。
+- **Service**：`@Transactional` 事务边界、业务规则、Entity→DTO 装配。OSIV 已关闭（`open-in-view=false`）— 懒加载必须在此层完成。
+- **Repository**：仅做数据访问，返回 Entity / 投影。
+- **Entity**：仅用于持久化映射，不对外暴露为 API 响应。
 
-```
-src/main/java/com/listen/portfolio/
-├── api/                                     # 表现层：Controller + API DTO
-│   └── v1/
-│       ├── auth/
-│       │   ├── AuthController.java
-│       │   └── dto/ (LoginRequest/SignUpRequest/.../LoginResponse)
-│       ├── user/
-│       │   ├── UserController.java
-│       │   └── dto/ (UserSummaryDto)
-│       ├── projects/
-│       │   ├── ProjectController.java
-│       │   └── dto/ (ProjectDto)
-│       └── about/
-│           ├── AboutMeController.java
-│           └── dto/ (AboutMeDto/StatDto/ExperienceDto/EducationDto/LanguageDto/SkillDto)
-├── service/                                  # 业务逻辑层：用例编排 + 事务边界 + DTO 装配
-├── repository/                               # 数据访问层：Spring Data JPA Repository（只依赖 Entity）
-├── infrastructure/                           # 基础设施
-│   ├── config/                               # 安全、异常、日志、OpenAPI、JPA 审计等横切配置
-│   └── persistence/
-│       └── entity/                           # JPA Entity（只属于持久化层）
-└── model/
-    └── ApiResponse.java                      # 统一响应结构（保留）
-```
-
-#### ✅ 分层原则（必须遵守）
-
-- API 层（Controller）
-  - 只做参数校验、调用 Service、返回 ApiResponse，不写业务规则、不直接访问 Repository
-- Service 层
-  - 负责事务边界（@Transactional）、业务规则与 Entity→DTO 的装配
-  - 说明：项目已关闭 OSIV（`spring.jpa.open-in-view=false`），因此必须在 Service（事务内）完成装配，避免序列化阶段懒加载
-- Repository 层
-  - 只做数据访问，返回 Entity/投影，不拼装业务响应
-- Entity（持久化层）
-  - 只用于表映射与关系定义，不承载 API 输出职责
-
-### 2. **配置管理（现状与规划）**
-
-```yaml
-# ~~application.yml（配置中心示例，规划中）~~
-spring:
-  config:
-    import: "optional:configserver:https://config.company.com"
-  
-  datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/portfolio}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    
-jwt:
-  secret: ${JWT_SECRET}  # 从环境变量读取
-  expiration: ${JWT_EXPIRATION:3600000}
-```
-
-**新增：现状配置落地说明（已实现）**
-
-- 敏感配置外部化：DB/JWT 均支持环境变量覆盖（application.properties）
-- 多环境：`src/main/resources/config/application-{dev,test,staging,prod}.yml`（保留默认配置行为）
-- 日志：logback-spring.xml 输出 JSON 结构化日志（便于 ELK/Loki）
-- 监控：Actuator `health/info/prometheus` 基础端点已开放
-
-### 3. **实体设计最佳实践**
-
-```java
-@Entity
-@Table(name = "users")
-@EntityListeners(AuditingEntityListener.class)
-// ~~@SQLDelete(sql = "UPDATE users SET deleted = true WHERE id = ?")~~
-// ~~@Where(clause = "deleted = false")~~
-public class User extends BaseEntity {
-    
-    @Column(nullable = false, unique = true)
-    @Size(min = 3, max = 50)
-    private String username;
-    
-    @Column(nullable = false, unique = true)
-    @Email
-    private String email;
-    
-    @Column(nullable = false)
-    @Size(min = 8)
-    private String password;
-    
-    @Column(name = "created_at", nullable = true, updatable = false)
-    @CreatedDate
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
-    
-    @Column(name = "deleted", nullable = false)
-    private boolean deleted = false;
-}
-```
-
-### 4. **全局异常处理**
-
-```java
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-    
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
-        ErrorResponse response = ErrorResponse.builder()
-            .code(e.getCode())
-            .message(e.getMessage())
-            .timestamp(LocalDateTime.now())
-            .path(request.getRequestURI())
-            .build();
-        return ResponseEntity.status(e.getStatus()).body(response);
-    }
-    
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(ValidationException e) {
-        // 处理验证错误
-    }
-}
-```
-
-### 5. **响应标准化**
-
-```java
-@Data
-@Builder
-public class ApiResponse<T> {
-    private boolean success;
-    private String code;
-    private String message;
-    private T data;
-    private LocalDateTime timestamp;
-    private String path;
-    
-    public static <T> ApiResponse<T> success(T data) {
-        return ApiResponse.<T>builder()
-            .success(true)
-            .code("SUCCESS")
-            .message("操作成功")
-            .data(data)
-            .timestamp(LocalDateTime.now())
-            .build();
-    }
-}
-```
-
-### 6. **日志和监控架构**
-
-```xml
-<!-- 依赖配置 -->
-<dependency>
-    <groupId>net.logstash.logback</groupId>
-    <artifactId>logstash-logback-encoder</artifactId>
-    ~~<version>7.3</version>~~
-    <version>8.1</version>
-</dependency>
-<dependency>
-    <groupId>io.micrometer</groupId>
-    <artifactId>micrometer-registry-prometheus</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-actuator</artifactId>
-</dependency>
-```
-
-### 7. **数据库迁移（Flyway）**
-
-```sql
--- V1__create_users_table.sql
-CREATE TABLE users (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted BOOLEAN DEFAULT FALSE,
-    INDEX idx_email (email),
-    INDEX idx_username (username)
-);
-```
-
-### 8. **API版本管理**
-
-```java
-@RestController
-~~@RequestMapping("/api/v1")~~
-@RequestMapping("/v1")
-@Tag(name = "用户管理", description = "用户相关API")
-public class UserController {
-    
-    @GetMapping("/users/{id}")
-    @Operation(summary = "获取用户信息")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "成功"),
-        @ApiResponse(responseCode = "404", description = "用户不存在")
-    })
-    public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
-        // 实现逻辑
-    }
-}
-```
-
-### 9. **缓存策略**
-
-```java
-@Configuration
-@EnableCaching
-public class CacheConfig {
-    
-    @Bean
-    public CacheManager cacheManager() {
-        return RedisCacheManager.builder(redisConnectionFactory())
-            .cacheDefaults(cacheConfiguration())
-            .build();
-    }
-    
-    private RedisCacheConfiguration cacheConfiguration() {
-        return RedisCacheConfiguration.defaultCacheConfig()
-            .entryTtl(Duration.ofMinutes(10))
-            .disableCachingNullValues()
-            .serializeValuesWith(RedisSerializationContext.SerializationPair
-                .fromSerializer(new GenericJackson2JsonRedisSerializer()));
-    }
-}
-```
-
-### 10. **测试架构**
+### JWT Token 流程
 
 ```
-src/test/
-├── unit/                   # 单元测试
-│   ├── service/
-│   ├── util/
-│   └── repository/
-├── integration/           # 集成测试
-│   ├── controller/
-│   └── repository/
-├── e2e/                   # 端到端测试
-└── resources/             # 测试资源
-    ├── application-test.yml
-    └── test-data.sql
+登录
+  └─ AuthController.login()
+       ├─ AuthenticationManager.authenticate()
+       ├─ JwtUtil.generateToken()         → accessToken  (默认 5 分钟)
+       └─ JwtUtil.generateRefreshToken()  → refreshToken (默认 24 小时)
+
+每次请求认证
+  └─ JwtRequestFilter
+       ├─ 提取 "Authorization: Bearer <token>"
+       ├─ TokenBlacklistService.isBlacklisted() → 在黑名单则拒绝
+       └─ JwtUtil.validateToken() → 写入 SecurityContext
+
+退出登录 / 修改密码
+  └─ TokenBlacklistService.addToBlacklist(token, expiry)
+       └─ Redis: SET token:blacklist:<token> 1 EX <ttl>
 ```
+
+## 🔐 安全机制
+
+- **BCrypt** 密码哈希
+- **无状态 Session**（JWT，服务端无会话状态）
+- **Token 黑名单**：Redis 存储，退出登录和修改密码时立即失效
+- **公开路径**：`/v1/auth/**`、`/v1/projects/**`、Actuator 健康/Prometheus、Swagger UI
+- **CSRF 禁用**（无状态 JWT API）
+- 所有敏感配置通过环境变量注入（`DB_PASSWORD`、`JWT_SECRET` 等）
+
+## 🧪 测试与代码质量
+
+### 运行测试
+
+```bash
+./mvnw test
+```
+
+### 覆盖率报告（JaCoCo）
+
+```bash
+check-coverage.bat        # Windows：运行测试 + 打开 HTML 报告
+# 或
+./mvnw clean test jacoco:report
+# 报告位置：target/site/jacoco/index.html
+```
+
+### SpotBugs 静态分析
+
+```bash
+check-spotbugs.bat        # Windows：运行分析 + 打开 HTML 报告
+# 或
+./mvnw spotbugs:check
+# 报告位置：target/site/spotbugs/spotbugs.html
+```
+
+### 测试覆盖范围
+
+| 测试文件 | 覆盖范围 |
+|---------|---------|
+| `UserControllerTest` | UserController 全接口 + 分支 |
+| `UserServiceTest` | UserService 业务逻辑 |
+| `UserRepositoryTest` | 用户数据访问 |
+| `AboutMeControllerTest` | AboutMeController |
+| `AboutMeServiceTest` | AboutMeService + DTO 映射 |
+| `AuthControllerTest` | 认证接口 |
+| `ProjectControllerTest` | 项目接口 |
+| `TokenBlacklistServiceTest` | Redis 黑名单操作 |
+| `LogoutIntegrationTest` | 退出登录流程 |
+| `LogoutTokenExtractionTest` | Token 提取分支 |
+
+## 🐳 Docker 部署
+
+### 完整栈（应用 + MySQL + Redis + Prometheus + Grafana）
+
+```bash
+cp .env.example .env    # 配置 DB / JWT 等参数（参考 .env 文件）
+
+./docker_deploy.ps1     # PowerShell 一键部署
+./docker_stop.ps1       # 停止所有服务
+```
+
+### 服务端口
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| App | 8080 | Spring Boot API |
+| MySQL | 3307 | 数据库 |
+| Redis | 6379 | Token 黑名单 |
+| Prometheus | 9090 | 指标采集 |
+| Grafana | 3000 | 仪表板（admin/admin123） |
+
+### Docker Compose Profiles
+
+| Profile | 包含服务 |
+|---------|---------|
+| `local` | 仅监控（Prometheus + Grafana） |
+| `full` | 完整栈 |
+| `staging` | 预发布环境 |
+| `prod` | 生产环境 |
+
+## 📊 监控与日志
+
+- **健康检查**：`GET /actuator/health` — 存活 / 就绪探针（支持 Kubernetes）
+- **Prometheus**：`GET /actuator/prometheus` — JVM、HTTP、连接池指标
+- **Grafana**：端口 3000，预配置仪表板
+- **结构化日志**：JSON 格式，兼容 ELK / Loki 日志平台
+- **请求日志**：`RequestLoggingFilter` 记录所有入站请求
+
+## 🔮 未来规划
+
+- **邮件发送**：`forgot-password` 发送真实邮件（当前为重置为默认密码）
+- **Docker 自动迁移**：容器启动时自动执行 Flyway 迁移
+- **Refresh Token 持久化**：将刷新 Token 存储到 DB/Redis，支持主动吊销
+- **限流保护**：对认证接口添加速率限制，防止暴力破解
+- **HTTPS/TLS**：生产环境强制 HTTPS
 
 ---
 
-## 🚀 改进实施路线图
-
-### 阶段1：基础改进（优先级：高）
-1. ✅ **配置管理优化** - 使用环境变量和配置中心
-2. ✅ **实体设计改进** - 添加审计字段和软删除
-3. ✅ **全局异常处理** - 统一错误响应格式
-4. ✅ **日志标准化** - 使用结构化日志
-
-### 阶段2：架构升级（优先级：中）
-1. **数据库迁移** - 集成Flyway或Liquibase
-2. **缓存集成** - 添加Redis缓存支持
-3. **API文档** - 集成Swagger/OpenAPI
-4. **监控告警** - 集成Prometheus + Grafana
-
-### 阶段3：企业级特性（优先级：低）
-1. **微服务架构** - 服务拆分和治理
-2. **消息队列** - 集成RabbitMQ/Kafka
-3. **分布式事务** - Saga模式实现
-4. **容器化部署** - Kubernetes集成
-
----
-
-## 🧪 待验证假设（高风险决策，需要 POC 验证）
-
-| 假设 | 风险点 | 建议验证方式 |
-|---|---|---|
-| 配置中心选型（Spring Cloud Config vs Nacos 等） | 配置安全、动态刷新一致性、权限隔离 | 小范围接入 1 个配置项，验证灰度与回滚 |
-| 分布式事务策略（Saga 优先） | 跨服务一致性、补偿逻辑复杂度 | 以“注册-创建默认数据”做 POC，验证失败补偿 |
-| Redis 缓存策略 | 一致性、缓存击穿/雪崩、Key 规范 | 以项目列表为热点接口做缓存 POC，验证命中率与降载 |
-| API 网关/限流熔断 | 路由与认证耦合、限流误伤 | 用网关对 /v1/projects 做限流 POC，验证告警与降级策略 |
-| 软删除切换 | 索引与查询性能、历史数据兼容 | Flyway baseline 后做灰度开关与性能对比 |
-
-## 🧷 README 评审报告（问题-影响-建议）
-
-| 优先级 | 问题 | 影响 | 建议 |
-|---|---|---|---|
-| 高 | 文档目录结构与当前代码不一致（模板内容过多） | 新成员误解架构、引入错误实践 | 保留模板但标注“未落地”，并补充“现状结构”与分层原则 |
-| 高 | Entity/DTO 职责边界描述不清 | Entity 透传触发懒加载与过度耦合 | 明确：Entity 仅在 persistence/entity；API 仅返回 DTO；Service 内装配 |
-| 高 | 依赖版本示例与 pom.xml 不一致 | 排障困难、复用错误依赖版本 | 示例版本以 pom.xml 为准并同步更新 |
-| 中 | 未明确 OSIV 策略 | 新接口可能在序列化阶段触发查询/报错 | 明确 OSIV 已关闭，Service 内事务装配 DTO |
-| 中 | 未覆盖分页与 N+1 查询规约 | 大数据量时性能劣化 | 制定分页默认值与最大页大小；明确 fetch join/Graph 使用策略 |
-| 中 | 缓存/迁移/告警缺少落地边界 | 高并发与运维不可预期 | 分阶段推进 Flyway baseline、Redis 缓存、业务指标与告警阈值 |
-| 低 | 配置中心/微服务/分布式事务示例缺落地标记 | 文档与实现偏差 | 标记为“规划中”，并列入“待验证假设” |
-
-## ✅ 下一步行动清单（可执行）
-
-> 说明：责任人与截止时间为项目管理字段，可按团队实际调整；验收标准用于避免“做了但不可验证”的情况。
-
-| 任务 | 责任人 | 截止时间 | 验收标准 |
-|---|---|---|---|
-| README 完整对齐（目录/版本/落地状态/链接） | Listen（Backend） | 2026-03-27 | Markdown linter + 拼写检查通过；链接可用；与代码一致 |
-| Flyway baseline 引入（不改业务表名/字段） | Listen（Backend） | 2026-03-31 | 启动无报错；baseline 版本可见；回滚方案说明齐全 |
-| Redis 缓存基线（可开关） | Listen（Backend） | 2026-04-05 | 本地可启用/禁用；项目列表命中率与延迟对比输出 |
-| 业务指标与告警阈值草案（登录/接口 P95/P99） | Listen（Backend） | 2026-04-07 | /actuator/prometheus 暴露业务指标；告警规则文档完成 |
-| 关键设计评审（书面确认） | 架构师（同级） | 2026-04-07 | 对“OSIV=off + DTO 装配 + Entity 归位 + Flyway 策略”出具书面确认 |
-
-## 🛡️ 质量门禁（文档与架构）
-
-- 文档检查
-  - Markdown linter：不通过不合入
-  - 拼写检查：不通过不合入
-  - 链接检查：README 内链/外链可用，不通过不合入
-  - 本地执行命令：
-    - `npm install`
-    - `npm run lint:docs`
-- 架构评审
-  - 关键设计改动（OSIV、事务边界、缓存策略、迁移策略）需至少 1 名同级架构师书面确认
-- CI 约束
-  - 合入主分支前必须通过 CI 文档检查与“文档描述与代码生成一致性”校验（例如 OpenAPI 端点存在性）
-
-## 📋 技术栈推荐
-
-### 核心框架
-- **Spring Boot 4.x** - 当前项目已使用（见 pom.xml）
-- **Spring Security 6.x** - 安全框架
-- **Spring Data JPA** - 数据访问
-- **Hibernate 6.x** - ORM框架
-
-### 数据库和缓存
-- **MySQL 8.0** - 关系型数据库
-- **Redis 7.x** - 分布式缓存
-- **Flyway** - 数据库迁移
-
-### 监控和日志
-- **Micrometer** - 指标收集
-- **Prometheus** - 监控系统
-- **Grafana** - 可视化面板
-- **ELK Stack** - 日志分析
-
-### 测试工具
-- **JUnit 5** - 单元测试
-- **TestContainers** - 集成测试
-- **RestAssured** - API测试
-- **Mockito** - Mock框架
-
----
-
-## 🔧 立即行动项
-
-1. ~~修复安全配置 - 更新JWT密钥和数据库密码~~（已完成：支持环境变量覆盖）
-2. ~~添加全局异常处理 - 创建统一错误响应~~（已完成）
-3. ~~实体优化 - 添加审计字段和验证注解~~（已完成：审计字段与 OSIV 策略；软删除规划中）
-4. ~~配置外部化 - 使用环境变量管理敏感配置~~（已完成）
-5. **数据库迁移（Flyway baseline）** - 规范化数据库版本管理（规划中）
-6. **缓存基线（Redis）** - 热点接口缓存与失效策略（规划中）
-7. **监控告警** - 业务指标与阈值告警（规划中）
-
-这个架构改进将显著提升系统的可维护性、可扩展性和企业级特性支持。
+📅 **最后更新**: 2026-03-29 | 🏷️ **版本**: 0.0.1-SNAPSHOT | 👤 **作者**: Listen — listen2code@gmail.com | [GitHub](https://github.com/listen2code)
