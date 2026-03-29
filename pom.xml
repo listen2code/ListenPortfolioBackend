@@ -281,26 +281,43 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
 			<!--
-				说明：Flyway Maven 插件，提供数据库迁移管理
-				原理：基于版本号执行 SQL 迁移脚本，管理数据库版本控制
-				使用场景：数据库迁移、版本控制、团队协作
-				todo: can be config
-			-->
-			<plugin>
-				<groupId>org.flywaydb</groupId>
-				<artifactId>flyway-maven-plugin</artifactId>
-				<version>11.14.1</version>
-				<configuration>
-					<url>jdbc:mysql://localhost:3306/portfolio?useSSL=false&amp;serverTimezone=Asia/Tokyo&amp;collation=utf8mb4_bin&amp;allowPublicKeyRetrieval=true</url>
-					<user>root</user>
-					<password>Ls-88888888</password>
-					<locations>
-						<location>classpath:db/migration</location>
-					</locations>
-					<cleanDisabled>false</cleanDisabled>
-					<outOfOrder>true</outOfOrder>
-				</configuration>
-			</plugin>
+			说明：Flyway Maven 插件（已禁用）
+			原因：应用已通过 FlywayConfig.java 在启动时自动执行迁移，无需 Maven 插件
+			
+			功能对比：
+			- FlywayConfig.java：应用启动时自动执行，支持环境变量，推荐使用
+			- flyway-maven-plugin：需手动执行 Maven 命令（如 mvn flyway:migrate），硬编码配置
+			
+			使用场景：
+			如需手动执行 Flyway 命令（migrate、clean、info、validate 等），可取消注释此插件
+			常用命令：
+			- mvn flyway:migrate  # 执行迁移
+			- mvn flyway:info     # 查看迁移状态
+			- mvn flyway:validate # 验证迁移脚本
+			- mvn flyway:clean    # 清空数据库（危险操作）
+			
+			注意事项：
+			1. 插件配置硬编码了数据库连接信息，不支持环境变量
+			2. 需要手动维护两处配置（FlywayConfig.java 和 pom.xml）
+			3. 生产环境建议使用 FlywayConfig.java 自动执行
+		-->
+		<!--
+		<plugin>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-maven-plugin</artifactId>
+			<version>11.14.1</version>
+			<configuration>
+				<url>jdbc:mysql://localhost:3306/portfolio?useSSL=false&amp;serverTimezone=Asia/Tokyo&amp;collation=utf8mb4_bin&amp;allowPublicKeyRetrieval=true</url>
+				<user>root</user>
+				<password>Ls-88888888</password>
+				<locations>
+					<location>classpath:db/migration</location>
+				</locations>
+				<cleanDisabled>false</cleanDisabled>
+				<outOfOrder>true</outOfOrder>
+			</configuration>
+		</plugin>
+		-->
 			<!--
 				说明：JaCoCo Maven 插件，提供测试覆盖率分析
 				原理：在测试执行时收集代码覆盖率数据，生成HTML/XML报告

@@ -12,7 +12,7 @@
 - **全局异常处理**：`GlobalExceptionHandler` 统一错误响应
 - **OpenAPI / Swagger UI**：自动生成 API 文档
 - **HikariCP 连接池**：完整的连接池参数配置
-- **Flyway 数据库迁移**（手动执行模式）
+- **Flyway 数据库迁移**：启动时自动执行
 - **Prometheus + Grafana 监控**：JVM / HTTP / 连接池指标
 - **结构化 JSON 日志**：logstash-logback-encoder，兼容 ELK / Loki
 - **请求日志**：`RequestLoggingFilter` 记录所有入站请求

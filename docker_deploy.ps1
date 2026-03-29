@@ -218,9 +218,17 @@ New-Environment -Environment $DeployType
 if ($DeployType -eq "local") {
     Write-Host "Local deployment - Starting complete Docker stack" -ForegroundColor Cyan
     
+    # 重新构建 WAR，确保 Docker 镜像使用最新代码与资源文件
+    Write-Host "[BUILD] Packaging application WAR before Docker build..." -ForegroundColor Green
+    & .\mvnw.cmd clean package -DskipTests
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Maven package failed, deployment aborted" -ForegroundColor Red
+        exit 1
+    }
+    
     # 启动完整 Docker 栈
-    Write-Host "[START] Starting local Docker stack..." -ForegroundColor Green
-    & docker-compose --profile local up -d
+    Write-Host "[START] Starting local Docker stack with app image rebuild..." -ForegroundColor Green
+    & docker-compose --profile local up -d --build
     
     # 等待服务启动
     Write-Host "[WAIT] Waiting for services to start..." -ForegroundColor Yellow
