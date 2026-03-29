@@ -52,4 +52,12 @@ public class ApiResponse<T> {
     public void setBody(T body) {
         this.body = body;
     }
+
+    public boolean isSuccess() {
+        return "0".equals(result);
+    }
+
+    public String getCode() {
+        return messageId;
+    }
 }
