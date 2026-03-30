@@ -82,6 +82,11 @@ public class AuthController {
     
     @PostMapping("/signUp")
     @Operation(summary = "Sign up", description = "Register a new user account")
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+        maxRequests = 10,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<ApiResponse<Object>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         logger.info("Received sign-up request, user: {}", signUpRequest.getUserName());
 
@@ -99,6 +104,11 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Authenticate user and issue JWT access token and refresh token")
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+        maxRequests = 10,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest LoginRequest) {
         logger.info("Received login request, user: {}", LoginRequest.getUserName());
 
@@ -132,7 +142,13 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh token", description = "Refresh JWT access token using refresh token")
-    public ResponseEntity<ApiResponse<?>> refresh(@RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+        maxRequests = 20,
+        timeWindowSeconds = 60
+    )
+    public ResponseEntity<ApiResponse<?>> refresh(
+            @RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
         logger.info("Received token refresh request");
 
         String jwt = jwtUtil.refreshToken(refreshToken);
@@ -149,30 +165,16 @@ public class AuthController {
     
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Send password reset email to user")
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP, com.listen.portfolio.common.RateLimit.RateLimitType.EMAIL},
+        maxRequests = 10,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<ApiResponse<Object>> forgotPassword(
-            @Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest,
-            HttpServletRequest request) {
+            @Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         
         String email = forgotPasswordRequest.getEmail();
-        String clientIp = getClientIp(request);
-        
-        logger.info("Received forgot-password request, email: {}, IP: {}", email, clientIp);
-
-        // 限流检查：同一邮箱 5 分钟内最多 3 次
-        if (!rateLimitService.isEmailAllowed(email)) {
-            logger.warn("Rate limit exceeded for email: {}", email);
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ApiResponse.error("RATE_LIMIT_EXCEEDED", 
-                          "Requests are too frequent, please try again later"));
-        }
-
-        // 限流检查：同一 IP 1 分钟内最多 10 次
-        if (!rateLimitService.isIpAllowed(clientIp)) {
-            logger.warn("Rate limit exceeded for IP: {}", clientIp);
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ApiResponse.error("RATE_LIMIT_EXCEEDED", 
-                          "Requests are too frequent, please try again later"));
-        }
+        logger.info("Received forgot-password request, email: {}", email);
 
         // 发送密码重置邮件
         authService.forgotPassword(forgotPasswordRequest);
@@ -184,7 +186,13 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     @Operation(summary = "Reset password", description = "Reset password using token from email")
-    public ResponseEntity<ApiResponse<Object>> resetPassword(@Valid @RequestBody com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest resetPasswordRequest) {
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP, com.listen.portfolio.common.RateLimit.RateLimitType.TOKEN},
+        maxRequests = 10,
+        timeWindowSeconds = 60
+    )
+    public ResponseEntity<ApiResponse<Object>> resetPassword(
+            @Valid @RequestBody com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest resetPasswordRequest) {
         logger.info("Received reset-password request");
 
         boolean success = authService.resetPassword(

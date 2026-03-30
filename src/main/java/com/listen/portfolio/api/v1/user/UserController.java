@@ -63,6 +63,11 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Get user", description = "Get basic user information by userId", 
               security = @SecurityRequirement(name = "bearerAuth"))
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+        maxRequests = 100,
+        timeWindowSeconds = 60
+    )
     public ApiResponse<UserSummaryDto> getUserById(@RequestParam @Min(value = 1, message = "id must be >= 1") Long id) {
         logger.info("Get user info, userId: {}", id);
         return userService.getUserSummaryById(id)
@@ -73,6 +78,11 @@ public class UserController {
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Logout current user and invalidate token",
               security = @SecurityRequirement(name = "bearerAuth"))
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+        maxRequests = 20,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<ApiResponse<String>> logout() {
         logger.info("Received logout request");
         
@@ -166,6 +176,11 @@ public class UserController {
     @PostMapping("/change-password")
     @Operation(summary = "Change password", description = "Change password for current user",
               security = @SecurityRequirement(name = "bearerAuth"))
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+        maxRequests = 20,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<ApiResponse<Object>> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
         // 获取当前认证用户的用户名
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -219,6 +234,11 @@ public class UserController {
     @DeleteMapping("/delete-account")
     @Operation(summary = "Delete account", description = "Permanently delete current user's account",
               security = @SecurityRequirement(name = "bearerAuth"))
+    @com.listen.portfolio.common.RateLimit(
+        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+        maxRequests = 5,
+        timeWindowSeconds = 60
+    )
     public ResponseEntity<ApiResponse<Object>> deleteAccount() {
         // 获取当前认证用户的用户名
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

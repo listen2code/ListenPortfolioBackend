@@ -141,6 +141,9 @@ class AuthControllerTest {
         verify(authService).signUp(any(SignUpRequest.class));
     }
 
+    // 注意：IP 限流现在由 AOP 切面处理，不再需要单独测试
+    // 限流功能的测试在 RateLimitAspectTest 中进行
+
     @Test
     @DisplayName("login - 成功登录")
     void testLogin_Success() {
@@ -203,6 +206,8 @@ class AuthControllerTest {
         verify(jwtUtil, never()).generateToken(any());
     }
 
+    // 注意：IP 限流现在由 AOP 切面处理
+
     @Test
     @DisplayName("refresh - 成功刷新令牌")
     void testRefreshToken_Success() {
@@ -245,15 +250,10 @@ class AuthControllerTest {
     @DisplayName("forgotPassword - 成功发送密码重置邮件")
     void testForgotPassword_Success() {
         // Given
-        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
-        when(request.getHeader("X-Real-IP")).thenReturn(null);
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(true);
-        when(rateLimitService.isIpAllowed(anyString())).thenReturn(true);
         when(authService.forgotPassword(any(ForgotPasswordRequest.class))).thenReturn(true);
 
         // When
-        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -262,61 +262,12 @@ class AuthControllerTest {
         assertNull(response.getBody().getBody());
 
         // 验证调用
-        verify(rateLimitService).isEmailAllowed("test@example.com");
-        verify(rateLimitService).isIpAllowed("127.0.0.1");
-        verify(authService).forgotPassword(mockForgotPasswordRequest);
+        verify(authService).forgotPassword(any(ForgotPasswordRequest.class));
     }
 
-    @Test
-    @DisplayName("forgotPassword - 邮箱限流触发")
-    void testForgotPassword_EmailRateLimitExceeded() {
-        // Given
-        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
-        when(request.getHeader("X-Real-IP")).thenReturn(null);
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(false);
+    // 注意：邮箱限流现在由 AOP 切面处理
 
-        // When
-        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
-
-        // Then
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("1", response.getBody().getResult());
-        assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getMessageId());
-        assertEquals("Requests are too frequent, please try again later", response.getBody().getMessage());
-
-        // 验证调用
-        verify(rateLimitService).isEmailAllowed("test@example.com");
-        verify(rateLimitService, never()).isIpAllowed(anyString());
-        verify(authService, never()).forgotPassword(any());
-    }
-
-    @Test
-    @DisplayName("forgotPassword - IP 限流触发")
-    void testForgotPassword_IpRateLimitExceeded() {
-        // Given
-        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
-        when(request.getHeader("X-Real-IP")).thenReturn(null);
-        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(true);
-        when(rateLimitService.isIpAllowed(anyString())).thenReturn(false);
-
-        // When
-        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
-
-        // Then
-        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("1", response.getBody().getResult());
-        assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getMessageId());
-        assertEquals("Requests are too frequent, please try again later", response.getBody().getMessage());
-
-        // 验证调用
-        verify(rateLimitService).isEmailAllowed("test@example.com");
-        verify(rateLimitService).isIpAllowed("127.0.0.1");
-        verify(authService, never()).forgotPassword(any());
-    }
+    // 注意：IP 限流现在由 AOP 切面处理
 
     @Test
     @DisplayName("resetPassword - 成功重置密码")

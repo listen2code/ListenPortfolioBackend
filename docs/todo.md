@@ -75,21 +75,6 @@
 
 ---
 
-### 5. 认证接口限流保护
-
-**现状**：`/v1/auth/login`、`/v1/auth/signUp` 等接口无限流，存在暴力破解风险。  
-**目标**：对认证接口按 IP 限制请求频率。
-
-**实施步骤**：
-```
-1. 引入 Bucket4j 或 Spring Retry 限流方案
-2. 对 /v1/auth/login 配置：同一 IP 1 分钟内最多 10 次
-3. 超限返回 HTTP 429 Too Many Requests
-4. 可结合 Redis 实现分布式限流
-```
-
-**验收标准**：超出频率限制后返回 429，正常请求不受影响。
-
 ---
 
 ### 6. 补全测试覆盖
@@ -156,7 +141,7 @@ src/main/resources/
 - [x] Token 黑名单（Redis）
 - [x] 敏感配置环境变量化
 - [ ] Refresh Token 持久化与吊销
-- [ ] 认证接口限流
+- [x] 认证接口限流（login/signUp/forgot-password）
 - [ ] 生产环境 HTTPS
 
 ### 功能完整性
