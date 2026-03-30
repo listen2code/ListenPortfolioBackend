@@ -197,7 +197,7 @@ src/main/resources/
 - [x] 修改密码（含 Token 失效）
 - [x] 退出登录（Token 黑名单）
 - [x] 账号注销
-- [ ] 忘记密码发送真实邮件
+- [x] 忘记密码发送真实邮件
 
 ### 运维就绪
 - [x] Docker Compose 完整栈
