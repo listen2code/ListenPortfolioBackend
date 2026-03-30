@@ -8,6 +8,8 @@ import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.AuthService;
+import com.listen.portfolio.service.RateLimitService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final RateLimitService rateLimitService;
 
     /**
      * 构造函数 - 全依赖注入
@@ -61,17 +64,19 @@ public class AuthController {
      * @param authenticationManager Spring Security 认证管理器，处理用户认证
      * @param jwtUtil JWT 工具类，处理令牌生成和验证
      * @param userDetailsService Spring Security 用户详情服务，加载用户信息
+     * @param rateLimitService 限流服务，防止 API 暴力访问
      */
     public AuthController(
             AuthService authService,
             AuthenticationManager authenticationManager,
             JwtUtil jwtUtil,
-            UserDetailsService userDetailsService
-    ) {
+            UserDetailsService userDetailsService,
+            RateLimitService rateLimitService) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.rateLimitService = rateLimitService;
     }
 
     
@@ -143,20 +148,78 @@ public class AuthController {
     }
     
     @PostMapping("/forgot-password")
-    @Operation(summary = "Forgot password", description = "Reset password to default value based on email")
-    public ResponseEntity<ApiResponse<Object>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        logger.info("Received forgot-password request, email: {}", forgotPasswordRequest.getEmail());
+    @Operation(summary = "Forgot password", description = "Send password reset email to user")
+    public ResponseEntity<ApiResponse<Object>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest,
+            HttpServletRequest request) {
+        
+        String email = forgotPasswordRequest.getEmail();
+        String clientIp = getClientIp(request);
+        
+        logger.info("Received forgot-password request, email: {}, IP: {}", email, clientIp);
 
-        boolean success = authService.forgotPassword(forgotPasswordRequest);
+        // 限流检查：同一邮箱 5 分钟内最多 3 次
+        if (!rateLimitService.isEmailAllowed(email)) {
+            logger.warn("Rate limit exceeded for email: {}", email);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ApiResponse.error("RATE_LIMIT_EXCEEDED", 
+                          "Requests are too frequent, please try again later"));
+        }
+
+        // 限流检查：同一 IP 1 分钟内最多 10 次
+        if (!rateLimitService.isIpAllowed(clientIp)) {
+            logger.warn("Rate limit exceeded for IP: {}", clientIp);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ApiResponse.error("RATE_LIMIT_EXCEEDED", 
+                          "Requests are too frequent, please try again later"));
+        }
+
+        // 发送密码重置邮件
+        authService.forgotPassword(forgotPasswordRequest);
+
+        // 始终返回成功，防止邮箱枚举攻击
+        logger.info("Password reset request processed for email: {}", email);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Reset password using token from email")
+    public ResponseEntity<ApiResponse<Object>> resetPassword(@Valid @RequestBody com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest resetPasswordRequest) {
+        logger.info("Received reset-password request");
+
+        boolean success = authService.resetPassword(
+            resetPasswordRequest.getToken(),
+            resetPasswordRequest.getNewPassword()
+        );
 
         if (success) {
-            logger.info("Password reset to default for email {}", forgotPasswordRequest.getEmail());
+            logger.info("Password reset successfully");
             return ResponseEntity.ok(ApiResponse.success(null));
         }
 
-        logger.warn("Password reset failed for email {}", forgotPasswordRequest.getEmail());
+        logger.warn("Password reset failed - invalid or expired token");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
+                .body(ApiResponse.error("INVALID_TOKEN", "The reset link is invalid or has expired"));
+    }
+
+    /**
+     * 获取客户端真实 IP 地址
+     * 
+     * 说明：考虑代理和负载均衡的情况
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 如果有多个 IP，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }
 

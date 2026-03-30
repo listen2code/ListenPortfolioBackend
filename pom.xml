@@ -189,6 +189,15 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 		<!--
+			说明：Spring Mail 邮件发送启动器，提供邮件发送功能
+			原理：封装 JavaMail API，提供 JavaMailSender 接口，支持 SMTP 协议发送邮件
+			使用场景：发送验证邮件、密码重置邮件、通知邮件等
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<!--
 			说明：Logstash Logback Encoder，将日志输出为 JSON 结构化格式
 			原理：替换默认 PatternEncoder 为 JSON Encoder，便于日志平台检索与聚合
 		-->

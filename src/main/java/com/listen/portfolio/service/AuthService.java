@@ -27,6 +27,7 @@ import java.util.Optional;
  * 主要职责：
  * - 用户注册：处理新用户注册流程，包含唯一性检查和密码加密
  * - 密码管理：密码修改、重置等安全相关操作
+ * - 邮件发送：密码重置邮件、验证邮件等
  * - Spring Security集成：实现UserDetailsService接口支持认证授权
  * - 用户验证：提供用户名查询和身份验证功能
  * 
@@ -60,6 +61,12 @@ public class AuthService implements UserDetailsService {
     
     // 密码编码器，用于安全地加密和验证密码
     private final PasswordEncoder passwordEncoder;
+    
+    // 邮件服务，用于发送邮件
+    private final EmailService emailService;
+    
+    // 密码重置 Token 服务，用于生成和验证重置 Token
+    private final PasswordResetTokenService passwordResetTokenService;
 
     /**
      * 构造函数 - 依赖注入
@@ -71,10 +78,15 @@ public class AuthService implements UserDetailsService {
      * 
      * @param repo 用户仓库接口，提供数据库访问能力
      * @param passwordEncoder Spring Security提供的密码加密器，用于密码的安全加密和验证
+     * @param emailService 邮件服务，用于发送密码重置邮件等
+     * @param passwordResetTokenService 密码重置 Token 服务，用于生成和验证重置 Token
      */
-    public AuthService(UserRepository repo, @Lazy PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository repo, @Lazy PasswordEncoder passwordEncoder, 
+                      EmailService emailService, PasswordResetTokenService passwordResetTokenService) {
         this.repo = repo;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.passwordResetTokenService = passwordResetTokenService;
     }
 
     /**
@@ -166,33 +178,111 @@ public class AuthService implements UserDetailsService {
     }
 
     /**
-     * 忘记密码重置服务
-     * 说明：用户通过邮箱验证后重置密码为默认密码，用于密码找回功能
-     * 安全考虑：
-     * - 必须通过邮箱验证用户身份，确保是本人操作
-     * - 重置为默认密码后，用户首次登录必须强制修改密码
-     * - 记录操作日志用于安全审计和异常追踪
-     * 使用场景：用户在登录页面点击"忘记密码"，通过邮箱验证后重置密码
-     * 注意：实际应用中建议结合邮箱验证码或短信验证码增强安全性
+     * 忘记密码功能
+     * 
+     * 说明：生成密码重置 Token 并发送邮件给用户
+     * 原理：通过邮箱查找用户，生成安全的重置 Token 存储到 Redis，并发送包含重置链接的邮件
+     * 
+     * 安全性：
+     * - Token 使用 SecureRandom 生成，确保随机性
+     * - Token 存储在 Redis 中，设置过期时间（默认 1 小时）
+     * - Token 仅可使用一次，使用后立即失效
+     * - 防止邮箱枚举攻击：无论邮箱是否存在，都返回成功，避免泄露用户信息
+     * - 只给存在的邮箱发送邮件，不存在的邮箱静默失败
+     * 
+     * 使用场景：用户在登录页面点击"忘记密码"，通过邮箱接收重置链接
      * 
      * @param forgotPasswordRequest 忘记密码请求，包含用户邮箱信息
-     * @return 密码重置成功返回true，邮箱对应的用户不存在返回false
+     * @return 始终返回 true，防止邮箱枚举攻击
      */
     @Transactional
     public boolean forgotPassword(ForgotPasswordRequest forgotPasswordRequest) {
-        logger.info("Attempting to reset password for email: {}", forgotPasswordRequest.getEmail());
+        String email = forgotPasswordRequest.getEmail();
+        logger.info("Password reset requested for email: {}", email);
         
-        return repo.findByEmail(forgotPasswordRequest.getEmail())
-                .map(userInfo -> {
-                    // 将用户密码重置为默认密码（Constants.DEFAULT_RESET_PASSWORD中定义的默认密码）
-                    userInfo.setPassword(passwordEncoder.encode(Constants.DEFAULT_RESET_PASSWORD));
-                    // 将重置后的密码保存到数据库
-                    repo.save(userInfo);
-                    logger.info("Password reset successfully for user: {}", userInfo.getId());
-                    return true;
-                })
-            // 如果用户不存在，返回false
-                .orElse(false);        
+        // 查找用户
+        Optional<UserEntity> userOptional = repo.findByEmail(email);
+        
+        if (userOptional.isPresent()) {
+            UserEntity userInfo = userOptional.get();
+            try {
+                // 生成密码重置 Token
+                String resetToken = passwordResetTokenService.generateToken(userInfo.getEmail());
+                
+                // 发送密码重置邮件
+                emailService.sendPasswordResetEmail(
+                    userInfo.getEmail(),
+                    resetToken,
+                    userInfo.getName()
+                );
+                
+                logger.info("Password reset email sent successfully to: {}", email);
+            } catch (Exception e) {
+                logger.error("Failed to send password reset email to: {}, error: {}", 
+                           email, e.getMessage());
+                // 即使发送失败，也返回 true，不暴露错误信息
+            }
+        } else {
+            // 邮箱不存在，静默失败，不记录警告日志（避免日志泄露信息）
+            logger.debug("Password reset requested for non-existent email (silent fail for security)");
+        }
+        
+        // 始终返回 true，防止通过响应判断邮箱是否存在
+        return true;
+    }
+
+    /**
+     * 重置密码功能
+     * 
+     * 说明：通过 Token 验证用户身份并重置密码
+     * 原理：
+     * 1. 从 Redis 中获取 Token 对应的邮箱
+     * 2. 验证 Token 是否有效（未过期、未使用）
+     * 3. 查找用户并更新密码
+     * 4. 删除 Token，防止重复使用
+     * 
+     * 安全性：
+     * - Token 仅可使用一次
+     * - Token 有过期时间（默认 1 小时）
+     * - 密码使用 BCrypt 加密
+     * 
+     * @param token 密码重置 Token
+     * @param newPassword 新密码
+     * @return 重置成功返回 true，Token 无效或用户不存在返回 false
+     */
+    @Transactional
+    public boolean resetPassword(String token, String newPassword) {
+        logger.info("Attempting to reset password with token");
+        
+        // 验证 Token 并获取邮箱
+        String email = passwordResetTokenService.getEmailByToken(token);
+        
+        if (email == null) {
+            logger.warn("Invalid or expired password reset token");
+            return false;
+        }
+        
+        // 查找用户
+        Optional<UserEntity> userOptional = repo.findByEmail(email);
+        
+        if (userOptional.isEmpty()) {
+            logger.error("User not found for email: {} (token valid but user deleted)", email);
+            // 删除无效 Token
+            passwordResetTokenService.deleteToken(token);
+            return false;
+        }
+        
+        UserEntity user = userOptional.get();
+        
+        // 更新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
+        repo.save(user);
+        
+        // 删除 Token，防止重复使用
+        passwordResetTokenService.deleteToken(token);
+        
+        logger.info("Password reset successfully for user: {}", user.getId());
+        return true;
     }
 
 }

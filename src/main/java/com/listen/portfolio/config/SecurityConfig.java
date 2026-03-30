@@ -76,6 +76,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/auth/**", "/v1/projects/**").permitAll()
                         // 说明：对图片与静态资源放行，便于前端与未登录访问
                         .requestMatchers("/images/**", "/static/**").permitAll()
+                        // 说明：对密码重置页面放行，允许未登录用户通过邮件链接访问
+                        .requestMatchers("/password-reset-out-email.html").permitAll()
                         // 说明：对健康检查与 Prometheus 指标端点放行，便于探活与监控系统抓取
                         // 原理：这些端点由 Spring Boot Actuator 提供，本身不包含业务敏感数据
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
