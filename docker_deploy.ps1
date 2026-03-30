@@ -63,6 +63,12 @@ function New-Environment {
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
             $RedisPort = $Config.ports.redis
+            $MailHost = $Config.mail.local.host
+            $MailPort = $Config.mail.local.port
+            $MailUsername = $Config.mail.local.username
+            $MailPassword = $Config.mail.local.password
+            $FrontendUrl = $Config.frontend.local.url
+            $PasswordResetTokenExpiration = $Config.password_reset.token_expiration
         }
         
         "test" {
@@ -92,6 +98,12 @@ function New-Environment {
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
             $RedisPort = $Config.ports.redis
+            $MailHost = $Config.mail.test.host
+            $MailPort = $Config.mail.test.port
+            $MailUsername = $Config.mail.test.username
+            $MailPassword = $Config.mail.test.password
+            $FrontendUrl = $Config.frontend.test.url
+            $PasswordResetTokenExpiration = $Config.password_reset.token_expiration
         }
         
         "staging" {
@@ -121,6 +133,12 @@ function New-Environment {
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
             $RedisPort = $Config.ports.redis
+            $MailHost = $Config.mail.staging.host
+            $MailPort = $Config.mail.staging.port
+            $MailUsername = $Config.mail.staging.username
+            $MailPassword = $Config.mail.staging.password
+            $FrontendUrl = $Config.frontend.staging.url
+            $PasswordResetTokenExpiration = $Config.password_reset.token_expiration
         }
         
         "prod" {
@@ -150,6 +168,12 @@ function New-Environment {
             $GrafanaDashboardsPath = $Config.grafana.dashboards_path
             $PrometheusRetention = $Config.prometheus.retention
             $RedisPort = $Config.ports.redis
+            $MailHost = $Config.mail.prod.host
+            $MailPort = $Config.mail.prod.port
+            $MailUsername = $Config.mail.prod.username
+            $MailPassword = $Config.mail.prod.password
+            $FrontendUrl = $Config.frontend.prod.url
+            $PasswordResetTokenExpiration = $Config.password_reset.token_expiration
         }
         
         default {
@@ -186,6 +210,24 @@ GRAFANA_UPDATE_INTERVAL=$GrafanaUpdateInterval
 GRAFANA_DASHBOARDS_PATH=$GrafanaDashboardsPath
 PROMETHEUS_RETENTION=$PrometheusRetention
 REDIS_PORT=$RedisPort
+
+# ===================================================================
+# Mail Service Configuration
+# ===================================================================
+MAIL_HOST=$MailHost
+MAIL_PORT=$MailPort
+MAIL_USERNAME=$MailUsername
+MAIL_PASSWORD=$MailPassword
+
+# ===================================================================
+# Frontend Configuration
+# ===================================================================
+FRONTEND_URL=$FrontendUrl
+
+# ===================================================================
+# Password Reset Configuration
+# ===================================================================
+PASSWORD_RESET_TOKEN_EXPIRATION=$PasswordResetTokenExpiration
 "@
     
     # 写入 .env 文件

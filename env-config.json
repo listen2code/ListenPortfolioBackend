@@ -74,5 +74,51 @@
       "domain": "prod.your-domain.com",
       "root_url": "https://prod.your-domain.com:3000"
     }
+  },
+  
+  "mail": {
+    "local": {
+      "host": "smtp.gmail.com",
+      "port": "587",
+      "username": "listen2code@gmail.com",
+      "password": "kmmfhtvrurtbcxti"
+    },
+    "test": {
+      "host": "smtp.gmail.com",
+      "port": "587",
+      "username": "test-email@gmail.com",
+      "password": "test-app-password"
+    },
+    "staging": {
+      "host": "smtp.gmail.com",
+      "port": "587",
+      "username": "staging-email@gmail.com",
+      "password": "staging-app-password"
+    },
+    "prod": {
+      "host": "smtp.gmail.com",
+      "port": "587",
+      "username": "prod-email@gmail.com",
+      "password": "prod-app-password"
+    }
+  },
+  
+  "frontend": {
+    "local": {
+      "url": "http://localhost:8080"
+    },
+    "test": {
+      "url": "http://test.your-domain.com"
+    },
+    "staging": {
+      "url": "http://staging.your-domain.com"
+    },
+    "prod": {
+      "url": "https://your-domain.com"
+    }
+  },
+  
+  "password_reset": {
+    "token_expiration": "3600"
   }
 }
