@@ -4,10 +4,12 @@ import com.listen.portfolio.api.v1.auth.dto.LoginRequest;
 import com.listen.portfolio.api.v1.auth.dto.LoginResponse;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
+import com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.service.AuthService;
+import com.listen.portfolio.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -47,21 +50,29 @@ class AuthControllerTest {
     @Mock
     private UserDetailsService userDetailsService;
 
+    @Mock
+    private RateLimitService rateLimitService;
+
+    @Mock
+    private HttpServletRequest request;
+
     private AuthController authController;
     private SignUpRequest mockSignUpRequest;
     private LoginRequest mockLoginRequest;
     private ForgotPasswordRequest mockForgotPasswordRequest;
+    private ResetPasswordRequest mockResetPasswordRequest;
     private UserEntity mockUserEntity;
     private UserDetails mockUserDetails;
 
     @BeforeEach
     void setUp() {
-        // 使用重构后的构造函数创建 AuthController
+        // 使用完整的构造函数创建 AuthController
         authController = new AuthController(
                 authService,
                 authenticationManager,
                 jwtUtil,
-                userDetailsService
+                userDetailsService,
+                rateLimitService
         );
 
         // 初始化测试数据
@@ -84,6 +95,10 @@ class AuthControllerTest {
 
         mockForgotPasswordRequest = new ForgotPasswordRequest();
         mockForgotPasswordRequest.setEmail("test@example.com");
+
+        mockResetPasswordRequest = new ResetPasswordRequest();
+        mockResetPasswordRequest.setToken("test-token");
+        mockResetPasswordRequest.setNewPassword("newPassword123");
     }
 
     @Test
@@ -227,14 +242,18 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("forgotPassword - 成功重置密码")
+    @DisplayName("forgotPassword - 成功发送密码重置邮件")
     void testForgotPassword_Success() {
         // Given
-        when(authService.forgotPassword(any(ForgotPasswordRequest.class)))
-                .thenReturn(true);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(true);
+        when(rateLimitService.isIpAllowed(anyString())).thenReturn(true);
+        when(authService.forgotPassword(any(ForgotPasswordRequest.class))).thenReturn(true);
 
         // When
-        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -243,27 +262,120 @@ class AuthControllerTest {
         assertNull(response.getBody().getBody());
 
         // 验证调用
-        verify(authService).forgotPassword(any(ForgotPasswordRequest.class));
+        verify(rateLimitService).isEmailAllowed("test@example.com");
+        verify(rateLimitService).isIpAllowed("127.0.0.1");
+        verify(authService).forgotPassword(mockForgotPasswordRequest);
     }
 
     @Test
-    @DisplayName("forgotPassword - 邮箱不存在重置失败")
-    void testForgotPassword_EmailNotFound() {
+    @DisplayName("forgotPassword - 邮箱限流触发")
+    void testForgotPassword_EmailRateLimitExceeded() {
         // Given
-        when(authService.forgotPassword(any(ForgotPasswordRequest.class)))
-                .thenReturn(false);
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(false);
 
         // When
-        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest);
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
+
+        // Then
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("1", response.getBody().getResult());
+        assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getMessageId());
+        assertEquals("Requests are too frequent, please try again later", response.getBody().getMessage());
+
+        // 验证调用
+        verify(rateLimitService).isEmailAllowed("test@example.com");
+        verify(rateLimitService, never()).isIpAllowed(anyString());
+        verify(authService, never()).forgotPassword(any());
+    }
+
+    @Test
+    @DisplayName("forgotPassword - IP 限流触发")
+    void testForgotPassword_IpRateLimitExceeded() {
+        // Given
+        when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        when(request.getHeader("X-Real-IP")).thenReturn(null);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(rateLimitService.isEmailAllowed(anyString())).thenReturn(true);
+        when(rateLimitService.isIpAllowed(anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<ApiResponse<Object>> response = authController.forgotPassword(mockForgotPasswordRequest, request);
+
+        // Then
+        assertEquals(HttpStatus.TOO_MANY_REQUESTS, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("1", response.getBody().getResult());
+        assertEquals("RATE_LIMIT_EXCEEDED", response.getBody().getMessageId());
+        assertEquals("Requests are too frequent, please try again later", response.getBody().getMessage());
+
+        // 验证调用
+        verify(rateLimitService).isEmailAllowed("test@example.com");
+        verify(rateLimitService).isIpAllowed("127.0.0.1");
+        verify(authService, never()).forgotPassword(any());
+    }
+
+    @Test
+    @DisplayName("resetPassword - 成功重置密码")
+    void testResetPassword_Success() {
+        // Given
+        when(authService.resetPassword(anyString(), anyString())).thenReturn(true);
+
+        // When
+        ResponseEntity<ApiResponse<Object>> response = authController.resetPassword(mockResetPasswordRequest);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("0", response.getBody().getResult());
+        assertNull(response.getBody().getBody());
+
+        // 验证调用
+        verify(authService).resetPassword("test-token", "newPassword123");
+    }
+
+    @Test
+    @DisplayName("resetPassword - Token 无效或过期")
+    void testResetPassword_InvalidToken() {
+        // Given
+        when(authService.resetPassword(anyString(), anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<ApiResponse<Object>> response = authController.resetPassword(mockResetPasswordRequest);
 
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("1", response.getBody().getResult());
-        assertEquals("Password change failed", response.getBody().getMessage());
+        assertEquals("INVALID_TOKEN", response.getBody().getMessageId());
+        assertEquals("The reset link is invalid or has expired", response.getBody().getMessage());
 
         // 验证调用
-        verify(authService).forgotPassword(any(ForgotPasswordRequest.class));
+        verify(authService).resetPassword("test-token", "newPassword123");
+    }
+
+    @Test
+    @DisplayName("resetPassword - 空请求参数")
+    void testResetPassword_EmptyRequest() {
+        // Given
+        ResetPasswordRequest emptyRequest = new ResetPasswordRequest();
+        emptyRequest.setToken("");
+        emptyRequest.setNewPassword("");
+        when(authService.resetPassword(anyString(), anyString())).thenReturn(false);
+
+        // When
+        ResponseEntity<ApiResponse<Object>> response = authController.resetPassword(emptyRequest);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("1", response.getBody().getResult());
+
+        // 验证调用
+        verify(authService).resetPassword("", "");
     }
 
     @Test
@@ -279,6 +391,7 @@ class AuthControllerTest {
             assertNotNull(authenticationManager);
             assertNotNull(jwtUtil);
             assertNotNull(userDetailsService);
+            assertNotNull(rateLimitService);
         });
     }
 
