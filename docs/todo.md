@@ -38,39 +38,6 @@
 
 ## 🔴 高优先级
 
-### 1. forgotPassword 发送真实邮件
-
-**现状**：`POST /v1/auth/forgot-password` 当前行为是将密码重置为默认值，并不发送邮件通知用户。  
-**目标**：向用户注册邮箱发送包含重置链接或临时密码的邮件。
-
-**实施步骤**：
-```
-1. 引入 spring-boot-starter-mail 依赖
-2. 配置 SMTP（环境变量注入：MAIL_HOST / MAIL_USERNAME / MAIL_PASSWORD）
-3. 创建 EmailService，使用 JavaMailSender 发送 HTML 邮件
-4. 修改 AuthService.forgotPassword()，调用 EmailService
-5. 可选：生成带过期时间的重置 Token，存储到 Redis
-```
-
-**验收标准**：调用接口后，注册邮箱收到邮件；无效邮箱返回合理错误。
-
----
-
-### 2. Docker 容器自动执行 Flyway 迁移
-
-**现状**：`spring.flyway.enabled=false`，需要手动执行 `./mvnw flyway:migrate`。  
-**目标**：容器启动时自动执行迁移，无需手动操作。
-
-**实施步骤**：
-```
-1. 将 application.properties 中 spring.flyway.enabled 改为 true（或通过环境变量控制）
-2. 在 docker-compose.yml 的 app 服务中添加 SPRING_FLYWAY_ENABLED=true
-3. 确认迁移脚本幂等（已有 V1__ 脚本的情况下，测试 baseline 策略）
-4. 测试容器冷启动和重启场景
-```
-
-**验收标准**：`docker compose up` 后数据库自动建表，无需手动干预。
-
 ---
 
 ### 3. 启用 OSIV 关闭配置
