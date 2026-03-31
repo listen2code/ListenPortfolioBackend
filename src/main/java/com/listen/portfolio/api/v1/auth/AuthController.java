@@ -75,7 +75,32 @@ public class AuthController {
 
     
     @PostMapping("/signUp")
-    @Operation(summary = "Sign up", description = "Register a new user account")
+    @Operation(
+        summary = "用户注册", 
+        description = "创建新的用户账户。支持用户名唯一性检查、密码加密存储。",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "201", 
+                description = "注册成功",
+                content = @io.swagger.v3.oas.annotations.media.Content(
+                    mediaType = "application/json",
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ApiResponse.class)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "用户名已存在",
+                content = @io.swagger.v3.oas.annotations.media.Content(
+                    mediaType = "application/json",
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ApiResponse.class)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "429", 
+                description = "请求过于频繁，触发限流"
+            )
+        }
+    )
     @com.listen.portfolio.common.RateLimit(
         types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
         maxRequests = 10,
@@ -97,7 +122,32 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login", description = "Authenticate user and issue JWT access token and refresh token")
+    @Operation(
+        summary = "用户登录", 
+        description = "用户身份验证，成功后返回 JWT 访问令牌和刷新令牌。访问令牌有效期5分钟，刷新令牌有效期24小时。",
+        responses = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "200", 
+                description = "登录成功",
+                content = @io.swagger.v3.oas.annotations.media.Content(
+                    mediaType = "application/json",
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = LoginResponse.class)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "400", 
+                description = "用户名或密码错误",
+                content = @io.swagger.v3.oas.annotations.media.Content(
+                    mediaType = "application/json",
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = ApiResponse.class)
+                )
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                responseCode = "429", 
+                description = "请求过于频繁，触发限流"
+            )
+        }
+    )
     @com.listen.portfolio.common.RateLimit(
         types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
         maxRequests = 10,

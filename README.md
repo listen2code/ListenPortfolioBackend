@@ -8,9 +8,12 @@ ListenPortfolioBackend 是 [ListenPortfolioFlutter](README-app.md) 的后端 RES
 - **完整认证流程**：注册、登录、Token 刷新、忘记密码、修改密码（自动 Token 失效）、账号注销、退出登录
 - **作品集 API**：关于我（需登录）、项目列表（公开）、用户信息
 - **Token 黑名单**：基于 Redis 的 JWT 黑名单，支持退出登录和密码修改时立即失效
+- **智能限流**：基于 AOP 的多维度限流系统（IP、邮箱、Token、用户），防止暴力攻击
+- **邮件服务**：完整的 SMTP 邮件发送，支持密码重置、HTML 模板、多邮件提供商
 - **可观测性**：Prometheus 指标、Grafana 仪表板、结构化 JSON 日志
 - **代码质量**：JaCoCo 覆盖率报告、SpotBugs + Find Security Bugs 静态分析
 - **Docker 就绪**：MySQL 8 + Redis 7 + Prometheus + Grafana 完整栈
+- **灵活部署**：支持 JAR 和 WAR 两种打包方式，适应不同部署环境
 
 ## 🛠️ 技术栈
 
@@ -29,6 +32,7 @@ ListenPortfolioBackend 是 [ListenPortfolioFlutter](README-app.md) 的后端 RES
 | 测试 | JUnit 5 + Mockito + JaCoCo | 0.8.8 |
 | 静态分析 | SpotBugs + Find Security Bugs | 4.7.3.6 / 1.12.0 |
 | 构建 | Maven Wrapper | — |
+| 打包方式 | JAR / WAR | 支持 Spring Boot 内嵌服务器和传统服务器部署 |
 
 ## 🚀 快速开始
 
@@ -79,6 +83,34 @@ mysql -u root -p -e "CREATE DATABASE portfolio CHARACTER SET utf8mb4 COLLATE utf
 | OpenAPI JSON | http://localhost:8080/v3/api-docs |
 | 健康检查 | http://localhost:8080/actuator/health |
 | Prometheus 指标 | http://localhost:8080/actuator/prometheus |
+
+### 5. 打包与部署
+
+本项目支持两种打包方式，适应不同的部署需求：
+
+#### JAR 包（推荐用于开发和小型部署）
+```bash
+# 构建 JAR 包
+./mvnw clean package -DskipTests
+
+# 运行 JAR 包
+java -jar target/portfolio-0.0.1-SNAPSHOT.jar
+```
+
+#### WAR 包（适用于传统服务器部署）
+```bash
+# 构建 WAR 包
+./mvnw clean package -DskipTests
+
+# 部署到外部 Tomcat
+# 将 target/portfolio-0.0.1-SNAPSHOT.war 复制到 Tomcat webapps 目录
+```
+
+**WAR 包优势：**
+- 兼容传统 Java EE 应用服务器
+- 支持多应用共享服务器资源
+- 便于企业级环境统一管理
+- 支持 JNDI 数据源配置
 
 ## 📡 API 接口
 
@@ -197,9 +229,41 @@ src/main/java/com/listen/portfolio/
 - **BCrypt** 密码哈希
 - **无状态 Session**（JWT，服务端无会话状态）
 - **Token 黑名单**：Redis 存储，退出登录和修改密码时立即失效
+- **智能限流**：基于 AOP 的多维度限流系统
+  - 支持限流类型：IP、邮箱、Token、用户、自定义
+  - Redis 分布式存储，支持集群部署
+  - 防止暴力破解、邮箱枚举、Token 滥用
 - **公开路径**：`/v1/auth/**`、`/v1/projects/**`、Actuator 健康/Prometheus、Swagger UI
 - **CSRF 禁用**（无状态 JWT API）
 - 所有敏感配置通过环境变量注入（`DB_PASSWORD`、`JWT_SECRET` 等）
+
+### 限流系统详解
+
+本项目实现了基于 AOP 的智能限流系统，有效防止各种攻击：
+
+#### 限流维度
+- **IP 限流**：防止同一 IP 的暴力攻击
+- **邮箱限流**：防止邮箱枚举和垃圾邮件
+- **Token 限流**：防止 Token 滥用
+- **用户限流**：针对已认证用户的频率控制
+- **自定义限流**：支持业务特定的限流规则
+
+#### 限流配置示例
+```java
+@RateLimit(
+    types = {RateLimitType.IP, RateLimitType.EMAIL},
+    maxRequests = 10,
+    timeWindowSeconds = 60
+)
+public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest request) {
+    // 注册逻辑
+}
+```
+
+#### 限流存储
+- 使用 Redis 存储限流计数器
+- 支持分布式部署
+- 自动过期清理
 
 ## 🧪 测试与代码质量
 

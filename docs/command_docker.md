@@ -279,6 +279,10 @@ docker volume prune
 ## 🎯 Portfolio 项目专用
 
 ### 快速启动
+
+#### 本地开发环境配置
+**注意**：`.env` 文件中的 `DATABASE_URL` 使用 `db:3306`（Docker 容器间通信），如果需要在本地直接连接数据库，请修改为 `localhost:3307`。
+
 ```bash
 # 启动完整监控栈
 docker-compose --profile local up -d
