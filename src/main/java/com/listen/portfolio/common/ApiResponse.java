@@ -17,6 +17,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>("0", "", "", body);
     }
 
+    public static <T> ApiResponse<T> success(T body, String message) {
+        return new ApiResponse<>("0", "", message, body);
+    }
+
     public static <T> ApiResponse<T> error(String messageId, String message) {
         return new ApiResponse<>("1", messageId, message, null);
     }

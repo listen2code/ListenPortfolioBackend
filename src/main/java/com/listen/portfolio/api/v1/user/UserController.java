@@ -32,7 +32,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import java.util.Optional;
-import java.util.Date;
 
 @RestController
 @RequestMapping("/v1/user")

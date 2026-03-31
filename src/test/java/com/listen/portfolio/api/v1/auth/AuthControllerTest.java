@@ -9,7 +9,6 @@ import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.service.AuthService;
-import com.listen.portfolio.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,9 +50,6 @@ class AuthControllerTest {
     private UserDetailsService userDetailsService;
 
     @Mock
-    private RateLimitService rateLimitService;
-
-    @Mock
     private HttpServletRequest request;
 
     private AuthController authController;
@@ -71,8 +67,7 @@ class AuthControllerTest {
                 authService,
                 authenticationManager,
                 jwtUtil,
-                userDetailsService,
-                rateLimitService
+                userDetailsService
         );
 
         // 初始化测试数据
@@ -342,7 +337,6 @@ class AuthControllerTest {
             assertNotNull(authenticationManager);
             assertNotNull(jwtUtil);
             assertNotNull(userDetailsService);
-            assertNotNull(rateLimitService);
         });
     }
 

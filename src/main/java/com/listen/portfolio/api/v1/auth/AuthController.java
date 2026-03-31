@@ -8,8 +8,6 @@ import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.service.AuthService;
-import com.listen.portfolio.service.RateLimitService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -49,7 +47,6 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
-    private final RateLimitService rateLimitService;
 
     /**
      * 构造函数 - 全依赖注入
@@ -64,19 +61,16 @@ public class AuthController {
      * @param authenticationManager Spring Security 认证管理器，处理用户认证
      * @param jwtUtil JWT 工具类，处理令牌生成和验证
      * @param userDetailsService Spring Security 用户详情服务，加载用户信息
-     * @param rateLimitService 限流服务，防止 API 暴力访问
      */
     public AuthController(
             AuthService authService,
             AuthenticationManager authenticationManager,
             JwtUtil jwtUtil,
-            UserDetailsService userDetailsService,
-            RateLimitService rateLimitService) {
+            UserDetailsService userDetailsService) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
-        this.rateLimitService = rateLimitService;
     }
 
     
@@ -181,7 +175,7 @@ public class AuthController {
 
         // 始终返回成功，防止邮箱枚举攻击
         logger.info("Password reset request processed for email: {}", email);
-        return ResponseEntity.ok(ApiResponse.success(null));
+        return ResponseEntity.ok(ApiResponse.success(null, "If the email exists, a password reset link has been sent"));
     }
 
     @PostMapping("/reset-password")
@@ -208,26 +202,6 @@ public class AuthController {
         logger.warn("Password reset failed - invalid or expired token");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("INVALID_TOKEN", "The reset link is invalid or has expired"));
-    }
-
-    /**
-     * 获取客户端真实 IP 地址
-     * 
-     * 说明：考虑代理和负载均衡的情况
-     */
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        // 如果有多个 IP，取第一个
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
     }
 }
 
