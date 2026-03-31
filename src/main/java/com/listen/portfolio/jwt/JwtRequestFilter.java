@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -110,39 +111,46 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             logger.debug("Username extracted and context unauthenticated, validating token");
             
-            // 从数据库加载用户详情
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            logger.debug("Loaded user details for: {}", username);
+            try {
+                // 从数据库加载用户详情
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+                logger.debug("Loaded user details for: {}", username);
 
-            // 检查 token 是否在黑名单中
-            if (tokenBlacklistService.isBlacklisted(jwt)) {
-                logger.warn("Token is blacklisted for user: {}", username);
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Token has been invalidated");
-                return;
-            }
-            
-            // 验证 JWT 令牌是否有效
-            if (jwtUtil.validateToken(jwt, userDetails)) {
-                logger.debug("JWT validated successfully, user {} authenticated", username);
+                // 检查 token 是否在黑名单中
+                if (tokenBlacklistService.isBlacklisted(jwt)) {
+                    logger.warn("Token is blacklisted for user: {}", username);
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Token has been invalidated");
+                    return;
+                }
                 
-                // 创建认证令牌
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, // 用户详情作为主体
-                        null, // 凭据（密码）为 null，因为使用 JWT
-                        userDetails.getAuthorities() // 用户权限
-                );
-                
-                // 设置认证令牌的详细信息（包括请求信息）
-                usernamePasswordAuthenticationToken
-                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                
-                // 将认证信息设置到 Spring Security 上下文中
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                logger.debug("Authentication set in security context for user {}", username);
-            } else {
-                // 令牌验证失败，返回标准 ApiResponse
-                logger.warn("JWT validation failed for user: {}", username);
-                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
+                // 验证 JWT 令牌是否有效
+                if (jwtUtil.validateToken(jwt, userDetails)) {
+                    logger.debug("JWT validated successfully, user {} authenticated", username);
+                    
+                    // 创建认证令牌
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, // 用户详情作为主体
+                            null, // 凭据（密码）为 null，因为使用 JWT
+                            userDetails.getAuthorities() // 用户权限
+                    );
+                    
+                    // 设置认证令牌的详细信息（包括请求信息）
+                    usernamePasswordAuthenticationToken
+                            .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    
+                    // 将认证信息设置到 Spring Security 上下文中
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                    logger.debug("Authentication set in security context for user {}", username);
+                } else {
+                    // 令牌验证失败，返回标准 ApiResponse
+                    logger.warn("JWT validation failed for user: {}", username);
+                    writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "Invalid or expired token");
+                    return;
+                }
+            } catch (UsernameNotFoundException e) {
+                // 用户不存在，返回标准 ApiResponse
+                logger.warn("User not found: {}", username);
+                writeErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "401", "User not found");
                 return;
             }
         } else {

@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -120,14 +121,17 @@ class JwtRequestFilterTest {
     @DisplayName("doFilterInternal - Token 在黑名单中拒绝认证")
     void testDoFilterInternal_TokenBlacklisted_RejectsAuthentication() throws ServletException, IOException {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
-        when(jwtUtil.extractUsername(validToken)).thenReturn("testuser");
+        lenient().when(jwtUtil.extractUsername(validToken)).thenReturn("testuser");
+        lenient().when(userDetailsService.loadUserByUsername("testuser")).thenReturn(testUser);
+        lenient().when(jwtUtil.validateToken(validToken, testUser)).thenReturn(true);
         when(tokenBlacklistService.isBlacklisted(validToken)).thenReturn(true);
 
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        // 认证失败时不应该继续过滤器链
+        verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(userDetailsService, never()).loadUserByUsername(anyString());
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
@@ -141,35 +145,38 @@ class JwtRequestFilterTest {
 
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        // 认证失败时不应该继续过滤器链
+        verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test
     @DisplayName("doFilterInternal - 用户不存在拒绝认证")
     void testDoFilterInternal_UserNotFound_RejectsAuthentication() throws ServletException, IOException {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
-        when(jwtUtil.extractUsername(validToken)).thenReturn("testuser");
-        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(null);
-        when(tokenBlacklistService.isBlacklisted(validToken)).thenReturn(false);
+        when(jwtUtil.extractUsername(validToken)).thenReturn("nonexistent");
+        when(userDetailsService.loadUserByUsername("nonexistent")).thenThrow(new UsernameNotFoundException("User not found"));
 
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        // 用户不存在时不应该继续过滤器链
+        verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(jwtUtil, never()).validateToken(anyString(), any());
     }
 
     @Test
-    @DisplayName("doFilterInternal - JWT 解析异常继续过滤")
+    @DisplayName("doFilterInternal - JWT 解析异常继续过滤器")
     void testDoFilterInternal_JwtParsingException_ContinuesFilter() throws ServletException, IOException {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + validToken);
         when(jwtUtil.extractUsername(validToken)).thenThrow(new RuntimeException("Invalid JWT"));
 
         jwtRequestFilter.doFilterInternal(request, response, filterChain);
 
-        verify(filterChain).doFilter(request, response);
+        // JWT 解析异常时不应该继续过滤器链，应该返回错误
+        verify(filterChain, never()).doFilter(request, response);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     @Test

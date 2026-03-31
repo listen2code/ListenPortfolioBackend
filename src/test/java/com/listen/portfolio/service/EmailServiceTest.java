@@ -49,7 +49,7 @@ class EmailServiceTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+        lenient().when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         // 设置测试用的 fromEmail
         ReflectionTestUtils.setField(emailService, "fromEmail", "test@example.com");
         ReflectionTestUtils.setField(emailService, "frontendUrl", "http://localhost:3000");
@@ -168,11 +168,11 @@ class EmailServiceTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> 
             emailService.sendHtmlEmail(to, subject, htmlContent)
         );
-        assertTrue(exception.getMessage().contains("邮件地址不能为空"));
+        assertTrue(exception.getMessage().contains("收件人邮箱不能为空"));
     }
 
     @Test
-    @DisplayName("邮件地址验证 - 无效格式")
+    @DisplayName("邮件地址验证 - 无效地址")
     void testSendHtmlEmail_InvalidAddress() {
         // Given
         String to = "invalid-email";
@@ -183,7 +183,7 @@ class EmailServiceTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> 
             emailService.sendHtmlEmail(to, subject, htmlContent)
         );
-        assertTrue(exception.getMessage().contains("邮件地址格式无效"));
+        assertTrue(exception.getMessage().contains("邮箱格式无效"));
     }
 
     @Test

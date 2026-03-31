@@ -36,16 +36,43 @@ public class EmailService {
     private String frontendUrl;
 
     /**
-     * 发送密码重置邮件
-     * 
-     * 说明：向用户发送包含密码重置链接的邮件
+     * 验证邮件参数
      * 
      * @param toEmail 收件人邮箱
-     * @param resetToken 密码重置 Token
+     * @param subject 邮件主题
+     * @param content 邮件内容
+     * @throws IllegalArgumentException 参数无效时抛出
+     */
+    private void validateEmailParameters(String toEmail, String subject, String content) {
+        if (toEmail == null || toEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("收件人邮箱不能为空");
+        }
+        
+        if (subject == null || subject.trim().isEmpty()) {
+            throw new IllegalArgumentException("邮件主题不能为空");
+        }
+        
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("邮件内容不能为空");
+        }
+        
+        // 简单的邮箱格式验证
+        if (!toEmail.contains("@") || !toEmail.contains(".")) {
+            throw new IllegalArgumentException("邮箱格式无效");
+        }
+    }
+
+    /**
+     * 发送密码重置邮件
+     * 
+     * 说明：使用 Thymeleaf 模板发送密码重置邮件
+     * 
+     * @param toEmail 收件人邮箱
      * @param username 用户名
+     * @param resetLink 重置链接
      * @throws MessagingException 邮件发送失败时抛出
      */
-    public void sendPasswordResetEmail(String toEmail, String resetToken, String username) throws MessagingException {
+    public void sendPasswordResetEmail(String toEmail, String username, String resetLink) throws MessagingException {
         logger.info("准备发送密码重置邮件到: {}", toEmail);
 
         try {
@@ -58,14 +85,11 @@ public class EmailService {
             helper.setTo(toEmail);
             helper.setSubject("密码重置请求 - Portfolio");
 
-            // 生成重置链接
-            String resetLink = frontendUrl + "/password-reset-out-email.html?token=" + resetToken;
-
-            // 使用 Thymeleaf 模板渲染邮件内容
+            // 使用传入的重置链接
             Context context = new Context();
             context.setVariable("username", username);
             context.setVariable("resetLink", resetLink);
-            context.setVariable("token", resetToken);
+            context.setVariable("token", extractTokenFromLink(resetLink));
             context.setVariable("expirationTime", "1小时");
 
             // 读取模板文件：src/main/resources/templates/email/password-reset-in-email.html
@@ -85,6 +109,19 @@ public class EmailService {
     }
 
     /**
+     * 从重置链接中提取 token
+     * 
+     * @param resetLink 重置链接
+     * @return token 字符串
+     */
+    private String extractTokenFromLink(String resetLink) {
+        if (resetLink != null && resetLink.contains("token=")) {
+            return resetLink.substring(resetLink.indexOf("token=") + 6);
+        }
+        return "";
+    }
+
+    /**
      * 发送简单文本邮件
      * 
      * 说明：发送纯文本邮件
@@ -96,6 +133,9 @@ public class EmailService {
      */
     public void sendSimpleEmail(String toEmail, String subject, String content) throws MessagingException {
         logger.info("准备发送邮件到: {}, 主题: {}", toEmail, subject);
+
+        // 参数验证
+        validateEmailParameters(toEmail, subject, content);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -127,6 +167,9 @@ public class EmailService {
      */
     public void sendHtmlEmail(String toEmail, String subject, String htmlContent) throws MessagingException {
         logger.info("准备发送 HTML 邮件到: {}, 主题: {}", toEmail, subject);
+
+        // 参数验证
+        validateEmailParameters(toEmail, subject, htmlContent);
 
         try {
             MimeMessage message = mailSender.createMimeMessage();
