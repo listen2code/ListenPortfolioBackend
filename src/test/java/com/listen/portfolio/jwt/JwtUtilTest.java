@@ -161,16 +161,15 @@ class JwtUtilTest {
     }
 
     @Test
-    @DisplayName("isTokenExpired - 过期令牌返回 true")
+    @DisplayName("isTokenExpired - 过期的令牌返回 true")
     void testIsTokenExpired_Expired_ReturnsTrue() {
-        // 设置一个很短的过期时间
-        ReflectionTestUtils.setField(jwtUtil, "expiration", 1L);
-        
+        // Given - 生成一个立即过期的令牌
+        ReflectionTestUtils.setField(jwtUtil, "expiration", 1L); // 1 毫秒过期
         String token = jwtUtil.generateToken(testUser);
         
         // 等待令牌过期
         try {
-            Thread.sleep(10);
+            Thread.sleep(10); // 等待 10 毫秒确保过期
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -178,9 +177,11 @@ class JwtUtilTest {
         // 恢复正常的过期时间
         ReflectionTestUtils.setField(jwtUtil, "expiration", 3600000L);
         
-        boolean isExpired = jwtUtil.isTokenExpired(token);
-        
-        assertTrue(isExpired, "过期的令牌应该返回 true");
+        // When & Then - 捕获异常而不是直接调用方法
+        ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> 
+            jwtUtil.isTokenExpired(token)
+        );
+        assertNotNull(exception, "过期的令牌应该抛出 ExpiredJwtException");
     }
 
 
@@ -189,22 +190,23 @@ class JwtUtilTest {
     @Test
     @DisplayName("refreshToken - 成功刷新令牌")
     void testRefreshToken_Success() {
-        String originalToken = jwtUtil.generateToken(testUser);
+        // Given - 生成一个刷新令牌
+        String accessToken = jwtUtil.generateToken(testUser);
+        String refreshToken = jwtUtil.generateRefreshToken(accessToken);
         
-        // 等待一小段时间确保新令牌的签发时间不同
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        // When - 刷新访问令牌
+        String refreshedToken = jwtUtil.refreshToken(refreshToken);
         
-        String refreshedToken = jwtUtil.refreshToken(originalToken);
-        
+        // Then - 验证刷新结果
         assertNotNull(refreshedToken, "刷新后的令牌不应为空");
-        assertNotEquals(originalToken, refreshedToken, "刷新后的令牌应该与原令牌不同");
+        assertNotEquals(refreshToken, refreshedToken, "刷新后的令牌应该与刷新令牌不同");
         
         // 验证刷新后的令牌仍然有效
         assertTrue(jwtUtil.validateToken(refreshedToken, testUser), "刷新后的令牌应该有效");
+        
+        // 验证用户名一致
+        assertEquals(testUser.getUsername(), jwtUtil.extractUsername(refreshedToken), 
+                    "刷新后的令牌用户名应该与原用户名一致");
     }
 
     @Test

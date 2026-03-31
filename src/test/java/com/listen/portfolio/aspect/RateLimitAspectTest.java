@@ -75,8 +75,8 @@ class RateLimitAspectTest {
     @Test
     @DisplayName("IP 限流 - 允许通过")
     void testIpRateLimit_Allowed() throws Throwable {
-        // Given
-        when(rateLimitService.isAllowed(anyString(), eq(10), eq(60))).thenReturn(true);
+        // Given - 使用 lenient() 避免不必要的 stubbing 警告
+        lenient().when(rateLimitService.isAllowed(anyString(), eq(10), eq(60))).thenReturn(true);
 
         // When
         TestController controller = new TestController();
@@ -90,8 +90,8 @@ class RateLimitAspectTest {
     @Test
     @DisplayName("IP 限流 - 超限拒绝")
     void testIpRateLimit_Exceeded() {
-        // Given
-        when(rateLimitService.isAllowed(anyString(), anyInt(), anyInt())).thenReturn(false);
+        // Given - 使用 lenient() 避免不必要的 stubbing 警告
+        lenient().when(rateLimitService.isAllowed(anyString(), anyInt(), anyInt())).thenReturn(false);
 
         // When & Then
         // 注意：这个测试需要实际的 AOP 环境才能完全验证
@@ -138,9 +138,9 @@ class RateLimitAspectTest {
     @Test
     @DisplayName("多种限流类型 - IP + EMAIL")
     void testMultipleRateLimitTypes() {
-        // Given
-        when(rateLimitService.isAllowed(contains("ip:"), eq(5), eq(300))).thenReturn(true);
-        when(rateLimitService.isAllowed(contains("email:"), eq(5), eq(300))).thenReturn(true);
+        // Given - 使用 lenient() 避免不必要的 stubbing 警告
+        lenient().when(rateLimitService.isAllowed(contains("ip:"), eq(5), eq(300))).thenReturn(true);
+        lenient().when(rateLimitService.isAllowed(contains("email:"), eq(5), eq(300))).thenReturn(true);
 
         // When
         TestController controller = new TestController();
@@ -153,17 +153,17 @@ class RateLimitAspectTest {
     @Test
     @DisplayName("用户级限流 - 需要认证")
     void testUserRateLimit_WithAuthentication() {
-        // Given
+        // Given - 使用 lenient() 避免不必要的 stubbing 警告
         Authentication authentication = mock(Authentication.class);
-        when(authentication.isAuthenticated()).thenReturn(true);
-        when(authentication.getName()).thenReturn("testuser");
-        when(authentication.getPrincipal()).thenReturn("testuser");
+        lenient().when(authentication.isAuthenticated()).thenReturn(true);
+        lenient().when(authentication.getName()).thenReturn("testuser");
+        lenient().when(authentication.getPrincipal()).thenReturn("testuser");
         
         SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
         
-        when(rateLimitService.isAllowed(contains("user:testuser"), eq(100), eq(60))).thenReturn(true);
+        lenient().when(rateLimitService.isAllowed(contains("user:testuser"), eq(100), eq(60))).thenReturn(true);
 
         // When
         TestController controller = new TestController();

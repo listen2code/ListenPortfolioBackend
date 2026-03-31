@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,8 +18,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,6 +52,9 @@ class JwtRequestFilterTest {
     @Mock
     private FilterChain filterChain;
 
+    @Mock
+    private PrintWriter responseWriter;
+
     @InjectMocks
     private JwtRequestFilter jwtRequestFilter;
 
@@ -59,7 +62,7 @@ class JwtRequestFilterTest {
     private String validToken;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         SecurityContextHolder.clearContext();
         
         testUser = User.withUsername("testuser")
@@ -68,6 +71,9 @@ class JwtRequestFilterTest {
                 .build();
         
         validToken = "valid.jwt.token";
+        
+        // Mock response.getWriter() to avoid NullPointerException - 使用 lenient() 避免不必要的 stubbing 警告
+        lenient().when(response.getWriter()).thenReturn(responseWriter);
     }
 
     @Test

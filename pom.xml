@@ -117,6 +117,16 @@
 			<scope>provided</scope>
 		</dependency>
 		<!--
+			说明：Spring Boot 测试启动器，提供全面的测试支持
+			原理：集成 JUnit 5、Mockito、AssertJ 等测试框架，提供完整的测试环境
+			使用场景：单元测试、集成测试、Web 层测试、数据层测试
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!--
 			说明：Spring Boot JPA 测试启动器，提供数据层测试支持
 			原理：自动配置内存数据库和测试事务，支持 Repository 层单元测试
 			使用场景：Repository 接口测试、数据库操作测试、事务回滚测试
@@ -134,6 +144,39 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-thymeleaf-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!--
+			说明：TestContainers JUnit Jupiter 集成，提供容器化测试支持
+			原理：在测试中启动真实的 Docker 容器（MySQL、Redis等），提供真实的集成测试环境
+			使用场景：数据库集成测试、Redis 集成测试、邮件服务集成测试
+		-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>1.19.0</version>
+			<scope>test</scope>
+		</dependency>
+		<!--
+			说明：TestContainers MySQL 模块，提供 MySQL 容器支持
+			原理：自动下载并启动 MySQL Docker 镜像，配置数据库连接
+			使用场景：Repository 层集成测试、数据库迁移测试、事务测试
+		-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>mysql</artifactId>
+			<version>1.19.0</version>
+			<scope>test</scope>
+		</dependency>
+		<!--
+			说明：TestContainers Redis 模块，提供 Redis 容器支持
+			原理：自动启动 Redis Docker 容器，配置连接参数
+			使用场景：限流服务测试、Token 黑名单测试、缓存功能测试
+		-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>1.19.0</version>
 			<scope>test</scope>
 		</dependency>
 		<!--
