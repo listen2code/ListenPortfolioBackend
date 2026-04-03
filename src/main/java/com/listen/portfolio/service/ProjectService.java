@@ -1,7 +1,7 @@
 package com.listen.portfolio.service;
 
 import com.listen.portfolio.api.v1.projects.dto.ProjectDto;
-import com.listen.portfolio.infrastructure.persistence.entity.ProjectEntity;
+import com.listen.portfolio.entity.ProjectEntity;
 import com.listen.portfolio.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

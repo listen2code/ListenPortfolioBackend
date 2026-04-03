@@ -1,4 +1,4 @@
-package com.listen.portfolio.config;
+package com.listen.portfolio.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

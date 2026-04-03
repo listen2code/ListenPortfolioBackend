@@ -1,12 +1,12 @@
 package com.listen.portfolio.api.v1.auth;
 
-import com.listen.portfolio.jwt.JwtUtil;
 import com.listen.portfolio.api.v1.auth.dto.LoginRequest;
 import com.listen.portfolio.api.v1.auth.dto.LoginResponse;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
+import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +101,8 @@ public class AuthController {
             )
         }
     )
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP},
         maxRequests = 10,
         timeWindowSeconds = 60
     )
@@ -148,8 +148,8 @@ public class AuthController {
             )
         }
     )
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP},
         maxRequests = 10,
         timeWindowSeconds = 60
     )
@@ -186,8 +186,8 @@ public class AuthController {
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh token", description = "Refresh JWT access token using refresh token")
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP},
         maxRequests = 20,
         timeWindowSeconds = 60
     )
@@ -209,8 +209,8 @@ public class AuthController {
     
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Send password reset email to user")
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP, com.listen.portfolio.common.RateLimit.RateLimitType.EMAIL},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP, com.listen.portfolio.common.aspect.RateLimit.RateLimitType.EMAIL},
         maxRequests = 10,
         timeWindowSeconds = 60
     )
@@ -230,8 +230,8 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     @Operation(summary = "Reset password", description = "Reset password using token from email")
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.IP, com.listen.portfolio.common.RateLimit.RateLimitType.TOKEN},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP, com.listen.portfolio.common.aspect.RateLimit.RateLimitType.TOKEN},
         maxRequests = 10,
         timeWindowSeconds = 60
     )

@@ -1,7 +1,8 @@
 package com.listen.portfolio.repository;
 
-import com.listen.portfolio.infrastructure.persistence.entity.SkillEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.listen.portfolio.entity.SkillEntity;
 
 public interface SkillRepository extends JpaRepository<SkillEntity, Long> {
 }

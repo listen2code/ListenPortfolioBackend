@@ -1,4 +1,4 @@
-package com.listen.portfolio.infrastructure.persistence.entity;
+package com.listen.portfolio.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,20 +10,22 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "languages")
+@Table(name = "experiences")
 /**
- * LanguageEntity（JPA Entity）。
+ * ExperienceEntity（JPA Entity）。
  *
  * 说明：
- * - 对应 languages 表
+ * - 对应 experiences 表
  * - 归属用户通过 user_id 关联 UserEntity（多对一）
  */
-public class LanguageEntity {
+public class ExperienceEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
-    private String level;
+    private String title;
+    private String company;
+    private String period;
+    private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -37,20 +39,36 @@ public class LanguageEntity {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public String getLevel() {
-        return level;
+    public String getCompany() {
+        return company;
     }
 
-    public void setLevel(String level) {
-        this.level = level;
+    public void setCompany(String company) {
+        this.company = company;
+    }
+
+    public String getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(String period) {
+        this.period = period;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public UserEntity getUser() {

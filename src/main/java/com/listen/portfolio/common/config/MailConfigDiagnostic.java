@@ -1,4 +1,4 @@
-package com.listen.portfolio.config;
+package com.listen.portfolio.common.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

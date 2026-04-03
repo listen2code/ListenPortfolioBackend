@@ -1,4 +1,4 @@
-package com.listen.portfolio.config;
+package com.listen.portfolio.common.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

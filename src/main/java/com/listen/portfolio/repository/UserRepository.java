@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
+import com.listen.portfolio.entity.UserEntity;
 
 import java.util.Optional;
 

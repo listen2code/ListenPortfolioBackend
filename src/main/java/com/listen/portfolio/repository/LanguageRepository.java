@@ -1,7 +1,8 @@
 package com.listen.portfolio.repository;
 
-import com.listen.portfolio.infrastructure.persistence.entity.LanguageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.listen.portfolio.entity.LanguageEntity;
 
 public interface LanguageRepository extends JpaRepository<LanguageEntity, Long> {
 }

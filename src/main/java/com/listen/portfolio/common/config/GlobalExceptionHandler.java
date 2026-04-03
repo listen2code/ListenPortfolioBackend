@@ -1,4 +1,4 @@
-package com.listen.portfolio.config;
+package com.listen.portfolio.common.config;
 
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;

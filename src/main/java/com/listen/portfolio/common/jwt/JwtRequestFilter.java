@@ -1,4 +1,4 @@
-package com.listen.portfolio.jwt;
+package com.listen.portfolio.common.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.listen.portfolio.common.ApiResponse;

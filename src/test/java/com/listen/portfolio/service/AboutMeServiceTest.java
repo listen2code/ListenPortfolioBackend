@@ -1,7 +1,7 @@
 package com.listen.portfolio.service;
 
 import com.listen.portfolio.api.v1.about.dto.*;
-import com.listen.portfolio.infrastructure.persistence.entity.*;
+import com.listen.portfolio.entity.*;
 import com.listen.portfolio.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

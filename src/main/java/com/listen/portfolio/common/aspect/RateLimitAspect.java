@@ -1,7 +1,6 @@
-package com.listen.portfolio.aspect;
+package com.listen.portfolio.common.aspect;
 
 import com.listen.portfolio.common.ApiResponse;
-import com.listen.portfolio.common.RateLimit;
 import com.listen.portfolio.service.RateLimitService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;

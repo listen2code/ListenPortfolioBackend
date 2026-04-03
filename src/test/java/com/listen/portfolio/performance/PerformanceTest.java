@@ -1,6 +1,6 @@
 package com.listen.portfolio.performance;
 
-import com.listen.portfolio.jwt.JwtUtil;
+import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

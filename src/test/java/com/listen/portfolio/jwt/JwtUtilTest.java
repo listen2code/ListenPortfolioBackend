@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.listen.portfolio.common.jwt.JwtUtil;
+
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;

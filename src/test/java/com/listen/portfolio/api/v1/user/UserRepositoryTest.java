@@ -1,6 +1,6 @@
 package com.listen.portfolio.api.v1.user;
 
-import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
+import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;

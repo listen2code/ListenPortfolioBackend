@@ -1,4 +1,4 @@
-package com.listen.portfolio.infrastructure.persistence.entity;
+package com.listen.portfolio.entity;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;

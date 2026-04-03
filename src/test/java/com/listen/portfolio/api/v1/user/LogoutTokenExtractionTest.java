@@ -1,6 +1,6 @@
 package com.listen.portfolio.api.v1.user;
 
-import com.listen.portfolio.jwt.JwtUtil;
+import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

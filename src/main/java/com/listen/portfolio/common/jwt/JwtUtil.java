@@ -1,4 +1,4 @@
-package com.listen.portfolio.jwt;
+package com.listen.portfolio.common.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

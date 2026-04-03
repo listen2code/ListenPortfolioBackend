@@ -1,6 +1,6 @@
 package com.listen.portfolio.security;
 
-import com.listen.portfolio.jwt.JwtUtil;
+import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.service.RateLimitService;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,9 +1,9 @@
 package com.listen.portfolio.api.v1.auth;
 
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
+import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
-import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 import com.listen.portfolio.service.AuthService;
 import com.listen.portfolio.service.EmailService;

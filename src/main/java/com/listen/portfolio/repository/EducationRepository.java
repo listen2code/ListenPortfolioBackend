@@ -1,7 +1,8 @@
 package com.listen.portfolio.repository;
 
-import com.listen.portfolio.infrastructure.persistence.entity.EducationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.listen.portfolio.entity.EducationEntity;
 
 public interface EducationRepository extends JpaRepository<EducationEntity, Long> {
 }

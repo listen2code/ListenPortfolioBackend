@@ -4,10 +4,11 @@ import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
+import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
 import com.listen.portfolio.service.TokenBlacklistService;
-import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
-import com.listen.portfolio.jwt.JwtUtil;
+
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 import org.slf4j.Logger;
@@ -62,8 +63,8 @@ public class UserController {
     @GetMapping
     @Operation(summary = "Get user", description = "Get basic user information by userId", 
               security = @SecurityRequirement(name = "bearerAuth"))
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.USER},
         maxRequests = 100,
         timeWindowSeconds = 60
     )
@@ -77,8 +78,8 @@ public class UserController {
     @PostMapping("/logout")
     @Operation(summary = "Logout", description = "Logout current user and invalidate token",
               security = @SecurityRequirement(name = "bearerAuth"))
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.USER},
         maxRequests = 20,
         timeWindowSeconds = 60
     )
@@ -175,8 +176,8 @@ public class UserController {
     @PostMapping("/change-password")
     @Operation(summary = "Change password", description = "Change password for current user",
               security = @SecurityRequirement(name = "bearerAuth"))
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.USER},
         maxRequests = 20,
         timeWindowSeconds = 60
     )
@@ -233,8 +234,8 @@ public class UserController {
     @DeleteMapping("/delete-account")
     @Operation(summary = "Delete account", description = "Permanently delete current user's account",
               security = @SecurityRequirement(name = "bearerAuth"))
-    @com.listen.portfolio.common.RateLimit(
-        types = {com.listen.portfolio.common.RateLimit.RateLimitType.USER},
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.USER},
         maxRequests = 5,
         timeWindowSeconds = 60
     )

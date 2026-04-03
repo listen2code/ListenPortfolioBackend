@@ -1,6 +1,7 @@
 package com.listen.portfolio.config;
 
 import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.common.config.GlobalExceptionHandler;
 import com.listen.portfolio.common.error.ErrorCode;
 import com.listen.portfolio.common.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;

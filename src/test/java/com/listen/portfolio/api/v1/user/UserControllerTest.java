@@ -3,10 +3,11 @@ package com.listen.portfolio.api.v1.user;
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.common.ApiResponse;
-import com.listen.portfolio.infrastructure.persistence.entity.UserEntity;
+import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
 import com.listen.portfolio.service.TokenBlacklistService;
-import com.listen.portfolio.jwt.JwtUtil;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

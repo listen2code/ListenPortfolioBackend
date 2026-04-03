@@ -1,6 +1,7 @@
 package com.listen.portfolio.aspect;
 
-import com.listen.portfolio.common.RateLimit;
+import com.listen.portfolio.common.aspect.RateLimit;
+import com.listen.portfolio.common.aspect.RateLimitAspect;
 import com.listen.portfolio.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
