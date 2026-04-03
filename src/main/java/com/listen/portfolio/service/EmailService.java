@@ -69,13 +69,16 @@ public class EmailService {
      * 
      * @param toEmail 收件人邮箱
      * @param username 用户名
-     * @param resetLink 重置链接
+     * @param token 重置令牌
      * @throws MessagingException 邮件发送失败时抛出
      */
-    public void sendPasswordResetEmail(String toEmail, String username, String resetLink) throws MessagingException {
+    public void sendPasswordResetEmail(String toEmail, String username, String token) throws MessagingException {
         logger.info("准备发送密码重置邮件到: {}", toEmail);
 
         try {
+            // 构建重置链接
+            String resetLink = frontendUrl + "/password-reset-out-email.html?token=" + token;
+            
             // 创建邮件消息
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -85,11 +88,11 @@ public class EmailService {
             helper.setTo(toEmail);
             helper.setSubject("密码重置请求 - Portfolio");
 
-            // 使用传入的重置链接
+            // 使用构建的重置链接
             Context context = new Context();
             context.setVariable("username", username);
             context.setVariable("resetLink", resetLink);
-            context.setVariable("token", extractTokenFromLink(resetLink));
+            context.setVariable("token", token);
             context.setVariable("expirationTime", "1小时");
 
             // 读取模板文件：src/main/resources/templates/email/password-reset-in-email.html
@@ -106,19 +109,6 @@ public class EmailService {
             logger.error("发送密码重置邮件失败到: {}, 错误: {}", toEmail, e.getMessage());
             throw e;
         }
-    }
-
-    /**
-     * 从重置链接中提取 token
-     * 
-     * @param resetLink 重置链接
-     * @return token 字符串
-     */
-    private String extractTokenFromLink(String resetLink) {
-        if (resetLink != null && resetLink.contains("token=")) {
-            return resetLink.substring(resetLink.indexOf("token=") + 6);
-        }
-        return "";
     }
 
     /**

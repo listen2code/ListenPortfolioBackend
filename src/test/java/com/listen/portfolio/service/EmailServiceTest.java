@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 /**
  * EmailService 单元测试
@@ -91,13 +92,13 @@ class EmailServiceTest {
         // Given
         String to = "user@example.com";
         String username = "testuser";
-        String resetLink = "http://localhost:8080/reset?token=abc123";
+        String token = "abc123";
 
         when(templateEngine.process(eq("email/password-reset-in-email"), any(Context.class)))
-                .thenReturn("<h1>密码重置</h1><p>你好 testuser</p><a href=\"http://localhost:8080/reset?token=abc123\">重置密码</a>");
+                .thenReturn("<h1>密码重置</h1><p>你好 testuser</p><a href=\"http://localhost:8080/password-reset-out-email.html?token=abc123\">重置密码</a>");
 
         // When
-        assertDoesNotThrow(() -> emailService.sendPasswordResetEmail(to, username, resetLink));
+        assertDoesNotThrow(() -> emailService.sendPasswordResetEmail(to, username, token));
 
         // Then
         verify(templateEngine).process(eq("email/password-reset-in-email"), any(Context.class));
@@ -144,14 +145,14 @@ class EmailServiceTest {
         // Given
         String to = "test@example.com";
         String username = "testuser";
-        String resetLink = "http://localhost:8080/reset?token=abc123";
+        String token = "abc123";
 
         when(templateEngine.process(eq("email/password-reset-in-email"), any(Context.class)))
                 .thenThrow(new RuntimeException("模板渲染失败"));
 
         // When & Then
         Exception exception = assertThrows(RuntimeException.class, () -> 
-            emailService.sendPasswordResetEmail(to, username, resetLink)
+            emailService.sendPasswordResetEmail(to, username, token)
         );
         assertEquals("模板渲染失败", exception.getMessage());
     }
@@ -256,17 +257,26 @@ class EmailServiceTest {
         // Given
         String to = "test@example.com";
         String username = "testuser";
-        String resetLink = "http://localhost:8080/reset?token=abc123";
+        String token = "abc123";
 
         when(templateEngine.process(eq("email/password-reset-in-email"), any(Context.class)))
                 .thenReturn("<h1>你好 ${username}</h1><a href=\"${resetLink}\">重置密码</a>");
 
         // When
-        assertDoesNotThrow(() -> emailService.sendPasswordResetEmail(to, username, resetLink));
+        assertDoesNotThrow(() -> emailService.sendPasswordResetEmail(to, username, token));
 
         // Then
         verify(templateEngine).process(eq("email/password-reset-in-email"), any(Context.class));
-        verify(mailSender).send(mimeMessage);
+        
+        // 验证模板变量设置
+        ArgumentCaptor<Context> contextCaptor = ArgumentCaptor.forClass(Context.class);
+        verify(templateEngine).process(eq("email/password-reset-in-email"), contextCaptor.capture());
+        
+        Context context = contextCaptor.getValue();
+        assertEquals(username, context.getVariable("username"));
+        assertEquals("http://localhost:8080/password-reset-out-email.html?token=abc123", context.getVariable("resetLink"));
+        assertEquals(token, context.getVariable("token"));
+        assertEquals("1小时", context.getVariable("expirationTime"));
     }
 
     @Test

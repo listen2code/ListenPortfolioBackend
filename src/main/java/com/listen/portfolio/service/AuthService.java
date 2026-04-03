@@ -211,8 +211,8 @@ public class AuthService implements UserDetailsService {
                 // 发送密码重置邮件
                 emailService.sendPasswordResetEmail(
                     userInfo.getEmail(),
-                    resetToken,
-                    userInfo.getName()
+                    userInfo.getName(),
+                    resetToken
                 );
                 
                 logger.info("Password reset email sent successfully to: {}", email);
