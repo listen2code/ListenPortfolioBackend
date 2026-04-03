@@ -71,7 +71,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
      * @param chain 过滤器链，用于传递请求
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, 
+    public void doFilterInternal(HttpServletRequest request, 
                                     HttpServletResponse response, 
                                     FilterChain chain) 
             throws ServletException, IOException {
