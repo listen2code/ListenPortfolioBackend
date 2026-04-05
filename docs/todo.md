@@ -44,18 +44,21 @@
 
 ### 1. ⭐ Flutter 前后端 API 对齐
 
-**现状**：Flutter 端 mock 数据与后端实际响应存在字段差异，影响切换到真实 API 时的兑容性。  
+**现状**：大部分 Mock 数据已修正，剩余 DTO 字段差异需 Flutter 端模型适配。  
 **具体差异**：
 
 | 项目 | Flutter Mock | 后端实际 | 处理 |
 |------|-------------|----------|------|
 | login.json `body.token` | `token` | `LoginResponse.token` | ✅ 已匹配 |
-| login.json `body.userId` | String `"1001"` | Long `1` | ⚠️ Flutter 端需处理类型 |
-| user.json / projects.json / aboutMe.json | 缺少 `messageId` 字段 | 始终返回 `messageId` | ⚠️ 需补全 |
-| projects.json `techStack` | `Node.js, Express` | 实际是 Spring Boot | ⚠️ 需修正 |
+| login.json `body.userId` | ~~String `"1001"`~~ → `1` | Long `1` | ✅ 已修正（ToStringConverter 兼容） |
+| user.json / projects.json / aboutMe.json | ~~缺少 `messageId`~~ | 始终返回 `messageId` | ✅ 已补全 |
+| projects.json `techStack` | ~~`Node.js, Express`~~ | 实际是 Spring Boot | ✅ 已修正 |
+| aboutMe.json | ~~虚假简历数据~~ | 真实简历内容 | ✅ 已替换为真实简历 |
 | `ProjectDto` | 无 `businessId` | 有 `businessId` 字段 | ⚠️ 前端需适配 |
+| `StatDto.id` | String `"android"` (实为 businessId) | Long `1` + `businessId: "android"` | ⚠️ 前端需映射 businessId→id |
 | aboutMe 路径 | `GET /aboutMe` | `GET /v1/aboutMe` | ✅ 已匹配 |
 
+**剩余工作**：Flutter 模型增加 `businessId` 字段适配，或后端 DTO 调整序列化策略。  
 **验收标准**：Flutter dev 环境调用后端 API，所有接口响应格式一致、无解析异常。
 
 ---
@@ -236,11 +239,16 @@ src/main/resources/
 ## 📊 检查清单
 
 ### Flutter 对接
-- [ ] Flutter mock 数据补全 `messageId` 字段
-- [ ] Flutter projects.json 后端技术栈修正为 Spring Boot
+- [x] Flutter mock 数据补全 `messageId` 字段 ✅
+- [x] Flutter projects.json 后端技术栈修正为 Spring Boot ✅
+- [x] Flutter aboutMe.json 替换为真实简历数据 ✅
+- [x] Flutter login/refresh.json userId 修正为数字类型 ✅
+- [x] V1 DB 种子数据替换为真实简历内容 ✅
+- [x] 创建 `docs/api_reference.md` 完整接口文档 ✅
 - [ ] Flutter 端适配 `ProjectDto.businessId` 字段
+- [ ] Flutter 端适配 `StatDto.id` vs `businessId` 映射
 - [ ] Flutter dev 环境配置指向后端 API URL
-- [ ] 字段类型对齐（userId: String vs Long）
+- [ ] V2 迁移脚本（已部署环境的数据更新）
 
 ---
 

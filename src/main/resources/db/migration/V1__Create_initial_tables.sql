@@ -1,14 +1,13 @@
 -- ===================================================================
 -- Portfolio 应用数据库初始化脚本
 -- 版本: V1
--- 说明: 创建项目的基础表结构，基于 db/schema.sql 和 db/data.sql
+-- 说明: 创建项目的基础表结构
 -- ===================================================================
 
 -- ===================================================================
 -- 用户表 (users)
 -- ===================================================================
 -- 说明: 存储用户基本信息和认证数据
--- 基于: db/schema.sql 中的 users 表结构
 -- 索引: email (唯一)
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID，主键自增',
@@ -35,7 +34,6 @@ CREATE TABLE IF NOT EXISTS users (
 -- 用户认证表 (user_certifications)
 -- ===================================================================
 -- 说明: 用户认证证书信息
--- 基于: db/schema.sql 中的 user_certifications 表
 CREATE TABLE IF NOT EXISTS user_certifications (
     user_id BIGINT NOT NULL COMMENT '用户ID',
     certification_name VARCHAR(255) NOT NULL COMMENT '认证名称',
@@ -47,7 +45,6 @@ CREATE TABLE IF NOT EXISTS user_certifications (
 -- 项目表 (projects)
 -- ===================================================================
 -- 说明: 项目信息表
--- 基于: db/schema.sql 中的 projects 表
 CREATE TABLE IF NOT EXISTS projects (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '项目ID，主键自增',
     business_id VARCHAR(255) UNIQUE COMMENT '业务逻辑ID',
@@ -65,7 +62,6 @@ CREATE TABLE IF NOT EXISTS projects (
 -- 项目技术栈表 (project_tech_stack)
 -- ===================================================================
 -- 说明: 项目技术栈关联表
--- 基于: db/schema.sql 中的 project_tech_stack 表
 CREATE TABLE IF NOT EXISTS project_tech_stack (
     project_id BIGINT NOT NULL COMMENT '项目ID',
     tech_name VARCHAR(255) NOT NULL COMMENT '技术名称',
@@ -77,7 +73,6 @@ CREATE TABLE IF NOT EXISTS project_tech_stack (
 -- 工作经历表 (experiences)
 -- ===================================================================
 -- 说明: 用户工作经历
--- 基于: db/schema.sql 中的 experiences 表
 CREATE TABLE IF NOT EXISTS experiences (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '经历ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
@@ -95,7 +90,6 @@ CREATE TABLE IF NOT EXISTS experiences (
 -- 教育经历表 (education)
 -- ===================================================================
 -- 说明: 用户教育背景
--- 基于: db/schema.sql 中的 education 表
 CREATE TABLE IF NOT EXISTS education (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '教育ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
@@ -113,7 +107,6 @@ CREATE TABLE IF NOT EXISTS education (
 -- 技能表 (skills)
 -- ===================================================================
 -- 说明: 用户技能分类
--- 基于: db/schema.sql 中的 skills 表
 CREATE TABLE IF NOT EXISTS skills (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '技能ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
@@ -128,7 +121,6 @@ CREATE TABLE IF NOT EXISTS skills (
 -- 技能项目表 (skill_items)
 -- ===================================================================
 -- 说明: 技能具体项目
--- 基于: db/schema.sql 中的 skill_items 表
 CREATE TABLE IF NOT EXISTS skill_items (
     skill_id BIGINT NOT NULL COMMENT '技能ID',
     item_name VARCHAR(255) NOT NULL COMMENT '技能项目名称',
@@ -140,7 +132,6 @@ CREATE TABLE IF NOT EXISTS skill_items (
 -- 语言表 (languages)
 -- ===================================================================
 -- 说明: 用户语言能力
--- 基于: db/schema.sql 中的 languages 表
 CREATE TABLE IF NOT EXISTS languages (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '语言ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
@@ -156,7 +147,6 @@ CREATE TABLE IF NOT EXISTS languages (
 -- 统计表 (stats)
 -- ===================================================================
 -- 说明: 用户统计数据
--- 基于: db/schema.sql 中的 stats 表
 CREATE TABLE IF NOT EXISTS stats (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '统计ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
@@ -173,7 +163,6 @@ CREATE TABLE IF NOT EXISTS stats (
 -- 统计标签表 (stat_tags)
 -- ===================================================================
 -- 说明: 统计标签关联
--- 基于: db/schema.sql 中的 stat_tags 表
 CREATE TABLE IF NOT EXISTS stat_tags (
     stat_id BIGINT NOT NULL COMMENT '统计ID',
     tag_name VARCHAR(255) NOT NULL COMMENT '标签名称',
@@ -184,7 +173,6 @@ CREATE TABLE IF NOT EXISTS stat_tags (
 -- ===================================================================
 -- 插入初始数据
 -- ===================================================================
--- 基于: db/data.sql 的初始数据
 
 -- 插入用户数据
 INSERT IGNORE INTO users (id, name, email, password, location, avatar_url, status, job_title, bio, graduation_year, github_url, major) VALUES
