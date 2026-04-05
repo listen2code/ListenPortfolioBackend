@@ -90,28 +90,48 @@ public ResponseEntity<?> updateProfile(@Valid @RequestBody ProfileRequest reques
 ## 📊 Redis 存储结构
 
 ### Key 设计
+
+实际代码使用**固定窗口计数器**算法，Key 中包含时间窗口段号：
+
 ```
-限流类型:标识符 → rate_limit:ip:192.168.1.100
-                → rate_limit:email:user@example.com
-                → rate_limit:token:abc123
-                → rate_limit:user:username
+rate_limit:{type}:{identifier}:{windowSegment}
+  → rate_limit:ip:192.168.1.100:27150234
+  → rate_limit:email:user@example.com:27150234
+  → rate_limit:user:username:27150234
 ```
 
+`windowSegment = currentTimeMillis / (timeWindowSeconds * 1000)`，同一时间窗口内的请求共享同一个 Key。
+
 ### 存储格式
-- **Key**: `rate_limit:{type}:{identifier}`
-- **Value**: 请求计数（数字）
-- **TTL**: 时间窗口（自动过期）
+- **Key**: `rate_limit:{identifier}:{windowSegment}`
+- **Value**: 请求计数（INCR 原子递增）
+- **TTL**: 时间窗口秒数（首次访问时设置，自动过期）
+
+### 算法说明
+
+```java
+// RateLimitService.isAllowed() 核心逻辑
+long currentWindow = System.currentTimeMillis() / (timeWindowSeconds * 1000);
+String key = RATE_LIMIT_PREFIX + identifier + ":" + currentWindow;
+
+Long count = redisTemplate.opsForValue().increment(key);  // 原子递增
+if (count == 1) {
+    redisTemplate.expire(key, timeWindowSeconds, TimeUnit.SECONDS);  // 首次设置过期
+}
+return count <= maxRequests;
+```
+
+> **注意**：当前实现为固定窗口算法，存在窗口边界突发问题。未来可升级为滑动窗口（ZSet）或令牌桶算法。
 
 ### 示例
 ```redis
-# IP 限流
-SET rate_limit:ip:192.168.1.100 1 EX 60
+# IP 限流（60秒窗口）
+INCR rate_limit:ip:192.168.1.100:27150234
+EXPIRE rate_limit:ip:192.168.1.100:27150234 60
 
-# 邮箱限流
-SET rate_limit:email:user@example.com 3 EX 300
-
-# 用户限流
-SET rate_limit:user:john_doe 50 EX 3600
+# 邮箱限流（300秒窗口）
+INCR rate_limit:email:user@example.com:5430046
+EXPIRE rate_limit:email:user@example.com:5430046 300
 ```
 
 ## 🛠️ 使用指南

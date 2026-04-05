@@ -22,6 +22,10 @@
 - **多环境配置**：`.env` 环境变量注入，支持 local / staging / prod profiles
 - **敏感配置外部化**：DB / JWT 均通过环境变量注入
 - **Kubernetes 探针**：liveness / readiness 健康检查端点
+- **邮件服务**：`EmailService` + SMTP 配置，支持密码重置邮件发送
+- **密码重置 Token**：`PasswordResetTokenService` 支持邮件链接重置密码
+- **AOP 智能限流**：`@RateLimit` 注解 + `RateLimitAspect` + Redis，支持 IP/EMAIL/TOKEN/USER/CUSTOM 多维度
+- **ErrorCode + BusinessException**：基础错误码体系和业务异常类
 
 ### 📈 当前评分
 
@@ -37,6 +41,39 @@
 ---
 
 ## 🔴 高优先级
+
+### 1. ⭐ Flutter 前后端 API 对齐
+
+**现状**：Flutter 端 mock 数据与后端实际响应存在字段差异，影响切换到真实 API 时的兑容性。  
+**具体差异**：
+
+| 项目 | Flutter Mock | 后端实际 | 处理 |
+|------|-------------|----------|------|
+| login.json `body.token` | `token` | `LoginResponse.token` | ✅ 已匹配 |
+| login.json `body.userId` | String `"1001"` | Long `1` | ⚠️ Flutter 端需处理类型 |
+| user.json / projects.json / aboutMe.json | 缺少 `messageId` 字段 | 始终返回 `messageId` | ⚠️ 需补全 |
+| projects.json `techStack` | `Node.js, Express` | 实际是 Spring Boot | ⚠️ 需修正 |
+| `ProjectDto` | 无 `businessId` | 有 `businessId` 字段 | ⚠️ 前端需适配 |
+| aboutMe 路径 | `GET /aboutMe` | `GET /v1/aboutMe` | ✅ 已匹配 |
+
+**验收标准**：Flutter dev 环境调用后端 API，所有接口响应格式一致、无解析异常。
+
+---
+
+### 2. ⭐ GitHub Actions CI
+
+**现状**：后端项目无 CI 工作流，`.github/workflows/` 为空。  
+**目标**：添加 GitHub Actions CI，自动化测试 + JaCoCo 报告 + SpotBugs。
+
+**实施步骤**：
+```
+1. 创建 .github/workflows/ci.yml
+2. 配置 MySQL + Redis 服务容器
+3. 添加 ./mvnw test + jacoco:report + spotbugs:check 步骤
+4. 添加 CI badge 到 README.md
+```
+
+**验收标准**：Push / PR 自动触发测试，README 显示绿色 badge。
 
 ---
 
@@ -58,7 +95,7 @@
 
 ## 🟡 中优先级
 
-### 4. Refresh Token 持久化与吊销
+### 4. ⭐ Refresh Token 持久化与吊销
 
 **现状**：刷新 Token 生成后不存储，无法主动吊销（例如修改密码后旧 Refresh Token 仍有效）。  
 **目标**：将 Refresh Token 存入 Redis，支持主动吊销。
@@ -74,6 +111,11 @@
 **验收标准**：修改密码后，使用旧 Refresh Token 刷新返回 401。
 
 ---
+
+### 5. ⭐ 限流算法升级
+
+**现状**：`RateLimitService` 使用 INCR 固定窗口计数器，存在窗口边界突发问题。  
+**目标**：升级为滑动窗口（Redis ZSet）或令牌桶算法，提高限流精度。
 
 ---
 
@@ -168,6 +210,38 @@ src/main/resources/
 - [x] 测试覆盖率 > 80%（实际覆盖情况良好）
 - [x] ~~Pom.xml 密码硬编码修复~~ ✅ 已解决
 
+### 10. 🔮 security_features.md 设计规划落地
+
+**现状**：`security_features.md` 中记录的以下类均为设计规划，代码未实现：  
+- `PasswordPolicyValidator`：密码复杂度校验
+- `DataMaskingUtil`：邮箱/IP 脎敏工具
+- `SecurityAuditService`：安全审计日志
+- `SecurityMetrics`：Prometheus 安全指标
+- `AnomalyDetectionService`：异常登录检测
+- `ThreatDetectionService`：实时威胁检测
+- `AutomatedSecurityResponse`：自动化安全响应
+- HTTPS 强制、CORS 精细化配置
+
+**建议**：根据面试价值和实际需要逐步实现，优先级从高到低：PasswordPolicyValidator > DataMaskingUtil > SecurityMetrics。
+
 ---
 
-📅 **最后更新**: 2026-03-29
+### 11. ⭐ LoginResponse 字段名与 README 一致性
+
+**现状**：`LoginResponse.java` 中字段名为 `token`，但 Flutter 端 mock 数据和行业惯例通常使用 `accessToken` 以区分于 `refreshToken`。  
+**建议**：评估是否将 `token` 重命名为 `accessToken`，同步更新 Flutter 端模型。
+
+---
+
+## 📊 检查清单
+
+### Flutter 对接
+- [ ] Flutter mock 数据补全 `messageId` 字段
+- [ ] Flutter projects.json 后端技术栈修正为 Spring Boot
+- [ ] Flutter 端适配 `ProjectDto.businessId` 字段
+- [ ] Flutter dev 环境配置指向后端 API URL
+- [ ] 字段类型对齐（userId: String vs Long）
+
+---
+
+📅 **最后更新**: 2026-04-05

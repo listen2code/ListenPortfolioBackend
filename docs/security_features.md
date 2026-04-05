@@ -1,8 +1,14 @@
 # 安全功能完整指南
 
+> ⚠️ **文档说明**：本文档同时包含 **已实现功能** 和 **设计规划**。
+> - ✅ 标记的部分已在代码中实现
+> - 🔮 标记的部分为设计规划，代码尚未实现
+>
+> 具体实现状态请参照各章节标注。
+
 ## 概述
 
-本项目实现了多层深度安全防护体系，从认证授权到流量控制，从数据加密到审计日志，构建了企业级的安全防护能力。安全设计遵循零信任原则，每个组件都经过安全加固。
+本项目已实现多层安全防护体系的核心部分，包括 JWT 认证授权、AOP 智能限流、Token 黑名单、BCrypt 密码加密。部分高级功能（审计日志、异常检测、威胁响应等）为设计规划，尚未落地到代码中。
 
 ## 🛡️ 安全架构总览
 
@@ -33,9 +39,9 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔐 认证与授权
+## 🔐 认证与授权 ✅
 
-### JWT 认证系统
+### JWT 认证系统 ✅
 
 #### JWT Token 结构
 ```json
@@ -109,25 +115,17 @@ public class TokenBlacklistService {
 }
 ```
 
-### 密码安全
+### 密码安全 ✅
 
-#### BCrypt 加密
+#### BCrypt 加密 ✅
+
+实际实现通过 `SecurityConfig.java` 中的 `BCryptPasswordEncoder` Bean（使用 Spring 默认 cost）：
 
 ```java
-@Component
-public class PasswordEncoder {
-    
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-    
-    // 密码加密
-    public String encode(String rawPassword) {
-        return encoder.encode(rawPassword);
-    }
-    
-    // 密码验证
-    public boolean matches(String rawPassword, String encodedPassword) {
-        return encoder.matches(rawPassword, encodedPassword);
-    }
+// SecurityConfig.java
+@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
 }
 ```
 
@@ -135,9 +133,10 @@ public class PasswordEncoder {
 - **盐值自动生成**：每次加密使用不同的盐值
 - **计算成本可调**：通过 cost 参数控制计算复杂度
 - **抗彩虹表**：盐值机制防止预计算攻击
-- **时间复杂度**：cost=12 时约 100ms 加密时间
 
-#### 密码策略
+#### 🔮 密码策略验证器（设计规划，代码未实现）
+
+> 以下 `PasswordPolicyValidator` 类尚未实现，当前仅依赖 `@Valid` 注解做基本校验。
 
 ```java
 @Component
@@ -235,7 +234,7 @@ public class RateLimitService {
 
 ### 敏感数据处理
 
-#### 配置外部化
+#### 配置外部化 ✅
 
 **环境变量配置**：
 ```bash
@@ -259,7 +258,9 @@ export REDIS_HOST=localhost
 export REDIS_PORT=6379
 ```
 
-#### 数据脱敏
+#### 🔮 数据脱敏（设计规划，代码未实现）
+
+> 以下 `DataMaskingUtil` 类尚未实现，当前仅在 `UserController.maskToken()` 中有简单的 Token 遮盖。
 
 ```java
 @Component
@@ -294,9 +295,11 @@ public class DataMaskingUtil {
 }
 ```
 
-### 数据传输安全
+### 🔮 数据传输安全（设计规划，代码未实现）
 
 #### HTTPS 强制
+
+> 当前代码未启用 HTTPS 强制，生产环境应通过反向代理（Nginx/ALB）终止 TLS。
 
 ```java
 @Configuration
@@ -316,7 +319,7 @@ public class SecurityConfig {
 }
 ```
 
-#### CORS 配置
+#### 🔮 CORS 配置（设计规划，当前使用 WebConfig 简单配置）
 
 ```java
 @Configuration
@@ -337,7 +340,10 @@ public class CorsConfig {
 }
 ```
 
-## 📊 审计与监控
+## 📊 🔮 审计与监控（设计规划，代码未实现）
+
+> 以下安全审计、监控指标、异常检测、威胁响应等功能均为设计规划，尚未在代码中实现。
+> 当前已实现的监控能力：Prometheus 指标（Actuator）、Grafana 仪表板、`RequestLoggingFilter` 请求日志。
 
 ### 安全审计日志
 
@@ -448,7 +454,7 @@ public class SecurityMetrics {
 
 ## 🚨 威胁防护
 
-### 常见攻击防护
+### 常见攻击防护（部分已实现，部分为规划）
 
 #### 1. 暴力破解攻击
 

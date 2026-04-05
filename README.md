@@ -137,7 +137,7 @@ java -jar target/portfolio-0.0.1-SNAPSHOT.jar
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
 | `GET` | `/v1/projects` | 公开 | 获取所有项目 |
-| `GET` | `/v1/about` | 需要 | 获取关于我信息（统计、经历、教育、技能、语言） |
+| `GET` | `/v1/aboutMe` | 需要 | 获取关于我信息（统计、经历、教育、技能、语言） |
 
 ### 统一响应格式
 
@@ -153,7 +153,7 @@ java -jar target/portfolio-0.0.1-SNAPSHOT.jar
 
 ```json
 {
-  "accessToken": "eyJ...",
+  "token": "eyJ...",
   "refreshToken": "eyJ...",
   "userId": 1
 }
@@ -175,26 +175,36 @@ src/main/java/com/listen/portfolio/
 │   ├── UserService.java
 │   ├── AboutMeService.java
 │   ├── ProjectService.java
+│   ├── EmailService.java
+│   ├── PasswordResetTokenService.java
+│   ├── RateLimitService.java
 │   └── TokenBlacklistService.java
 ├── repository/                      # 数据访问：Spring Data JPA 接口
-├── infrastructure/
-│   └── persistence/entity/          # JPA 实体（仅属于持久化层）
-│       ├── UserEntity.java          # + Stat / Experience / Education / Language / Skill
-│       ├── ProjectEntity.java
-│       └── ...
-├── config/                          # 横切配置
-│   ├── SecurityConfig.java
-│   ├── GlobalExceptionHandler.java
-│   ├── OpenApiConfig.java
-│   ├── RedisConfig.java
-│   ├── RequestLoggingFilter.java
-│   └── WebConfig.java
-├── jwt/                             # JWT 工具
-│   ├── JwtUtil.java                 # Token 生成 / 验证 / 刷新
-│   └── JwtRequestFilter.java        # 每次请求的 JWT 校验过滤器
-└── common/                          # 共享模型
-    ├── ApiResponse.java
-    └── Constants.java
+├── entity/                          # JPA 实体（仅属于持久化层）
+│   ├── UserEntity.java              # + Stat / Experience / Education / Language / Skill
+│   ├── ProjectEntity.java
+│   └── ...
+├── common/                          # 横切关注点
+│   ├── ApiResponse.java             # 统一响应模型
+│   ├── Constants.java               # 常量定义
+│   ├── aspect/                      # AOP 切面
+│   │   ├── RateLimit.java           # 限流注解
+│   │   └── RateLimitAspect.java     # 限流切面实现
+│   ├── config/                      # 配置类
+│   │   ├── SecurityConfig.java
+│   │   ├── GlobalExceptionHandler.java
+│   │   ├── OpenApiConfig.java
+│   │   ├── RedisConfig.java
+│   │   ├── FlywayConfig.java
+│   │   ├── RequestLoggingFilter.java
+│   │   └── WebConfig.java
+│   ├── jwt/                         # JWT 工具
+│   │   ├── JwtUtil.java             # Token 生成 / 验证 / 刷新
+│   │   └── JwtRequestFilter.java    # 每次请求的 JWT 校验过滤器
+│   ├── error/                       # 错误码
+│   │   └── ErrorCode.java
+│   └── exception/                   # 自定义异常
+│       └── BusinessException.java
 ```
 
 ### 分层原则
@@ -346,11 +356,11 @@ cp .env.example .env    # 配置 DB / JWT 等参数（参考 .env 文件）
 
 ## 🔮 未来规划
 
-- **邮件发送**：`forgot-password` 发送真实邮件（当前为重置为默认密码）
 - **Docker 自动迁移**：容器启动时自动执行 Flyway 迁移
 - **Refresh Token 持久化**：将刷新 Token 存储到 DB/Redis，支持主动吊销
-- **限流保护**：对认证接口添加速率限制，防止暴力破解
 - **HTTPS/TLS**：生产环境强制 HTTPS
+- **配置文件拆分**：按环境拆分 application.yml（dev/test/prod）
+- **GitHub Actions CI**：自动化测试、构建、覆盖率报告
 
 ---
 

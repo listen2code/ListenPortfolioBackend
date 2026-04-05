@@ -8,13 +8,18 @@
 
 ### 测试统计
 
-| 测试类型 | 文件数量 | 覆盖率 | 状态 |
-|----------|----------|--------|------|
-| **单元测试** | 18 个 | 85% | ✅ 优秀 |
-| **集成测试** | 3 个 | 90% | ✅ 优秀 |
-| **安全测试** | 2 个 | 95% | ✅ 优秀 |
-| **API 测试** | 8 个 | 88% | ✅ 优秀 |
-| **总计** | 31 个 | 86% | ✅ 超出目标 |
+| 测试类型 | 文件数量 | 说明 |
+|----------|----------|------|
+| **API 层测试** | 10 个 | Controller + Service（auth/user/projects/about） |
+| **通用组件测试** | 6 个 | ApiResponse / ErrorCode / Redis / TokenBlacklist 等 |
+| **JWT 测试** | 2 个 | JwtUtil + JwtRequestFilter |
+| **服务层测试** | 4 个 | AboutMeService / EmailService / PasswordResetToken / RateLimit |
+| **集成测试** | 2 个 | BaseIntegrationTest / RedisIntegrationTestLocal |
+| **安全 / 性能测试** | 2 个 | SecurityTest / PerformanceTest |
+| **配置测试** | 1 个 | GlobalExceptionHandler |
+| **总计** | **27 个** | — |
+
+> 注意：覆盖率数据请以 `./mvnw clean test jacoco:report` 生成的 JaCoCo 报告为准。
 
 ### 测试分布
 
@@ -46,13 +51,21 @@ src/test/java/com/listen/portfolio/
 │   └── TokenBlacklistServiceTest.java
 ├── config/                           # 配置测试
 │   └── GlobalExceptionHandlerTest.java
+├── integration/                      # 集成测试
+│   ├── BaseIntegrationTest.java
+│   └── RedisIntegrationTestLocal.java
 ├── jwt/                              # JWT 测试
 │   ├── JwtRequestFilterTest.java
 │   └── JwtUtilTest.java
-├── service/                          # 服务层测试
-│   ├── AboutMeServiceTest.java
-│   └── EmailServiceTest.java
-└── ...                               # 其他测试文件
+├── performance/                      # 性能测试
+│   └── PerformanceTest.java
+├── security/                         # 安全测试
+│   └── SecurityTest.java
+└── service/                          # 服务层测试
+    ├── AboutMeServiceTest.java
+    ├── EmailServiceTest.java
+    ├── PasswordResetTokenServiceTest.java
+    └── RateLimitServiceTest.java
 ```
 
 ## 🧪 测试框架与工具
