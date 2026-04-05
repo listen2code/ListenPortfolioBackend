@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS stat_tags (
 
 -- 插入用户数据
 INSERT IGNORE INTO users (id, name, email, password, location, avatar_url, status, job_title, bio, graduation_year, github_url, major) VALUES
-(1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK', 'Japan / Tokyo', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Full Stack Mobile Architect', 'A seasoned mobile developer with over 10 years of experience in Android and 2+ years in Flutter. Specialized in high-performance application development, clean architecture, and reactive programming. Proven track record of leading cross-functional teams and delivering complex enterprise solutions.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
+(1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK', 'Japan / Tokyo', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Senior Android / Flutter Engineer', 'Senior Android Engineer with 11+ years of mobile development experience and 3+ years in Flutter. Expertise in client architecture (componentization, plugin systems), performance optimization, and APM infrastructure. Key achievements include reducing Feed timeout rates from 1.5% to 0.3%, building full-stack APM monitoring platforms, and leading Flutter app development for securities trading at Rakuten. JLPT N1, BJT J2 certified, currently based in Tokyo, Japan.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
 
 -- 插入项目数据
 INSERT IGNORE INTO projects (id, business_id, title, subtitle, project_desc, image_url, github_url) VALUES
@@ -203,36 +203,42 @@ INSERT IGNORE INTO project_tech_stack (project_id, tech_name) VALUES
 (1, 'Flutter'), (1, 'Riverpod'), (1, 'Clean Architecture'), (1, 'MVI'),
 (2, 'Dart'), (2, 'Riverpod'), (2, 'Dio'), (2, 'Architecture'),
 (3, 'Flutter'), (3, 'Design System'), (3, 'CustomPainter'),
-(4, 'Spring Boot'), (4, 'JPA'), (4, 'AWS'), (4, 'MySQL'),
+(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'),
 (5, 'Markdown'), (5, 'Documentation'), (5, 'Knowledge Sharing');
 
 -- 插入工作经历数据
 INSERT IGNORE INTO experiences (id, user_id, title, company, period, description) VALUES
-(1, 1, 'Senior Mobile Architect', 'Global Tech Solutions', '2021 - Present', 'Leading the migration of core native apps to Flutter, optimizing CI/CD pipelines, and establishing mobile engineering best practices.'),
-(2, 1, 'Lead Android Developer', 'Innovation Hub', '2015 - 2021', 'Designed and developed large-scale financial applications with millions of active users. Implemented robust security protocols.'),
-(3, 1, 'Junior Developer', 'Start-up Inc.', '2013 - 2015', 'Focusing on UI/UX implementation and RESTful API integration for Android platform.');
+(1, 1, 'Android / Flutter Engineer', 'LYC Corp. (Rakuten Securities Project)', '2023.02 - Present', 'Lead developer for new securities Flutter app: architecture design, framework development, FIDO2 authentication integration, and Flutter version upgrades. Maintaining Android stock trading app and conducting code reviews for team members.'),
+(2, 1, 'Android Engineer — Mobile Infrastructure', 'Youzan Technology', '2021.10 - 2022.07', 'Built mobile APM stutter/ANR detection SDK with optimized data reporting and aggregation. Created full-stack monitoring dashboards (React/AntDesign frontend + Spring Boot backend with RESTful APIs). Participated in Commerce SDK Redux-pattern refactoring.'),
+(3, 1, 'Android Engineer', 'Duolu (Yin''ai Network Technology)', '2019.11 - 2021.10', 'Established Feed monitoring system, reducing timeout rate from 1.5% to 0.3% and latency by 40%+. Led componentization (module + module_api + module_run) and plugin architecture (Shadow framework). Built dev-stage performance monitoring tools and automated testing (44 Feed cases via AirTest).'),
+(4, 1, 'Android Engineer', 'Qibei Technology (Bike-sharing)', '2016.09 - 2019.08', 'Developed bike-sharing apps (Qibei Bike, Dingda Transit) across 4+ major versions. Implemented hot-fix (Tinker), online performance monitoring (Matrix), and reduced build time by 30%+ via Gradle optimization. Set up Jenkins CI pipeline with wireless ADB deployment.'),
+(5, 1, 'Android Engineer', 'Baidu (Waimai Delivery)', '2014.12 - 2016.06', 'Independently maintained delivery rider app (Xiaodu Knight v1.4-2.9). Designed dynamic GPS tracking strategy reducing redundant uploads by 10%+. Developed PassSDK for unified B-side authentication with AES/JNI encryption. Built logistics development framework for multi-app scaffolding.'),
+(6, 1, 'Java Developer', 'NewLand Software Engineering', '2013.05 - 2014.09', 'Developed business management and analytics modules for China Mobile support system using J2EE, S2SH framework, and Oracle database.');
 
 -- 插入教育经历数据
 INSERT IGNORE INTO education (id, user_id, degree, school, period, description) VALUES
-(1, 1, 'Bachelor of Computer Science', 'Tech University', '2009 - 2013', 'Specialized in Software Engineering and Mobile Systems.');
+(1, 1, 'Bachelor of Software Engineering', 'Fujian University of Technology', '2011.09 - 2013.06', 'Outstanding Graduation Thesis: Design and Implementation of CRM System Based on Intelligent Evaluation System'),
+(2, 1, 'Associate in Computer Applications', 'Fujian Normal University (IT College)', '2008.09 - 2011.06', 'Provincial Outstanding Student, First-class Scholarship, Outstanding Student Cadre');
 
 -- 插入技能数据
 INSERT IGNORE INTO skills (id, user_id, category) VALUES
 (1, 1, 'Mobile'),
 (2, 1, 'Architecture'),
-(3, 1, 'Backend & DevOps');
+(3, 1, 'Performance & APM'),
+(4, 1, 'Backend & DevOps');
 
 -- 插入技能项目数据
 INSERT IGNORE INTO skill_items (skill_id, item_name) VALUES
 (1, 'Flutter'), (1, 'Android Native'), (1, 'Dart'), (1, 'Kotlin'), (1, 'Java'),
-(2, 'Clean Architecture'), (2, 'MVI'), (2, 'MVVM'), (2, 'SOLID'),
-(3, 'Spring Boot'), (3, 'SQL'), (3, 'Docker'), (3, 'CI/CD');
+(2, 'Clean Architecture'), (2, 'Componentization'), (2, 'Plugin Architecture'), (2, 'MVI'), (2, 'MVVM'), (2, 'SOLID'),
+(3, 'Profiling'), (3, 'Memory Optimization'), (3, 'Feed Monitoring'), (3, 'Systrace'), (3, 'LeakCanary'),
+(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'), (4, 'CI/CD');
 
 -- 插入语言数据
 INSERT IGNORE INTO languages (id, user_id, name, level) VALUES
-(1, 1, 'English', 'CET4'),
-(2, 1, 'Japanese', 'N1'),
-(3, 1, 'Chinese', 'Native');
+(1, 1, 'Japanese', 'JLPT N1 (131), BJT J2 (512)'),
+(2, 1, 'Chinese', 'Native'),
+(3, 1, 'English', 'CET-4');
 
 -- 插入用户认证数据
 INSERT IGNORE INTO user_certifications (user_id, certification_name) VALUES
@@ -241,20 +247,20 @@ INSERT IGNORE INTO user_certifications (user_id, certification_name) VALUES
 
 -- 插入统计数据
 INSERT IGNORE INTO stats (id, user_id, business_id, year, label) VALUES
-(1, 1, 'android', '10', 'androidExp'),
-(2, 1, 'flutter', '2', 'flutterExp'),
+(1, 1, 'android', '11', 'androidExp'),
+(2, 1, 'flutter', '3', 'flutterExp'),
 (3, 1, 'java_web', '1', 'javaWeb');
 
 -- 插入统计标签数据
 INSERT IGNORE INTO stat_tags (stat_id, tag_name) VALUES
 (1, 'archDesign'),
 (1, 'perfOptimization'),
+(1, 'componentization'),
+(2, 'cleanArchitecture'),
 (2, 'stateManagement'),
 (2, 'riverpod'),
-(2, 'cleanArchitecture'),
 (3, 'springBoot'),
-(3, 'jpa'),
-(3, 'aws');
+(3, 'restApi');
 
 -- ===================================================================
 -- 性能优化说明
