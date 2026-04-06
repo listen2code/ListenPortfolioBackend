@@ -33,3 +33,7 @@ build/
 .vscode/
 .trae/
 tool/listen.pem
+
+### Environment secrets ###
+.env
+env-config.json
