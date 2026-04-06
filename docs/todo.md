@@ -96,9 +96,74 @@
 
 ---
 
+### 3. ⭐ deleteAccount 软删除修复
+
+**现状**：`UserService.deleteAccount()` 执行硬删除，但 `UserEntity` 有 `deleted` 字段暗示软删除设计意图。  
+**问题**：userId=1 是种子用户，硬删除后所有 portfolio 数据丢失。
+
+**实施步骤**：
+```
+1. 修改 UserService.deleteAccount() 改为软删除：user.setDeleted(true)
+2. 修改 aboutMe/projects 查询，排除 deleted=true 的用户
+3. 添加单元测试验证软删除逻辑
+```
+
+**验收标准**：userId=1 无法被删除，查询接口自动排除已删除用户。
+
+---
+
+### 4. ⭐ V2 迁移脚本（已部署环境数据更新）
+
+**现状**：V1 迁移使用 INSERT IGNORE，已部署环境需要数据更新。  
+**目标**：创建 V2 迁移脚本，使用 UPDATE 语句更新现有数据。
+
+**实施步骤**：
+```
+1. 创建 src/main/resources/db/migration/V2__Update_seed_data.sql
+2. 更新 users 表中的 jobTitle, location 等字段为真实简历数据
+3. 更新 stats 表中的 year 字段（Android 11年，Flutter 3年）
+```
+
+**验收标准**：已部署环境执行 V2 迁移后，数据与真实简历一致。
+
+---
+
+### 5. ⭐ GitHub Actions CI
+
+**现状**：后端项目无 CI 工作流，`.github/workflows/` 为空。  
+**目标**：添加 GitHub Actions CI，自动化测试 + JaCoCo 报告 + SpotBugs。
+
+**实施步骤**：
+```
+1. 创建 .github/workflows/ci.yml
+2. 配置 MySQL + Redis 服务容器
+3. 添加 ./mvnw test + jacoco:report + spotbugs:check 步骤
+4. 添加 CI badge 到 README.md
+```
+
+**验收标准**：Push / PR 自动触发测试，README 显示绿色 badge。
+
+---
+
+### 6. 启用 OSIV 关闭配置
+
+**现状**：`application.properties` 中 `spring.jpa.open-in-view=false` 已注释。  
+**目标**：正式启用，强制 Service 层完成所有懒加载，避免序列化阶段 N+1 查询。
+
+**实施步骤**：
+```
+1. 取消注释 spring.jpa.open-in-view=false
+2. 运行全量测试，确认无懒加载异常（LazyInitializationException）
+3. 对存在懒加载的 Service 方法补充 @Transactional 或 fetch join
+```
+
+**验收标准**：应用正常启动，全量测试通过，无 OSIV 相关告警。
+
+---
+
 ## 🟡 中优先级
 
-### 4. ⭐ Refresh Token 持久化与吊销
+### 7. ⭐ Refresh Token 持久化与吊销
 
 **现状**：刷新 Token 生成后不存储，无法主动吊销（例如修改密码后旧 Refresh Token 仍有效）。  
 **目标**：将 Refresh Token 存入 Redis，支持主动吊销。
@@ -115,14 +180,14 @@
 
 ---
 
-### 5. ⭐ 限流算法升级
+### 8. ⭐ 限流算法升级
 
 **现状**：`RateLimitService` 使用 INCR 固定窗口计数器，存在窗口边界突发问题。  
 **目标**：升级为滑动窗口（Redis ZSet）或令牌桶算法，提高限流精度。
 
 ---
 
-### 6. 补全测试覆盖
+### 9. 补全测试覆盖
 
 **现状**：Controller / Service / Repository 均有测试，但部分层覆盖不完整。  
 **缺少的测试**：
@@ -144,14 +209,14 @@ src/test/java/com/listen/portfolio/
 
 ## 🟢 低优先级
 
-### 7. 生产环境 HTTPS / TLS
+### 10. 生产环境 HTTPS / TLS
 
 **现状**：应用仅支持 HTTP，生产环境流量未加密。  
 **目标**：通过反向代理（Nginx / AWS ALB）终止 TLS，或直接在应用层配置证书。
 
 ---
 
-### 8. 配置文件拆分
+### 11. 配置文件拆分
 
 **现状**：`application.properties` 约 243 行，所有环境配置混合在一起。  
 **目标**：按环境拆分，减少误配置风险。
@@ -167,7 +232,36 @@ src/main/resources/
 
 ---
 
-### 9. ~~Pom.xml Flyway 插件密码硬编码~~ ✅ 已解决
+### 12. PasswordPolicyValidator 密码复杂度校验
+
+**现状**：密码校验仅依赖前端基础验证，后端无复杂度策略。  
+**目标**：实现 `PasswordPolicyValidator` 类，支持长度、字符类型、特殊字符等规则。
+
+---
+
+### 13. 服务端文案 i18n
+
+**现状**：所有错误消息和响应文案均为硬编码中文。  
+**目标**：支持多语言消息，根据 Accept-Language 头返回对应语言文案。
+
+---
+
+### 14. security_features.md 设计落地
+
+**现状**：`security_features.md` 中记录的以下类均为设计规划，代码未实现：  
+- `PasswordPolicyValidator`：密码复杂度校验
+- `DataMaskingUtil`：邮箱/IP 脱敏工具
+- `SecurityAuditService`：安全审计日志
+- `SecurityMetrics`：Prometheus 安全指标
+- `AnomalyDetectionService`：异常登录检测
+- `ThreatDetectionService`：实时威胁检测
+- `AutomatedSecurityResponse`：自动化安全响应
+
+**建议**：根据面试价值和实际需要逐步实现，优先级从高到低：PasswordPolicyValidator > DataMaskingUtil > SecurityMetrics。
+
+---
+
+### 15. ~~Pom.xml Flyway 插件密码硬编码~~ ✅ 已解决
 
 **现状**：`pom.xml` 的 Flyway Maven 插件配置中密码硬编码（`Ls-88888888`）。  
 **目标**：改为读取 Maven 属性或环境变量。
