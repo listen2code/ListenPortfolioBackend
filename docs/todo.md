@@ -197,6 +197,7 @@ src/main/resources/
 - [x] 退出登录（Token 黑名单）
 - [x] 账号注销
 - [x] 忘记密码发送真实邮件
+- [ ] Userid=1的账户无法delete-account
 
 ### 运维就绪
 - [x] Docker Compose 完整栈
