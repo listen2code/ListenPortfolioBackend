@@ -128,38 +128,6 @@
 
 ---
 
-### 5. ⭐ GitHub Actions CI
-
-**现状**：后端项目无 CI 工作流，`.github/workflows/` 为空。  
-**目标**：添加 GitHub Actions CI，自动化测试 + JaCoCo 报告 + SpotBugs。
-
-**实施步骤**：
-```
-1. 创建 .github/workflows/ci.yml
-2. 配置 MySQL + Redis 服务容器
-3. 添加 ./mvnw test + jacoco:report + spotbugs:check 步骤
-4. 添加 CI badge 到 README.md
-```
-
-**验收标准**：Push / PR 自动触发测试，README 显示绿色 badge。
-
----
-
-### 6. 启用 OSIV 关闭配置
-
-**现状**：`application.properties` 中 `spring.jpa.open-in-view=false` 已注释。  
-**目标**：正式启用，强制 Service 层完成所有懒加载，避免序列化阶段 N+1 查询。
-
-**实施步骤**：
-```
-1. 取消注释 spring.jpa.open-in-view=false
-2. 运行全量测试，确认无懒加载异常（LazyInitializationException）
-3. 对存在懒加载的 Service 方法补充 @Transactional 或 fetch join
-```
-
-**验收标准**：应用正常启动，全量测试通过，无 OSIV 相关告警。
-
----
 
 ## 🟡 中优先级
 
@@ -216,22 +184,6 @@ src/test/java/com/listen/portfolio/
 
 ---
 
-### 11. 配置文件拆分
-
-**现状**：`application.properties` 约 243 行，所有环境配置混合在一起。  
-**目标**：按环境拆分，减少误配置风险。
-
-```
-src/main/resources/
-├── application.yml           # 公共配置
-├── config/
-│   ├── application-dev.yml
-│   ├── application-prod.yml
-│   └── application-test.yml
-```
-
----
-
 ### 12. PasswordPolicyValidator 密码复杂度校验
 
 **现状**：密码校验仅依赖前端基础验证，后端无复杂度策略。  
@@ -261,18 +213,6 @@ src/main/resources/
 
 ---
 
-### 15. ~~Pom.xml Flyway 插件密码硬编码~~ ✅ 已解决
-
-**现状**：`pom.xml` 的 Flyway Maven 插件配置中密码硬编码（`Ls-88888888`）。  
-**目标**：改为读取 Maven 属性或环境变量。
-
-**解决方案**：该问题已解决，Flyway Maven 插件已被注释掉，应用启动时通过 `FlywayConfig.java` 自动执行迁移，支持环境变量配置。
-
-```xml
-<!-- 插件已禁用，使用 FlywayConfig.java 自动执行迁移 -->
-```
-
----
 
 ## 📋 检查清单
 
@@ -307,22 +247,6 @@ src/main/resources/
 - [x] 全局异常处理
 - [x] 测试覆盖率 > 80%（实际覆盖情况良好）
 - [x] ~~Pom.xml 密码硬编码修复~~ ✅ 已解决
-
-### 10. 🔮 security_features.md 设计规划落地
-
-**现状**：`security_features.md` 中记录的以下类均为设计规划，代码未实现：  
-- `PasswordPolicyValidator`：密码复杂度校验
-- `DataMaskingUtil`：邮箱/IP 脎敏工具
-- `SecurityAuditService`：安全审计日志
-- `SecurityMetrics`：Prometheus 安全指标
-- `AnomalyDetectionService`：异常登录检测
-- `ThreatDetectionService`：实时威胁检测
-- `AutomatedSecurityResponse`：自动化安全响应
-- HTTPS 强制、CORS 精细化配置
-
-**建议**：根据面试价值和实际需要逐步实现，优先级从高到低：PasswordPolicyValidator > DataMaskingUtil > SecurityMetrics。
-
----
 
 ### 11. ⭐ LoginResponse 字段名与 README 一致性
 
