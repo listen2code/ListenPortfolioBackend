@@ -41,46 +41,27 @@ tree -L 2
 
 ### 2. 环境配置
 
-#### 复制环境配置模板
+#### 环境变量配置（可选）
 
+**方式 1：系统环境变量（推荐本地开发）**
 ```bash
-# 复制环境配置文件
-cp .env.example .env
+# PowerShell
+$env:DB_USERNAME="your_db_user"
+$env:DB_PASSWORD="your_db_password"
+$env:JWT_SECRET="your-super-strong-secret-key-at-least-256-bits-long"
+$env:MAIL_PASSWORD="your-gmail-app-password"
 
-# 编辑环境配置
-vim .env
+# Linux/Mac
+export DB_USERNAME="your_db_user"
+export DB_PASSWORD="your_db_password"
+export JWT_SECRET="your-super-strong-secret-key-at-least-256-bits-long"
+export MAIL_PASSWORD="your-gmail-app-password"
 ```
 
-#### 环境变量配置
-
+**方式 2：Docker 部署（使用 .env 文件）**
 ```bash
-# .env 文件配置示例
-# 数据库配置
-DATABASE_URL=jdbc:mysql://localhost:3307/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
-DATABASE_USERNAME=root
-DATABASE_PASSWORD=Ls-88888888
-
-# Redis 配置
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# JWT 配置
-JWT_SECRET=your-super-strong-secret-key-at-least-256-bits-long-for-development
-JWT_EXPIRATION=300000
-JWT_REFRESH_EXPIRATION=86400000
-
-# 邮件配置（开发环境可使用 MailHog）
-MAIL_HOST=localhost
-MAIL_PORT=1025
-MAIL_USERNAME=test@example.com
-MAIL_PASSWORD=test
-
-# 前端配置
-FRONTEND_URL=http://localhost:3000
-
-# 应用配置
-APP_PORT=8080
-ENVIRONMENT=local
+cp .env.example .env
+# 编辑 .env 文件填入真实密码
 ```
 
 ### 3. 启动依赖服务
@@ -159,11 +140,15 @@ curl http://localhost:8080/actuator/prometheus
 
 ## 🐳 Docker 开发环境
 
-### 完整 Docker 开发栈
+### Docker 全栈开发
 
 ```bash
-# 启动完整开发环境
-docker-compose --profile local up -d
+# 一键部署全栈（推荐）
+./docker_deploy.ps1
+
+# 手动启动全栈
+cp .env.example .env  # 可选：覆盖默认密码
+docker-compose --profile local up -d --build
 
 # 查看所有服务
 docker-compose ps
@@ -279,9 +264,9 @@ void $TEST_METHOD_NAME$() {
   "mainClass": "com.listen.portfolio.PortfolioApplication",
   "projectName": "ListenPortfolioBackend",
   "args": "",
-  "vmOptions": "-Dspring.profiles.active=dev",
+  "vmOptions": "-Dspring.profiles.active=docker",
   "env": {
-    "SPRING_PROFILES_ACTIVE": "dev"
+    "SPRING_PROFILES_ACTIVE": "docker"
   }
 }
 ```
@@ -340,9 +325,9 @@ void $TEST_METHOD_NAME$() {
       "mainClass": "com.listen.portfolio.PortfolioApplication",
       "projectName": "ListenPortfolioBackend",
       "args": "",
-      "vmOptions": "-Dspring.profiles.active=dev",
+      "vmOptions": "-Dspring.profiles.active=docker",
       "env": {
-        "SPRING_PROFILES_ACTIVE": "dev"
+        "SPRING_PROFILES_ACTIVE": "docker"
       }
     }
   ]
@@ -436,8 +421,9 @@ git config core.editor "code --wait"
 ### 本地监控设置
 
 ```bash
-# 启动本地监控栈
-docker-compose --profile monitoring up -d
+### 启动本地监控栈
+
+docker-compose --profile local up -d  # 包含 Prometheus + Grafana
 
 # 访问 Grafana
 open http://localhost:3000

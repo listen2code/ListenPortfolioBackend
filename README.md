@@ -48,15 +48,25 @@ git clone <repository-url>
 cd ListenPortfolioBackend
 ```
 
-配置环境变量（`.env` 文件或系统环境变量）：
+配置环境变量（可选，用于覆盖默认值）：
 
+**方式 1：系统环境变量（推荐用于本地开发）**
 ```bash
-DB_URL=jdbc:mysql://localhost:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&collation=utf8mb4_bin&allowPublicKeyRetrieval=true
-DB_USERNAME=root
-DB_PASSWORD=your_password
-JWT_SECRET=your-super-strong-secret-key-at-least-256-bits-long
-JWT_EXPIRATION=300000          # 5 分钟（毫秒）
-JWT_REFRESH_EXPIRATION=86400000   # 24 小时（毫秒）
+# PowerShell
+$env:DB_USERNAME="your_db_user"
+$env:DB_PASSWORD="your_db_password"
+$env:JWT_SECRET="your-super-strong-secret-key-at-least-256-bits-long"
+$env:MAIL_PASSWORD="your-gmail-app-password"
+
+# 然后启动
+./mvnw spring-boot:run
+```
+
+**方式 2：Docker 部署（使用 .env 文件）**
+```bash
+cp .env.example .env
+# 编辑 .env 文件填入真实密码
+./docker_deploy.ps1
 ```
 
 ### 2. 初始化数据库
@@ -318,12 +328,11 @@ check-spotbugs.bat        # Windows：运行分析 + 打开 HTML 报告
 
 ## 🐳 Docker 部署
 
-### 完整栈（应用 + MySQL + Redis + Prometheus + Grafana）
+### Docker 全栈部署
 
 ```bash
-cp .env.example .env    # 配置 DB / JWT 等参数（参考 .env 文件）
-
-./docker_deploy.ps1     # PowerShell 一键部署
+cp .env.example .env    # 可选：覆盖默认密码
+./docker_deploy.ps1     # Maven 打包 → Docker 构建 → 启动全栈
 ./docker_stop.ps1       # 停止所有服务
 ```
 
@@ -337,14 +346,18 @@ cp .env.example .env    # 配置 DB / JWT 等参数（参考 .env 文件）
 | Prometheus | 9090 | 指标采集 |
 | Grafana | 3000 | 仪表板（admin/admin123） |
 
-### Docker Compose Profiles
+### Docker Compose 配置
 
-| Profile | 包含服务 |
-|---------|---------|
-| `local` | 仅监控（Prometheus + Grafana） |
-| `full` | 完整栈 |
-| `staging` | 预发布环境 |
-| `prod` | 生产环境 |
+**启动方式**：
+```bash
+cp .env.example .env  # 可选：覆盖默认密码
+./docker_deploy.ps1    # 一键启动全栈
+```
+
+**包含服务**：
+- App (Spring Boot) + MySQL + Redis + Prometheus + Grafana
+- 自动激活 `SPRING_PROFILES_ACTIVE=docker` profile
+- 使用 Docker 内部网络：`db:3306`、`redis:6379`
 
 ## 📊 监控与日志
 
@@ -359,7 +372,7 @@ cp .env.example .env    # 配置 DB / JWT 等参数（参考 .env 文件）
 - **Docker 自动迁移**：容器启动时自动执行 Flyway 迁移
 - **Refresh Token 持久化**：将刷新 Token 存储到 DB/Redis，支持主动吊销
 - **HTTPS/TLS**：生产环境强制 HTTPS
-- **配置文件拆分**：按环境拆分 application.yml（dev/test/prod）
+- **多环境配置**：application-{profile}.properties（按需添加 staging/prod）
 - **GitHub Actions CI**：自动化测试、构建、覆盖率报告
 
 ---

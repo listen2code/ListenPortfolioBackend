@@ -280,23 +280,22 @@ docker volume prune
 
 ### 快速启动
 
-#### 本地开发环境配置
-**注意**：`.env` 文件中的 `DATABASE_URL` 使用 `db:3306`（Docker 容器间通信），如果需要在本地直接连接数据库，请修改为 `localhost:3307`。
+#### Docker 部署
+**注意**：Docker 内部使用 `db:3306` 和 `redis:6379`（容器名），主机访问使用 `localhost:3307` 和 `localhost:6379`。
 
 ```bash
-# 启动完整监控栈
-docker-compose --profile local up -d
+# 一键部署全栈（推荐）
+./docker_deploy.ps1
+
+# 手动启动全栈
+cp .env.example .env  # 可选：覆盖默认密码
+docker-compose --profile local up -d --build
 
 # 仅启动数据库
 docker-compose up -d db
 
 # 仅启动监控服务
 docker-compose up -d prometheus grafana
-
-# 启动特定环境
-docker-compose --profile aws up -d
-docker-compose --profile staging up -d
-docker-compose --profile prod up -d
 ```
 
 ### 开发调试
@@ -384,7 +383,7 @@ docker inspect <container_name>
 ### 常用组合命令
 ```bash
 # 完整重启流程
-docker-compose down && docker-compose up --build -d
+docker-compose --profile local down && docker-compose --profile local up --build -d
 
 # 查看所有服务状态
 docker-compose ps && docker-compose logs --tail=10
@@ -404,10 +403,8 @@ curl http://localhost:3000/api/health
 | **Grafana** | 3000 | 可视化界面 |
 
 ### 环境变量文件
-- `.env.local` - 本地开发环境
-- `.env.staging` - 预发布环境  
-- `.env.prod` - 生产环境
-- `.env.aws` - AWS 部署环境
+- `.env.example` - 模板文件（可提交到 Git）
+- `.env` - 实际密钥（Git 忽略，Docker Compose 使用）
 
 ---
 

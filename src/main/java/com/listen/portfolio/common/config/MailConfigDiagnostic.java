@@ -30,7 +30,7 @@ public class MailConfigDiagnostic {
     @Value("${spring.mail.password}")
     private String springMailPassword;
 
-    // 直接从 .env 文件读取
+    // 环境变量（与 application.properties 中 ${MAIL_*} 占位符对应）
     @Value("${MAIL_HOST:smtp.gmail.com}")
     private String envMailHost;
     
@@ -170,7 +170,7 @@ public class MailConfigDiagnostic {
             if (!envConfigOk) logger.warn("   - Environment variables config incomplete");
             if (!systemPropertyOk) logger.warn("   - System properties incomplete");
             
-            logger.info("💡 Check your .env file and PortfolioApplication.loadDotenv()");
+            logger.info("💡 Check environment variables: MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD");
         }
     }
 }

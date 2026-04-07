@@ -83,24 +83,27 @@ app.password-reset.token-expiration=${PASSWORD_RESET_TOKEN_EXPIRATION:3600}
 
 ### 环境变量配置
 
+**方式 1：系统环境变量（推荐本地开发）**
 ```bash
-# Gmail 配置
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password  # Gmail 应用专用密码
+# PowerShell
+$env:MAIL_HOST="smtp.gmail.com"
+$env:MAIL_PORT="587"
+$env:MAIL_USERNAME="your-email@gmail.com"
+$env:MAIL_PASSWORD="your-app-password"
+$env:FRONTEND_URL="http://localhost:3000"
 
-# QQ 邮箱配置
-MAIL_HOST=smtp.qq.com
-MAIL_PORT=587
-MAIL_USERNAME=your-qq@qq.com
-MAIL_PASSWORD=your-authorization-code  # QQ 授权码
+# Linux/Mac
+export MAIL_HOST="smtp.gmail.com"
+export MAIL_PORT="587"
+export MAIL_USERNAME="your-email@gmail.com"
+export MAIL_PASSWORD="your-app-password"
+export FRONTEND_URL="http://localhost:3000"
+```
 
-# 前端应用地址
-FRONTEND_URL=http://localhost:3000
-
-# Token 过期时间（秒）
-PASSWORD_RESET_TOKEN_EXPIRATION=3600
+**方式 2：Docker 部署（使用 .env 文件）**
+```bash
+cp .env.example .env
+# 编辑 .env 文件填入真实密码
 ```
 
 ## 🚀 快速开始
@@ -556,27 +559,18 @@ MAIL_PASSWORD=your-password
 
 ## Docker Compose 配置
 
-在 `docker-compose.yml` 中添加环境变量：
-
-```yaml
-services:
-  app:
-    environment:
-      - MAIL_HOST=smtp.gmail.com
-      - MAIL_PORT=587
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - FRONTEND_URL=${FRONTEND_URL}
-      - PASSWORD_RESET_TOKEN_EXPIRATION=3600
-```
-
-然后在 `.env` 文件中配置：
+Docker Compose 已配置好邮件环境变量，只需在 `.env` 文件中提供真实值：
 
 ```bash
+cp .env.example .env
+# 编辑 .env 文件
 MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
-FRONTEND_URL=http://localhost:3000
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
 ```
+
+然后启动：`./docker_deploy.ps1`
 
 ## API 使用
 
@@ -645,7 +639,7 @@ Content-Type: application/json
 
 ### 本地测试
 
-1. 配置环境变量
+1. 设置系统环境变量（见上文）
 2. 启动 Redis：`docker-compose up -d redis`
 3. 启动应用：`./mvnw spring-boot:run`
 4. 使用 Postman 或 curl 调用接口：
@@ -667,12 +661,19 @@ MailHog 是一个邮件测试工具，可以捕获所有发送的邮件，无需
 docker run -d -p 1025:1025 -p 8025:8025 mailhog/mailhog
 ```
 
-2. 配置环境变量：
+2. 设置环境变量：
 ```bash
-MAIL_HOST=localhost
-MAIL_PORT=1025
-MAIL_USERNAME=test@test.com
-MAIL_PASSWORD=test
+# PowerShell
+$env:MAIL_HOST="localhost"
+$env:MAIL_PORT="1025"
+$env:MAIL_USERNAME="test@test.com"
+$env:MAIL_PASSWORD="test"
+
+# Linux/Mac
+export MAIL_HOST="localhost"
+export MAIL_PORT="1025"
+export MAIL_USERNAME="test@test.com"
+export MAIL_PASSWORD="test"
 ```
 
 3. 访问 MailHog Web UI：http://localhost:8025
