@@ -58,13 +58,13 @@
   "payload": {
     "sub": "username",
     "iat": 1640995200,
-    "exp": 1640998800,
-    "iss": "portfolio-api",
-    "aud": "portfolio-client"
+    "exp": 1640998800
   },
   "signature": "HMACSHA256(base64UrlEncode(header) + "." + base64UrlEncode(payload), secret)"
 }
 ```
+
+当前 `JwtUtil` 主要写入标准 claims `sub`、`iat`、`exp`；`iss` / `aud` 并未在当前实现中显式设置。
 
 #### Token 生命周期管理
 
@@ -94,9 +94,9 @@
 
 **Redis 黑名单存储结构**：
 ```
-Key: token:blacklist:<jwt_token_hash>
+Key: token:blacklist:<jwt_token>
 Value: "blacklisted"
-TTL: Token 剩余有效期
+TTL: Token 剩余有效期（上限 24 小时；若 token 已过期则回退为默认 24 小时）
 ```
 
 **黑名单操作流程**：
@@ -170,10 +170,10 @@ public class PasswordPolicyValidator {
 | 限流类型 | 标识符来源 | 防护目标 | 典型配置 |
 |----------|------------|----------|----------|
 | **IP 限流** | X-Forwarded-For, X-Real-IP, RemoteAddr | 防止 IP 暴力攻击 | 10次/分钟 |
-| **邮箱限流** | 请求参数中的 email 字段 | 防止邮箱枚举、垃圾邮件 | 5次/5分钟 |
-| **Token 限流** | JWT Token 中的用户名 | 防止 Token 滥用 | 100次/小时 |
-| **用户限流** | SecurityContext 中的用户名 | 防止单用户恶意操作 | 50次/小时 |
-| **自定义限流** | SpEL 表达式 | 业务特定需求 | 根据业务定 |
+| **邮箱限流** | 请求参数中的 email 字段 | 防止邮箱枚举、垃圾邮件 | 10次/分钟（如 forgot-password） |
+| **Token 限流** | 请求参数中的 reset token 字段 | 防止重置链接滥用 | 10次/分钟（如 reset-password） |
+| **用户限流** | SecurityContext 中的用户名 | 防止单用户恶意操作 | 5-100次/分钟（视接口而定） |
+| **自定义限流** | SpEL 表达式 | 业务特定需求 | 当前仓库未见实际使用 |
 
 #### 限流实现架构
 
@@ -196,7 +196,11 @@ public class RateLimitAspect {
             );
             
             if (!allowed) {
-                throw new RateLimitExceededException("Rate limit exceeded for " + type);
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body(ApiResponse.error(
+                        "RATE_LIMIT_EXCEEDED",
+                        "Requests are too frequent, please try again later"
+                    ));
             }
         }
         
@@ -392,11 +396,13 @@ grep -r "localhost\|127\.0\.0\.1\|test" src/main/java/
 #### 3. 日志审计
 
 ```bash
-# 分析安全日志
-grep "SECURITY_AUDIT" logs/application.log | grep "FAILED"
+# 当前默认日志主要输出到控制台；如已重定向到文件，请将 <your-log-file> 替换为实际日志路径
 
-# 检查异常登录模式
-grep "USER_LOGIN_FAILED" logs/application.log | awk '{print $1}' | sort | uniq -c | sort -nr
+# 查找限流或认证失败相关日志
+grep -E "Rate limit exceeded|Invalid credentials|Password reset failed" <your-log-file>
+
+# 查找 token 黑名单与登出相关日志
+grep -E "token added to blacklist|logged out successfully|Current token added to blacklist" <your-log-file>
 ```
 
 ### 应急响应
@@ -430,7 +436,9 @@ grep "USER_LOGIN_FAILED" logs/application.log | awk '{print $1}' | sort | uniq -
         └─ 完善监控告警
 ```
 
-#### 自动化响应
+#### 🔮 自动化响应（设计规划）
+
+> 以下 `AutomatedSecurityResponse` 为说明性示例，当前仓库未实现对应事件模型、自动封禁或自动撤销 Token 流程。
 
 ```java
 @Component

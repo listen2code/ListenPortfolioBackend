@@ -41,8 +41,9 @@
 git clone <repository-url>
 cd ListenPortfolioBackend
 
-# 查看项目结构
-tree -L 2
+# （可选）查看项目结构
+# PowerShell: Get-ChildItem -Depth 2
+# Bash（安装 tree 时）: tree -L 2
 ```
 
 ### 2. 环境配置
@@ -52,12 +53,14 @@ tree -L 2
 **方式 1：系统环境变量（推荐本地开发）**
 ```bash
 # PowerShell
+$env:DB_URL="jdbc:mysql://localhost:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&collation=utf8mb4_bin&allowPublicKeyRetrieval=true"
 $env:DB_USERNAME="your_db_user"
 $env:DB_PASSWORD="your_db_password"
 $env:JWT_SECRET="your-super-strong-secret-key-at-least-256-bits-long"
 $env:MAIL_PASSWORD="your-gmail-app-password"
 
 # Linux/Mac
+export DB_URL="jdbc:mysql://localhost:3306/portfolio?useSSL=false&serverTimezone=Asia/Tokyo&collation=utf8mb4_bin&allowPublicKeyRetrieval=true"
 export DB_USERNAME="your_db_user"
 export DB_PASSWORD="your_db_password"
 export JWT_SECRET="your-super-strong-secret-key-at-least-256-bits-long"
@@ -66,11 +69,12 @@ export MAIL_PASSWORD="your-gmail-app-password"
 
 **方式 2：Docker 部署（使用 .env 文件）**
 ```bash
-cp .env.example .env
-# 编辑 .env 文件填入真实密码
+# 当前仓库未提交 `.env.example`
+# 如需覆盖 docker-compose.yml 默认值，请手动创建 `.env`
 ```
 
 > 本地直接执行 `./mvnw spring-boot:run` 时，默认使用 `application.properties` 中的 localhost 配置，无需额外指定 `dev` profile。
+> 如果你是“本地运行 Spring Boot + Docker Compose 提供 MySQL/Redis”，则需要把 `DB_URL` 改成 `jdbc:mysql://localhost:3307/portfolio?...`，因为 Compose 中的 MySQL 暴露端口是宿主机 `3307`。
 
 ### 3. 启动依赖服务
 
@@ -86,6 +90,8 @@ docker-compose ps
 # 查看日志
 docker-compose logs -f db redis
 ```
+
+> 注意：此方式启动的 MySQL 会映射到宿主机 `3307`。如果应用不是在 Docker 内运行，而是在本机通过 `./mvnw spring-boot:run` 启动，请同步覆盖 `DB_URL`。
 
 #### 手动安装（可选）
 
@@ -109,6 +115,10 @@ sudo apt install redis-server
 ```
 
 ### 4. 数据库初始化
+
+如果你使用的是 `docker-compose` 中的 `db` 服务，则 `MYSQL_DATABASE=portfolio` 会在容器初始化时自动创建数据库，通常不需要再手动执行以下命令。
+
+以下步骤主要适用于**本机单独安装的 MySQL**：
 
 ```bash
 # 创建数据库
@@ -141,8 +151,8 @@ java -jar target/portfolio-0.0.1-SNAPSHOT.jar
 # 健康检查
 curl http://localhost:8080/actuator/health
 
-# API 文档访问
-open http://localhost:8080/swagger-ui.html
+# Swagger UI
+# 在浏览器访问: http://localhost:8080/swagger-ui.html
 
 # Prometheus 指标
 curl http://localhost:8080/actuator/prometheus
@@ -157,7 +167,7 @@ curl http://localhost:8080/actuator/prometheus
 ./docker_deploy.ps1
 
 # 手动启动全栈
-cp .env.example .env  # 可选：覆盖默认密码
+# 可选：手动创建 `.env` 覆盖 docker-compose.yml 中的默认值
 docker-compose --profile local up -d --build
 
 # 查看所有服务
@@ -172,7 +182,7 @@ docker-compose logs -f app
 当前仓库没有 `docker-compose.override.yml`。开发时请直接以根目录下的 `docker-compose.yml` 为准：
 
 - `app`：Spring Boot 应用，自动注入 `SPRING_PROFILES_ACTIVE=docker`
-- `db`：MySQL 8，默认映射到宿主机 `3307`
+- `db`：MySQL 8，默认映射到宿主机 `3307`（本地直连时需相应覆盖 `DB_URL`）
 - `redis`：Redis 7，默认映射到宿主机 `6379`
 - `prometheus`：指标采集，默认 `9090`
 - `grafana`：监控面板，默认 `3000`
