@@ -43,7 +43,7 @@
 }
 ```
 
-**Response** (200):
+**Response** (201):
 ```json
 {
   "result": "0",
@@ -86,11 +86,15 @@
 
 ### POST `/v1/auth/refresh` — 刷新 Token
 
-**Request Body**:
-```json
-{
-  "refreshToken": "eyJhbGciOiJIUzI1NiJ9..."
-}
+**Rate Limit**: IP 20次/分钟
+
+**Request Param**:
+
+- `refreshToken`: 刷新令牌
+
+**示例**:
+```http
+POST /v1/auth/refresh?refreshToken=eyJhbGciOiJIUzI1NiJ9...
 ```
 
 **Response** (200): 同 login 响应格式。
@@ -99,7 +103,7 @@
 
 ### POST `/v1/auth/forgot-password` — 忘记密码
 
-**Rate Limit**: Email 3次/5分钟
+**Rate Limit**: IP + Email 各 10次/分钟
 
 **Request Body**:
 ```json
@@ -113,19 +117,42 @@
 {
   "result": "0",
   "messageId": "",
-  "message": ""
+  "message": "If the email exists, a password reset link has been sent"
 }
 ```
+
+> 为避免邮箱枚举，接口在处理完成后统一返回成功文案。
 
 ---
 
 ### POST `/v1/auth/reset-password` — 重置密码
+
+**Rate Limit**: IP + Token 各 10次/分钟
 
 **Request Body**:
 ```json
 {
   "token": "reset-token-from-email",
   "newPassword": "new-password"
+}
+```
+
+**Response** (200):
+```json
+{
+  "result": "0",
+  "messageId": "",
+  "message": ""
+}
+```
+
+**Response** (400):
+```json
+{
+  "result": "1",
+  "messageId": "INVALID_TOKEN",
+  "message": "The reset link is invalid or has expired",
+  "body": null
 }
 ```
 

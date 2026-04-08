@@ -1,8 +1,14 @@
 # 开发环境设置指南
 
+**Status**: `Implemented with Current-Setup Scope`
+
+> 本文档仅记录当前仓库中可验证的开发环境配置与启动方式。
+> 如与仓库文件冲突，以 `docker-compose.yml`、`src/main/resources/application*.properties`、`README.md` 为准。
+> 当前配置策略是：`application.properties` 作为主配置，`application-docker.properties` 只覆盖 Docker 网络差异。
+
 ## 概述
 
-本指南详细介绍了如何搭建 ListenPortfolioBackend 项目的完整开发环境，包括本地开发、Docker 开发、IDE 配置等。按照本指南操作，您可以快速建立一个功能完整的开发环境。
+本指南用于帮助你快速拉起 ListenPortfolioBackend 的当前开发环境。重点是最小可运行路径，而不是覆盖所有可能的个人化工具链配置。
 
 ## 🎯 环境要求
 
@@ -41,7 +47,7 @@ tree -L 2
 
 ### 2. 环境配置
 
-#### 环境变量配置（可选）
+#### 环境变量配置（推荐）
 
 **方式 1：系统环境变量（推荐本地开发）**
 ```bash
@@ -63,6 +69,8 @@ export MAIL_PASSWORD="your-gmail-app-password"
 cp .env.example .env
 # 编辑 .env 文件填入真实密码
 ```
+
+> 本地直接执行 `./mvnw spring-boot:run` 时，默认使用 `application.properties` 中的 localhost 配置，无需额外指定 `dev` profile。
 
 ### 3. 启动依赖服务
 
@@ -125,6 +133,8 @@ mysql -u root -p -e "FLUSH PRIVILEGES;"
 java -jar target/portfolio-0.0.1-SNAPSHOT.jar
 ```
 
+> Docker 场景下由 `docker-compose.yml` 注入 `SPRING_PROFILES_ACTIVE=docker`；本地直跑通常不需要显式设置该变量。
+
 ### 6. 验证安装
 
 ```bash
@@ -157,401 +167,71 @@ docker-compose ps
 docker-compose logs -f app
 ```
 
-### Docker Compose 配置
+### 当前 Docker 入口说明
 
-**docker-compose.override.yml**（开发环境覆盖）：
-```yaml
-version: '3.8'
+当前仓库没有 `docker-compose.override.yml`。开发时请直接以根目录下的 `docker-compose.yml` 为准：
 
-services:
-  app:
-    volumes:
-      - .:/app  # 挂载源代码
-      - /app/target  # 排除构建目录
-    environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - JAVA_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005
-    ports:
-      - "5005:5005"  # 调试端口
+- `app`：Spring Boot 应用，自动注入 `SPRING_PROFILES_ACTIVE=docker`
+- `db`：MySQL 8，默认映射到宿主机 `3307`
+- `redis`：Redis 7，默认映射到宿主机 `6379`
+- `prometheus`：指标采集，默认 `9090`
+- `grafana`：监控面板，默认 `3000`
 
-  db:
-    ports:
-      - "3307:3306"  # 本地访问端口
-    volumes:
-      - mysql_data_dev:/var/lib/mysql
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+`application-docker.properties` 当前只覆盖两项：
 
-  redis:
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data_dev:/data
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    ports:
-      - "1025:1025"  # SMTP 端口
-      - "8025:8025"  # Web UI 端口
-    profiles:
-      - local
-
-volumes:
-  mysql_data_dev:
-  redis_data_dev:
+```properties
+spring.datasource.url=jdbc:mysql://db:3306/portfolio?...
+spring.data.redis.host=redis
 ```
 
 ## 💻 IDE 配置
 
-### IntelliJ IDEA 配置
+### 推荐最小配置
 
-#### 1. 项目导入
+本项目不要求统一的 IDE 模板文件。你只需要保证：
 
-```bash
-# 1. 打开 IntelliJ IDEA
-# 2. 选择 "Open" -> 选择项目根目录
-# 3. 等待 Maven 依赖下载完成
-# 4. 设置 Project SDK 为 Java 17
-```
+- 使用 Java 17
+- 以 Maven 项目方式导入仓库
+- 运行主类 `com.listen.portfolio.PortfolioApplication`
+- 本地直跑时不强制指定 profile；Docker 调试时再显式设置 `SPRING_PROFILES_ACTIVE=docker`
 
-#### 2. 代码格式化
-
-```xml
-<!-- .editorconfig -->
-root = true
-
-[*]
-charset = utf-8
-end_of_line = lf
-indent_size = 4
-indent_style = space
-insert_final_newline = true
-trim_trailing_whitespace = true
-
-[*.java]
-indent_size = 4
-
-[*.{yml,yaml}]
-indent_size = 2
-```
-
-#### 3. 代码模板
-
-**Live Templates**：
-```java
-// logger 模板
-private static final Logger logger = LoggerFactory.getLogger($CLASS_NAME$.class);
-
-// test 模板
-@Test
-@DisplayName("$TEST_DESCRIPTION$")
-void $TEST_METHOD_NAME$() {
-    // Given
-    $END$
-    
-    // When
-    
-    // Then
-}
-```
-
-#### 4. 调试配置
-
-```json
-{
-  "type": "java",
-  "name": "Portfolio Application",
-  "request": "launch",
-  "mainClass": "com.listen.portfolio.PortfolioApplication",
-  "projectName": "ListenPortfolioBackend",
-  "args": "",
-  "vmOptions": "-Dspring.profiles.active=docker",
-  "env": {
-    "SPRING_PROFILES_ACTIVE": "docker"
-  }
-}
-```
-
-### VS Code 配置
-
-#### 1. 扩展安装
-
-```json
-{
-  "recommendations": [
-    "redhat.java",
-    "vscjava.vscode-java-pack",
-    "ms-vscode.vscode-spring-boot",
-    "ms-vscode.vscode-spring-boot-dashboard",
-    "ms-vscode-remote.remote-containers",
-    "ms-vscode.vscode-docker",
-    "humao.rest-client"
-  ]
-}
-```
-
-#### 2. 工作区配置
-
-**.vscode/settings.json**：
-```json
-{
-  "java.home": "/path/to/java-17",
-  "java.configuration.updateBuildConfiguration": "automatic",
-  "spring-boot.ls.checkJVM": false,
-  "files.exclude": {
-    "**/target": true,
-    "**/.classpath": true,
-    "**/.project": true,
-    "**/.settings": true,
-    "**/.factorypath": true
-  },
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": true
-  }
-}
-```
-
-#### 3. 调试配置
-
-**.vscode/launch.json**：
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "java",
-      "name": "Launch Portfolio Application",
-      "request": "launch",
-      "mainClass": "com.listen.portfolio.PortfolioApplication",
-      "projectName": "ListenPortfolioBackend",
-      "args": "",
-      "vmOptions": "-Dspring.profiles.active=docker",
-      "env": {
-        "SPRING_PROFILES_ACTIVE": "docker"
-      }
-    }
-  ]
-}
-```
-
-## 🔧 开发工具配置
-
-### Maven 配置
-
-#### Maven Wrapper 更新
-
-```bash
-# 更新 Maven Wrapper 到最新版本
-./mvnw wrapper:wrapper -DmavenWrapperVersion=3.9.0
-
-# 验证版本
-./mvnw -version
-```
-
-#### 本地 Maven 配置
-
-**~/.m2/settings.xml**：
-```xml
-<settings>
-  <profiles>
-    <profile>
-      <id>dev</id>
-      <properties>
-        <spring.profiles.active>dev</spring.profiles.active>
-      </properties>
-    </profile>
-  </profiles>
-  
-  <activeProfiles>
-    <activeProfile>dev</activeProfile>
-  </activeProfiles>
-  
-  <mirrors>
-    <mirror>
-      <id>aliyun-maven</id>
-      <mirrorOf>central</mirrorOf>
-      <url>https://maven.aliyun.com/repository/central</url>
-    </mirror>
-  </mirrors>
-</settings>
-```
-
-### Git 配置
-
-#### Git Hooks
-
-```bash
-# 安装 pre-commit hook
-cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/sh
-# 运行测试
-./mvnw test -q
-if [ $? -ne 0 ]; then
-    echo "Tests failed, commit aborted"
-    exit 1
-fi
-
-# 代码格式检查
-./mvnw spotbugs:check -q
-if [ $? -ne 0 ]; then
-    echo "Code quality checks failed, commit aborted"
-    exit 1
-fi
-EOF
-
-chmod +x .git/hooks/pre-commit
-```
-
-#### Git 配置
-
-```bash
-# 设置用户信息
-git config user.name "Your Name"
-git config user.email "your.email@example.com"
-
-# 设置默认分支名
-git config init.defaultBranch main
-
-# 设置编辑器
-git config core.editor "code --wait"
-```
+如需远程调试，可在自行启动 JVM 时添加 JDWP 参数；这属于个人调试方式，不是仓库默认配置。
 
 ## 📊 开发监控
 
-### 本地监控设置
+### 本地监控入口
 
-```bash
-### 启动本地监控栈
+当前监控栈来自 `docker-compose.yml`：
 
-docker-compose --profile local up -d  # 包含 Prometheus + Grafana
+- Grafana: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- Actuator Prometheus: `http://localhost:8080/actuator/prometheus`
 
-# 访问 Grafana
-open http://localhost:3000
-
-# 访问 Prometheus
-open http://localhost:9090
-```
-
-### 日志配置
-
-**logback-dev.xml**：
-```xml
-<configuration>
-    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-    
-    <logger name="com.listen.portfolio" level="DEBUG"/>
-    <logger name="org.springframework.security" level="DEBUG"/>
-    <logger name="org.springframework.web" level="DEBUG"/>
-    
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </root>
-</configuration>
-```
-
-### 性能监控
-
-```bash
-# 启用 JFR（Java Flight Recorder）
-java -XX:+FlightRecorder -XX:StartFlightRecording=duration=60s,filename=recording.jfr \
-     -jar target/portfolio-0.0.1-SNAPSHOT.jar
-
-# 使用 JProfiler（商业工具）
-jprofiler -port 8849 -pid $(pgrep java)
-```
+当前日志配置文件为 `classpath:logback-spring.xml`，并不存在 `logback-dev.xml`。
 
 ## 🧪 测试开发
 
-### 测试环境配置
+### 当前测试配置说明
 
-**application-test.properties**：
-```properties
-# 使用 H2 内存数据库进行测试
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.datasource.driver-class-name=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=
+仓库中存在 `src/main/resources/application-test.properties` 与 `src/test/resources/application-test.properties`，但测试是否能完整通过仍依赖具体外部服务状态，尤其是部分 Redis 相关测试。
 
-# JPA 测试配置
-spring.jpa.hibernate.ddl-auto=create-drop
-spring.jpa.show-sql=true
+因此这里不再把某一份测试配置文件解释为“完整测试环境方案”，更建议直接以实际测试命令和失败日志为准：
 
-# Redis 测试配置（使用嵌入式 Redis）
-spring.data.redis.host=localhost
-spring.data.redis.port=6370
-
-# 邮件测试配置
-spring.mail.host=localhost
-spring.mail.port=1025
-```
-
-### 测试数据管理
-
-```java
-@TestConfiguration
-public class TestDataConfig {
-    
-    @Bean
-    @Primary
-    public DataSource testDataSource() {
-        return new EmbeddedDatabaseBuilder()
-            .setType(EmbeddedDatabaseType.H2)
-            .addScript("schema.sql")
-            .addScript("test-data.sql")
-            .build();
-    }
-}
+```bash
+./mvnw test
+./mvnw clean test jacoco:report
 ```
 
 ## 🔍 调试指南
 
-### 远程调试
+### 常用调试方式
 
-#### 1. 启动远程调试
+- 本地直跑：`./mvnw spring-boot:run`
+- Docker 全栈：`docker-compose --profile local up -d --build`
+- 查看应用日志：`docker-compose logs -f app`
+- 查看健康检查：`curl http://localhost:8080/actuator/health`
 
-```bash
-# 启动应用时启用调试
-java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 \
-     -jar target/portfolio-0.0.1-SNAPSHOT.jar
-```
-
-#### 2. IDE 连接调试
-
-**IntelliJ IDEA**：
-1. Run -> Edit Configurations
-2. Add New Configuration -> Remote JVM Debug
-3. Host: localhost, Port: 5005
-4. 点击 Debug
-
-**VS Code**：
-```json
-{
-  "type": "java",
-  "name": "Attach to Remote",
-  "request": "attach",
-  "hostName": "localhost",
-  "port": 5005
-}
-```
-
-### 日志调试
-
-```bash
-# 启用详细日志
-export JAVA_OPTS="$JAVA_OPTS -Dlogging.level.com.listen.portfolio=TRACE"
-
-# 启用 SQL 日志
-export JAVA_OPTS="$JAVA_OPTS -Dlogging.level.org.springframework.jdbc=DEBUG"
-
-# 启用 Spring Security 日志
-export JAVA_OPTS="$JAVA_OPTS -Dlogging.level.org.springframework.security=TRACE"
-```
+如需更细粒度日志，可通过 JVM 参数或环境变量临时覆盖 `logging.level.*`，不建议为此维护额外的本地专用日志配置文件。
 
 ## 🚨 故障排除
 
@@ -613,37 +293,10 @@ tail -f /usr/local/var/log/redis.log
 
 ```bash
 # 重新导入 Maven 项目
-./mvnw idea:idea  # IntelliJ
-./mvnw eclipse:eclipse  # Eclipse
+# IntelliJ / VS Code 中执行 Reimport Maven Project 即可
 
-# 清理 IDE 文件
-rm -rf .idea .classpath .project .factorypath
-```
-
-### 性能问题
-
-#### 1. 内存不足
-
-```bash
-# 增加 JVM 内存
-export JAVA_OPTS="-Xms1024m -Xmx2048m"
-
-# 查看 JVM 内存使用
-jstat -gc -t $(pgrep java) 5s
-
-# 生成内存转储
-jmap -dump:format=b,file=heap.hprof $(pgrep java)
-```
-
-#### 2. 数据库性能
-
-```bash
-# 查看 MySQL 慢查询
-SHOW VARIABLES LIKE 'slow_query_log';
-SHOW VARIABLES LIKE 'long_query_time';
-
-# 分析查询性能
-EXPLAIN SELECT * FROM users WHERE username = 'test';
+# 命令行刷新依赖
+./mvnw -U dependency:resolve
 ```
 
 ## 📚 开发资源

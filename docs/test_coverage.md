@@ -1,10 +1,16 @@
 # 测试覆盖率与质量保障
 
+**Status**: `Implemented Locally, Metrics Must Be Regenerated`
+
+> 本文档中的测试文件统计以当前 `src/test/java` 为准。
+> 覆盖率数值请以执行 `./mvnw clean test jacoco:report` 或 `check-coverage.bat` 后生成的 JaCoCo 报告为准。
+> 文中的代码片段主要用于说明测试模式，未必与仓库中的实际测试类一一对应。
+
 ## 概述
 
-本项目建立了完善的测试体系，包括单元测试、集成测试、安全测试和性能测试。通过多层次的测试策略确保代码质量和系统稳定性，当前测试覆盖率已超过 80% 的目标。
+本项目包含单元测试、集成测试、安全测试和性能测试。仓库当前通过 JaCoCo Maven 插件配置了覆盖率检查，其中可直接从 `pom.xml` 验证的质量门禁是 **指令覆盖率最低 80%**；实际覆盖率结果需要在本地重新生成报告确认。
 
-## 📊 测试现状
+## 测试现状
 
 ### 测试统计
 
@@ -68,7 +74,7 @@ src/test/java/com/listen/portfolio/
     └── RateLimitServiceTest.java
 ```
 
-## 🧪 测试框架与工具
+## 测试框架与工具
 
 ### 核心测试框架
 
@@ -106,11 +112,9 @@ src/test/java/com/listen/portfolio/
 
 - **JaCoCo**：代码覆盖率分析
 - **SpotBugs**：静态代码分析
-- **ArchUnit**：架构规则测试
 - **TestContainers**：容器化集成测试
-- **WireMock**：HTTP 服务 Mock
 
-## 📋 测试策略
+## 测试策略
 
 ### 1. 单元测试
 
@@ -175,8 +179,9 @@ class JwtUtilTest {
 #### 测试范围
 - **数据库集成**：JPA 实体和 Repository 测试
 - **Redis 集成**：缓存和黑名单功能测试
-- **邮件服务**：SMTP 集成测试
-- **完整流程**：端到端业务流程测试
+- **测试环境基座**：基础 Spring Boot 集成环境验证
+  
+> 当前仓库可直接看到的集成测试文件主要是 `BaseIntegrationTest` 与 `RedisIntegrationTestLocal`；下方代码块更适合作为集成测试编写模式示例阅读。
 
 #### 测试示例
 
@@ -311,7 +316,7 @@ class AuthControllerApiTest {
 }
 ```
 
-## 📈 覆盖率分析
+## 覆盖率分析
 
 ### JaCoCo 配置
 
@@ -374,15 +379,11 @@ open target/site/jacoco/index.html
 
 ### 覆盖率目标
 
-| 指标类型 | 当前值 | 目标值 | 状态 |
-|----------|--------|--------|------|
-| **指令覆盖率** | 86% | 80% | ✅ 达标 |
-| **分支覆盖率** | 82% | 75% | ✅ 达标 |
-| **行覆盖率** | 88% | 80% | ✅ 达标 |
-| **方法覆盖率** | 91% | 85% | ✅ 达标 |
-| **类覆盖率** | 95% | 90% | ✅ 达标 |
+| 指标类型 | 仓库可验证目标 | 当前值 | 状态 |
+|----------|----------------|--------|------|
+| **指令覆盖率** | ≥ 80% | 以最新 JaCoCo 报告为准 | 运行后确认 |
 
-## 🔧 测试配置
+## 测试配置
 
 ### 测试配置文件
 
@@ -450,7 +451,7 @@ public class TestConfig {
 }
 ```
 
-## 🚀 运行测试
+## 运行测试
 
 ### 本地测试
 
@@ -470,54 +471,10 @@ public class TestConfig {
 
 ### CI/CD 测试
 
-**GitHub Actions 配置**：
-```yaml
-name: Test
+当前仓库中 **没有可直接引用的 Backend GitHub Actions 工作流文件**。
+因此，测试执行与覆盖率生成应以本地命令和 Maven 插件配置为准；若后续新增 CI，请再基于真实工作流补充本节。
 
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test
-          MYSQL_DATABASE: test_portfolio
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-      
-      redis:
-        image: redis:7.2-alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
-    
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-    
-    - name: Run tests
-      run: ./mvnw test
-    
-    - name: Generate test report
-      run: ./mvnw jacoco:report
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: target/site/jacoco/jacoco.xml
-```
-
-## 🔍 测试最佳实践
+## 测试最佳实践
 
 ### 1. 测试命名规范
 
@@ -557,6 +514,7 @@ void shouldCreateNewUserSuccessfully() {
     assertThat(result).isTrue();
     Optional<UserEntity> user = authService.getUserByName("newuser");
     assertThat(user).isPresent();
+    assertThat(user.get().getEmail()).isEqualTo("newuser@example.com");
 }
 ```
 
@@ -622,16 +580,13 @@ class UserDataTest {
 }
 ```
 
-## 📊 质量门禁
+## 质量门禁
 
 ### 测试质量指标
 
 | 指标 | 阈值 | 当前值 | 状态 |
 |------|------|--------|------|
-| **测试覆盖率** | ≥ 80% | 86% | ✅ 通过 |
-| **测试通过率** | 100% | 100% | ✅ 通过 |
-| **构建时间** | ≤ 5 分钟 | 3.2 分钟 | ✅ 通过 |
-| **测试稳定性** | ≥ 95% | 98% | ✅ 通过 |
+| **指令覆盖率** | ≥ 80% | 以最新 JaCoCo 报告为准 | 运行后确认 |
 
 ### 质量门禁配置
 

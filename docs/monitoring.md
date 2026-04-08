@@ -1,5 +1,10 @@
 # 📊 Portfolio 应用监控系统
 
+**Status**: `Implemented for Local Docker Profile`
+
+> 当前监控栈以根目录 `docker-compose.yml` 为准，Prometheus / Grafana 配置文件位于 `monitoring/` 目录。
+> 如与本文档冲突，请优先参考 `docker-compose.yml`、`monitoring/prometheus.yml` 与 `monitoring/grafana/**`。
+
 ## 🎯 概述
 
 本项目集成了 **Grafana + Prometheus** 监控系统，提供实时的应用性能监控、健康检查和可视化仪表板。
@@ -8,7 +13,6 @@
 
 ```
 monitoring/
-├── README.md                           # 本说明文档
 ├── prometheus.yml                      # Prometheus 监控配置
 └── grafana/
     ├── provisioning/
@@ -42,16 +46,12 @@ docker --version
 #### **步骤 2: 启动监控系统**
 
 ```powershell
-# 启动所有监控服务
-.\deploy.ps1 local
+# 使用本地 profile 启动应用 + MySQL + Redis + Prometheus + Grafana
+docker-compose --profile local up -d --build
 ```
 
-脚本会自动完成：
-- ✅ 停止现有容器
-- ✅ 构建应用镜像
-- ✅ 启动所有服务
-- ✅ 检查健康状态
-- ✅ 显示访问地址
+当前仓库中用于本地监控的最小启动路径就是上面的 `docker-compose` 命令。
+若需要脚本化部署，可参考根目录 `docker_deploy.ps1`，但文档中的监控栈说明默认基于 `docker-compose.yml`。
 
 ### 📱 启动成功后的访问地址
 
@@ -60,6 +60,8 @@ docker --version
 | **Portfolio App** | http://localhost:8080 | - | 主应用 |
 | **Prometheus** | http://localhost:9090 | - | 指标收集和查询 |
 | **Grafana** | http://localhost:3000 | admin / admin123 | 可视化监控面板 |
+
+> Grafana 默认账号密码来自 `docker-compose.yml` 中的环境变量默认值，可通过环境变量覆盖。
 
 ### ⚡ 快速验证
 
@@ -85,7 +87,7 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing
 .\mvnw.cmd clean package -DskipTests
 
 # 2. 启动服务
-docker-compose --profile local up -d
+docker-compose --profile local up -d --build
 
 # 3. 等待服务启动
 Start-Sleep -Seconds 30
@@ -109,6 +111,8 @@ docker-compose ps
 - ✅ **网络隔离**: 自定义 Docker 网络确保服务间通信
 - ✅ **数据持久化**: 所有数据都持久化到 Docker 卷
 - ✅ **JVM 优化**: 配置了 G1GC 和内存参数
+- ✅ **Profile 启动**: 应用、MySQL、Redis、Prometheus、Grafana 都挂在 `local` profile 下
+- ✅ **环境变量**: 应用容器默认设置 `SPRING_PROFILES_ACTIVE=docker`
 
 ### 2. prometheus.yml
 
@@ -162,19 +166,12 @@ scrape_configs:
 
 ### 5. grafana/dashboards/portfolio-dashboard.json
 
-**作用**: Portfolio 应用专用监控仪表板
-- 📈 **6 个监控面板**: 覆盖性能、资源、安全等关键指标
-- 🎯 **专门设计**: 针对 Spring Boot 应用优化
-- 🔄 **实时刷新**: 每 5 秒刷新数据
-- 🏷️ **标签分类**: 便于仪表板管理和搜索
+**作用**: 仓库中预置的 Grafana 仪表板定义文件
+- 📈 **已提交 JSON 配置**: 可随仓库版本一起管理
+- 🔄 **自动导入**: 由 Grafana provisioning 在启动时加载
+- 🎯 **面向 Spring Boot 指标**: 查询 Prometheus 中的 HTTP / JVM / 系统类指标
 
-**监控面板**:
-1. **HTTP Response Time** - API 响应时间趋势
-2. **HTTP Request Rate** - 请求速率监控
-3. **System CPU Usage** - CPU 使用率
-4. **JVM Heap Memory Usage** - 堆内存使用率
-5. **Spring Security Processing Time** - 安全处理时间
-6. **Garbage Collection Pause Time** - GC 暂停时间
+> 仪表板中的具体 panel 数量、标题和查询语句请以 `portfolio-dashboard.json` 或 Grafana UI 中当前导入结果为准。
 
 ## 🚀 工作原理
 

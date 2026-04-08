@@ -2,15 +2,16 @@
 
 **Status**: `Partially Implemented`
 
-> ⚠️ **文档说明**：本文档同时包含 **已实现功能** 和 **设计规划**。
-> - ✅ 标记的部分已在代码中实现
-> - 🔮 标记的部分为设计规划，代码尚未实现
+> ⚠️ **文档说明**：本文档同时包含 **当前已实现的安全能力** 与 **规划中的扩展方案**。
+> - ✅ 标记的部分可在当前仓库代码中找到对应实现
+> - 🔮 标记的部分为设计草案或示例代码，当前仓库未落地
+> - 如与代码冲突，以 `src/main` 中实际实现为准
 >
-> 具体实现状态请参照各章节标注。
+> 本文档的目标是帮助学习与 review，不应将所有章节默认理解为“已经上线的完整安全体系”。
 
 ## 概述
 
-本项目已实现多层安全防护体系的核心部分，包括 JWT 认证授权、AOP 智能限流、Token 黑名单、BCrypt 密码加密。部分高级功能（审计日志、异常检测、威胁响应等）为设计规划，尚未落地到代码中。
+当前已落地的核心能力主要包括：JWT 认证与刷新、基于 Redis 的 Token 黑名单、`BCryptPasswordEncoder` 密码加密、基于注解 + AOP 的限流、基础输入校验，以及通过环境变量注入敏感配置。审计日志、异常检测、自动化威胁响应、数据脱敏等章节仍属于设计规划。
 
 ## 🛡️ 安全架构总览
 
@@ -18,28 +19,30 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    网络层安全                                │
+│              网络层安全（主要依赖部署基础设施）               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  HTTPS/TLS  │  │  防火墙规则  │  │  DDoS 防护  │        │
+│  │  HTTPS/TLS* │  │  防火墙规则* │  │  DDoS 防护* │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    应用层安全                                │
+│                    应用层安全（当前核心实现）                │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  智能限流    │  │  JWT 认证   │  │  权限控制    │        │
+│  │  注解限流    │  │  JWT 认证   │  │  权限控制    │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    数据层安全                                │
+│           数据与配置安全（部分实现，部分规划）               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │  密码加密    │  │  数据脱敏    │  │  审计日志    │        │
+│  │  密码加密    │  │  数据脱敏*   │  │  审计日志*   │        │
 │  └─────────────┘  └─────────────┘  └─────────────┘        │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+* 带 `*` 的部分依赖部署环境或仍属于规划，不代表当前应用内已完整实现。
 
 ## 🔐 认证与授权 ✅
 
@@ -72,20 +75,19 @@
     ├─ 生成 Refresh Token（24小时）
     │
     ├─ Access Token 使用
-    │   ├─ 每次请求验证
-    │   ├─ 检查黑名单
-    │   └─ 自动刷新机制
+    │   ├─ 每次请求验证签名与过期时间
+    │   ├─ 检查 Redis 黑名单
+    │   └─ 需要时由客户端调用 /refresh 获取新 Access Token
     │
     ├─ Token 失效场景
-    │   ├─ 用户退出登录 → 加入黑名单
-    │   ├─ 修改密码 → 加入黑名单
-    │   ├─ 注销账号 → 加入黑名单
+    │   ├─ 用户退出登录 → 当前 Token 加入黑名单
+    │   ├─ 修改密码 / 注销账号 → 相关失效处理以当前接口实现为准
     │   └─ Token 过期 → 自然失效
     │
     └─ Token 刷新
         ├─ 验证 Refresh Token
         ├─ 生成新的 Access Token
-        └─ 可选：生成新的 Refresh Token
+        └─ 是否轮换 Refresh Token 以当前代码返回结果为准
 ```
 
 #### Token 黑名单机制
@@ -136,7 +138,7 @@ public PasswordEncoder passwordEncoder() {
 - **计算成本可调**：通过 cost 参数控制计算复杂度
 - **抗彩虹表**：盐值机制防止预计算攻击
 
-#### 🔮 密码策略验证器（设计规划，代码未实现）
+#### 🔮 密码策略验证器（设计规划，当前使用 `@Valid` 注解做基本校验）
 
 > 以下 `PasswordPolicyValidator` 类尚未实现，当前仅依赖 `@Valid` 注解做基本校验。
 
@@ -159,7 +161,7 @@ public class PasswordPolicyValidator {
 }
 ```
 
-## 🚦 智能限流系统
+## 🚦 限流系统 ✅
 
 ### 多维度限流
 
@@ -205,32 +207,28 @@ public class RateLimitAspect {
 
 #### Redis 限流算法
 
-**滑动窗口算法实现**：
+当前实现使用 **固定窗口计数器**，而不是 ZSet 滑动窗口。
+
+**当前实现示意**：
 ```java
 @Service
 public class RateLimitService {
     
-    public boolean isAllowed(String key, int maxRequests, int timeWindowSeconds) {
-        long currentTime = System.currentTimeMillis();
-        long windowStart = currentTime - timeWindowSeconds * 1000L;
-        
-        // 使用 ZSet 实现滑动窗口
-        redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);
-        
-        // 检查当前窗口内的请求数
-        Long currentCount = redisTemplate.opsForZSet().count(key, windowStart, currentTime);
-        
-        if (currentCount < maxRequests) {
-            // 添加当前请求
-            redisTemplate.opsForZSet().add(key, UUID.randomUUID().toString(), currentTime);
-            redisTemplate.expire(key, timeWindowSeconds);
-            return true;
+    public boolean isAllowed(String identifier, int maxRequests, int timeWindowSeconds) {
+        long currentWindow = System.currentTimeMillis() / (timeWindowSeconds * 1000L);
+        String key = "rate_limit:" + identifier + ":" + currentWindow;
+ 
+        Long count = redisTemplate.opsForValue().increment(key);
+        if (count == 1) {
+            redisTemplate.expire(key, timeWindowSeconds, TimeUnit.SECONDS);
         }
-        
-        return false;
+ 
+        return count <= maxRequests;
     }
 }
 ```
+
+如需滑动窗口、漏桶或令牌桶算法，应视为后续增强项，而非当前实现事实。
 
 ## 🔒 数据安全
 
@@ -238,7 +236,9 @@ public class RateLimitService {
 
 #### 配置外部化 ✅
 
-**环境变量配置**：
+当前仓库使用 `application.properties` 作为主配置文件，并通过环境变量覆盖敏感值；Docker 场景仅用 `application-docker.properties` 覆盖与本地不同的主机地址。
+
+**环境变量配置示例**：
 ```bash
 # 数据库配置
 export DB_URL=jdbc:mysql://localhost:3306/portfolio
@@ -295,358 +295,75 @@ public class DataMaskingUtil {
         return parts[0] + "." + parts[1] + ".***.***";
     }
 }
-```
 
-### 🔮 数据传输安全（设计规划，代码未实现）
+## 📊 🔮 审计与扩展监控（设计规划，代码未实现）
 
-#### HTTPS 强制
-
-> 当前代码未启用 HTTPS 强制，生产环境应通过反向代理（Nginx/ALB）终止 TLS。
-
-```java
-@Configuration
-public class SecurityConfig {
-    
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // 强制 HTTPS
-            .requiresChannel(channel -> channel
-                .anyRequest().requiresSecure()
-            )
-            // 其他安全配置...
-            ;
-        return http.build();
-    }
-}
-```
-
-#### 🔮 CORS 配置（设计规划，当前使用 WebConfig 简单配置）
-
-```java
-@Configuration
-public class CorsConfig {
-    
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("https://app.example.com"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        configuration.setAllowCredentials(true);
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-    }
-}
-```
-
-## 📊 🔮 审计与监控（设计规划，代码未实现）
-
-> 以下安全审计、监控指标、异常检测、威胁响应等功能均为设计规划，尚未在代码中实现。
-> 当前已实现的监控能力：Prometheus 指标（Actuator）、Grafana 仪表板、`RequestLoggingFilter` 请求日志。
-
-### 安全审计日志
-
-#### 结构化安全日志
-
-```json
-{
-  "timestamp": "2024-03-31T20:15:30.123Z",
-  "level": "INFO",
-  "logger": "com.listen.portfolio.audit.SecurityAuditService",
-  "message": "User login successful",
-  "audit": {
-    "event": "USER_LOGIN",
-    "userId": "12345",
-    "username": "john_doe",
-    "ipAddress": "192.168.1.100",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    "sessionId": "session-abc-123",
-    "result": "SUCCESS",
-    "timestamp": "2024-03-31T20:15:30.123Z",
-    "duration": 150
-  }
-}
-```
-
-#### 审计服务实现
-
-```java
-@Service
-public class SecurityAuditService {
-    
-    private static final Logger auditLogger = LoggerFactory.getLogger("SECURITY_AUDIT");
-    
-    public void auditLogin(String username, String ipAddress, String userAgent, boolean success) {
-        AuditEvent event = AuditEvent.builder()
-            .event(success ? "USER_LOGIN" : "USER_LOGIN_FAILED")
-            .username(username)
-            .ipAddress(maskIp(ipAddress))
-            .userAgent(userAgent)
-            .result(success ? "SUCCESS" : "FAILED")
-            .timestamp(Instant.now())
-            .build();
-            
-        auditLogger.info("Security event: {}", event.toJson());
-    }
-    
-    public void auditTokenRevocation(String username, String reason) {
-        AuditEvent event = AuditEvent.builder()
-            .event("TOKEN_REVOKED")
-            .username(username)
-            .reason(reason)
-            .timestamp(Instant.now())
-            .build();
-            
-        auditLogger.warn("Token revoked: {}", event.toJson());
-    }
-}
-```
-
-### 安全监控指标
-
-#### Prometheus 安全指标
-
-```java
-@Component
-public class SecurityMetrics {
-    
-    // 登录尝试计数
-    private final Counter loginAttempts = Counter.builder("security_login_attempts_total")
-        .description("Total number of login attempts")
-        .tag("result", "unknown")
-        .register(Metrics.globalRegistry);
-    
-    // 限流触发计数
-    private final Counter rateLimitHits = Counter.builder("security_rate_limit_hits_total")
-        .description("Total number of rate limit hits")
-        .tag("type", "unknown")
-        .register(Metrics.globalRegistry);
-    
-    // Token 黑名单大小
-    private final Gauge tokenBlacklistSize = Gauge.builder("security_token_blacklist_size")
-        .description("Current size of token blacklist")
-        .register(Metrics.globalRegistry, this, SecurityMetrics::getBlacklistSize);
-    
-    public void recordLoginAttempt(String result) {
-        loginAttempts.tags("result", result).increment();
-    }
-    
-    public void recordRateLimitHit(String type) {
-        rateLimitHits.tags("type", type).increment();
-    }
-    
-    private double getBlacklistSize() {
-        // 从 Redis 获取黑名单大小
-        return tokenBlacklistService.getBlacklistSize();
-    }
-}
-```
-
-#### Grafana 安全仪表板
-
-**关键监控面板**：
-1. **登录失败率**：失败登录 / 总登录尝试
-2. **限流触发频率**：各类型限流触发次数
-3. **Token 黑名单趋势**：黑名单大小变化
-4. **异常登录检测**：异常 IP、异常时间登录
-5. **安全事件时间线**：安全事件的时间分布
+> 以下安全审计、专用安全指标、异常检测、威胁响应等功能均为设计规划，尚未在当前仓库中实现。
+> 本章中的 `SecurityAuditService`、`SecurityMetrics` 等类为说明性示例，不应被视为现有代码。
+> 当前与安全排查相关的已实现能力主要是：Actuator / Prometheus 指标、Grafana 监控栈、`RequestLoggingFilter` 请求日志，以及部分控制器中的敏感 token 遮盖日志。
 
 ## 🚨 威胁防护
 
-### 常见攻击防护（部分已实现，部分为规划）
+### 当前已具备的基础防护
 
-#### 1. 暴力破解攻击
+#### 1. 暴力破解与滥用请求
 
-**防护措施**：
-- IP 限流：同一 IP 限制登录尝试频率
-- 账户锁定：连续失败后临时锁定账户
-- 验证码：高风险场景增加验证码验证
+- 通过 `@RateLimit` + `RateLimitAspect` 对部分接口执行 IP / Email / User / Token 维度限流
+- 当前没有账户锁定、验证码或自动封禁 IP 的完整机制
 
-```java
-@RateLimit(
-    types = {RateLimitType.IP, RateLimitType.EMAIL},
-    maxRequests = 5,
-    timeWindowSeconds = 300
-)
-public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-    // 登录逻辑
-}
-```
+#### 2. 会话与令牌滥用
 
-#### 2. 会话劫持
+- 使用短期 Access Token + Refresh Token 模式
+- 支持将已退出登录的 Token 写入 Redis 黑名单
+- 设备指纹绑定、异常设备识别仍属于规划
 
-**防护措施**：
-- JWT 短期有效：Access Token 5分钟过期
-- Token 黑名单：退出登录立即失效
-- 绑定设备：可选的设备指纹验证
+#### 3. CSRF 与接口访问模型
 
-#### 3. CSRF 攻击
+- 当前 API 采用无状态 JWT 认证模型
+- 当前仓库未实现单独的 CSRF Token 交互流程
+- CORS 策略以当前 `WebConfig` 与部署环境配置为准
 
-**防护措施**：
-- 无状态设计：JWT 天然免疫 CSRF
-- 同源策略：配置 CORS 白名单
-- 双重提交：如需要可启用 CSRF Token
+#### 4. 注入与输入安全
 
-#### 4. 注入攻击
+- 主要依赖 Bean Validation、Spring MVC 参数绑定、JPA 参数化查询
+- 未实现独立的 WAF / IDS / SQL 审计层
 
-**防护措施**：
-- 参数化查询：JPA 原生 SQL 使用参数绑定
-- 输入验证：所有用户输入严格验证
-- 输出编码：模板引擎自动转义
+#### 5. 传输链路安全
 
-#### 5. 中间人攻击
+- 应用代码当前未强制开启 `requiresSecure()` 或内置 HSTS 配置
+- 生产环境 HTTPS / TLS 通常应由反向代理、网关或云负载均衡负责终止
+- 证书固定、自动中间人攻击检测仍属于规划
 
-**防护措施**：
-- HTTPS 强制：所有 API 强制使用 HTTPS
-- HSTS 头：设置 HTTP Strict Transport Security
-- 证书固定：可选的客户端证书固定
+### 🔮 异常检测与自动化威胁响应（设计规划）
 
-### 异常检测
-
-#### 异常登录检测
-
-```java
-@Service
-public class AnomalyDetectionService {
-    
-    public boolean isSuspiciousLogin(String username, String ipAddress, String userAgent) {
-        // 检查异常 IP
-        if (isNewIpAddress(username, ipAddress)) {
-            return true;
-        }
-        
-        // 检查异常时间
-        if (isUnusualTime(username)) {
-            return true;
-        }
-        
-        // 检查异常设备
-        if (isNewDevice(username, userAgent)) {
-            return true;
-        }
-        
-        return false;
-    }
-    
-    private boolean isNewIpAddress(String username, String ipAddress) {
-        // 检查用户历史 IP 列表
-        Set<String> historicalIps = getUserHistoricalIps(username);
-        return !historicalIps.contains(ipAddress);
-    }
-}
-```
-
-#### 实时威胁检测
-
-```java
-@Component
-public class ThreatDetectionService {
-    
-    @EventListener
-    public void handleLoginFailed(LoginFailedEvent event) {
-        // 检查是否为暴力攻击
-        if (isBruteForceAttack(event.getIpAddress())) {
-            // 自动拉黑 IP
-            blockIpAddress(event.getIpAddress(), Duration.ofHours(1));
-            
-            // 发送告警
-            sendSecurityAlert("Brute force attack detected", event);
-        }
-    }
-    
-    private boolean isBruteForceAttack(String ipAddress) {
-        // 检查短时间内的失败次数
-        String key = "login_failed:" + ipAddress;
-        Long failedCount = redisTemplate.opsForValue().get(key);
-        return failedCount != null && failedCount > 10;
-    }
-}
-```
+异常登录识别、失败事件聚合、自动封禁、专用安全告警等能力尚未在当前代码中实现；如需补齐，应新增专用领域服务与审计事件模型，而不是默认认为现有请求日志已经覆盖这些能力。
 
 ## 🔧 安全配置
 
-### 生产环境安全清单
+### 当前配置基线
 
-#### 1. 基础安全配置
+当前仓库采用 `application.properties` 作为主配置文件，通过环境变量覆盖敏感值；Docker 场景仅使用 `application-docker.properties` 覆盖数据库与 Redis hostname。当前并不存在一套长期维护的 `dev / test / prod` 安全 profile 矩阵。
 
-```properties
-# 安全相关配置
-server.ssl.enabled=true
-server.ssl.key-store=classpath:keystore.p12
-server.ssl.key-store-password=${SSL_KEYSTORE_PASSWORD}
-server.ssl.key-store-type=PKCS12
-
-# Session 配置
-server.servlet.session.timeout=1800
-server.servlet.session.cookie.http-only=true
-server.servlet.session.cookie.secure=true
-
-# 安全头配置
-security.headers.frame-options=DENY
-security.headers.content-type-options=nosniff
-security.headers.xss-protection=1; mode=block
-```
-
-#### 2. JWT 安全配置
+#### 当前已存在的关键配置
 
 ```properties
-# JWT 强安全配置
-jwt.secret=${JWT_SECRET}
-jwt.expiration=300000
-jwt.refresh-expiration=86400000
-
-# JWT 算法配置（仅使用强算法）
-jwt.algorithm=HS256
-jwt.issuer=portfolio-api
-jwt.audience=portfolio-client
+jwt.secret=${JWT_SECRET:...}
+jwt.expiration=${JWT_EXPIRATION:300000}
+jwt.refresh-expiration=${JWT_REFRESH_EXPIRATION:86400000}
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:...}
+spring.mail.password=${MAIL_PASSWORD:...}
+management.endpoints.web.exposure.include=health,info,prometheus
 ```
 
-#### 3. 数据库安全配置
+#### 生产部署建议（运维侧）
 
-```properties
-# 数据库连接安全
-spring.datasource.url=jdbc:mysql://localhost:3306/portfolio?useSSL=true&verifyServerCertificate=true
-spring.datasource.username=${DB_USERNAME}
-spring.datasource.password=${DB_PASSWORD}
+- 使用反向代理或云负载均衡终止 HTTPS / TLS
+- 通过环境变量或密钥管理系统覆盖默认密钥与密码
+- 收紧 Actuator 暴露范围与 Swagger/OpenAPI 访问策略
+- 根据生产数据库策略调整 `useSSL`、连接池与日志级别配置
 
-# 连接池安全配置
-spring.datasource.hikari.leak-detection-threshold=60000
-spring.datasource.hikari.connection-test-query=SELECT 1
-spring.datasource.hikari.connection-timeout=30000
-```
-
-### 环境隔离
-
-#### 开发环境
-
-```properties
-# 开发环境 - 相对宽松的安全配置
-spring.profiles.active=dev
-logging.level.com.listen.portfolio=DEBUG
-security.debug=true
-```
-
-#### 测试环境
-
-```properties
-# 测试环境 - 接近生产的安全配置
-spring.profiles.active=test
-logging.level.com.listen.portfolio=INFO
-security.debug=false
-```
-
-#### 生产环境
-
-```properties
-# 生产环境 - 最严格的安全配置
-spring.profiles.active=prod
-logging.level.com.listen.portfolio=WARN
-security.debug=false
-management.endpoints.web.exposure.include=health,info
-```
+以上建议属于部署基线，不代表当前应用内已经自动启用。
 
 ## 📋 安全运维
 

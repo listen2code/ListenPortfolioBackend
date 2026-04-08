@@ -1,6 +1,12 @@
 # 密码重置 API 使用指南
-
-## 完整流程
+  
+  **Status**: `Implemented with Current Endpoint Scope`
+  
+  > 本文档仅描述当前仓库中已经实现的密码重置接口、邮件链接格式与配置项。
+  > 如与 `AuthController`、`AuthService`、`EmailService`、`application.properties` 冲突，以代码为准。
+  > React / Vue 片段仅为前端接入示意，不代表仓库内已有对应前端页面实现。
+  
+  ## 完整流程
 
 ### 1. 请求密码重置（发送邮件）
 
@@ -13,21 +19,23 @@ curl -X POST http://localhost:8080/v1/auth/forgot-password \
   -d '{"email":"listen2code@gmail.com"}'
 ```
 
-**响应**：
-```json
-{
-  "result": "0",
-  "messageId": "",
-  "message": "",
-  "body": null
-}
-```
-
-**说明**：
-- 用户会收到包含重置链接的邮件
-- 链接格式：`http://localhost:3000/password-reset-out-email?token=xxx`
-- Token 有效期：1 小时
-- 限流：同一邮箱 5 分钟内最多 3 次
+  **响应**：
+  ```json
+  {
+    "result": "0",
+    "messageId": "",
+    "message": "If the email exists, a password reset link has been sent",
+    "body": null
+  }
+  ```
+  
+  **说明**：
+  - 当前接口无论邮箱是否存在，都会返回成功响应，以降低邮箱枚举风险
+  - 只有邮箱存在时才会尝试发送邮件
+  - 链接格式为：`{FRONTEND_URL}/password-reset-out-email.html?token=xxx`
+  - 默认配置下，链接会指向：`http://localhost:8080/password-reset-out-email.html?token=xxx`
+  - Token 有效期：1 小时
+  - 当前限流由 `AuthController` 上的 `@RateLimit` 注解控制：同一 IP / Email 1 分钟内最多 10 次
 
 ### 2. 重置密码（使用 Token）
 
@@ -58,7 +66,7 @@ curl -X POST http://localhost:8080/v1/auth/reset-password \
 {
   "result": "1",
   "messageId": "INVALID_TOKEN",
-  "message": "重置链接无效或已过期",
+  "message": "The reset link is invalid or has expired",
   "body": null
 }
 ```
@@ -230,14 +238,14 @@ curl -X POST http://localhost:8080/v1/auth/login \
 ```
 
 ## 安全特性
-
-1. **Token 一次性使用**：Token 使用后立即失效
-2. **Token 过期时间**：默认 1 小时后自动失效
-3. **限流保护**：
-   - 同一邮箱 5 分钟内最多 3 次
-   - 同一 IP 1 分钟内最多 10 次
-4. **防止邮箱枚举**：无论邮箱是否存在，都返回成功
-5. **密码加密**：使用 BCrypt 加密存储
+  
+  1. **Token 一次性使用**：Token 使用后立即失效
+  2. **Token 过期时间**：默认 1 小时后自动失效
+  3. **限流保护**：
+     - `POST /v1/auth/forgot-password`：同一 IP / Email 1 分钟内最多 10 次
+     - `POST /v1/auth/reset-password`：同一 IP / Token 1 分钟内最多 10 次
+  4. **防止邮箱枚举**：无论邮箱是否存在，都返回成功
+  5. **密码加密**：使用 BCrypt 加密存储
 
 ## 错误处理
 
@@ -247,38 +255,44 @@ curl -X POST http://localhost:8080/v1/auth/login \
 | `RATE_LIMIT_EXCEEDED` | 请求过于频繁 | 等待几分钟后重试 |
 
 ## 配置说明
+  
+  ### 修改 Token 有效期
+  
+  在 `application.properties` 或环境变量中配置：
+  
+  ```properties
+  # Token 有效期（秒），默认 3600 = 1 小时
+  app.password-reset.token-expiration=3600
+  ```
 
-### 修改 Token 有效期
+  ### 修改前端 URL
+  
+  ```properties
+  # 前端应用地址
+  app.frontend.url=http://localhost:3000
+  ```
+  
+  > 若不覆盖该配置，默认值为 `http://localhost:8080`，邮件中的重置链接会指向后端静态页面 `/password-reset-out-email.html`。
+  
+  ### 修改限流参数
+  
+  当前密码重置接口的限流阈值定义在 `AuthController` 的 `@RateLimit` 注解上，而不是 `RateLimitService` 的默认辅助方法中：
+  
+  ```java
+  @RateLimit(
+      types = {RateLimitType.IP, RateLimitType.EMAIL},
+      maxRequests = 10,
+      timeWindowSeconds = 60
+  )
+  public ResponseEntity<ApiResponse<Object>> forgotPassword(...) { ... }
 
-在 `application.properties` 或环境变量中配置：
-
-```properties
-# Token 有效期（秒），默认 3600 = 1 小时
-app.password-reset.token-expiration=3600
-```
-
-### 修改前端 URL
-
-```properties
-# 前端应用地址
-app.frontend.url=http://localhost:3000
-```
-
-### 修改限流参数
-
-在 `RateLimitService.java` 中修改：
-
-```java
-// 邮箱限流：5 分钟内最多 3 次
-public boolean isEmailAllowed(String email) {
-    return isAllowed("email:" + email, 3, 300);
-}
-
-// IP 限流：1 分钟内最多 10 次
-public boolean isIpAllowed(String ip) {
-    return isAllowed("ip:" + ip, 10, 60);
-}
-```
+  @RateLimit(
+      types = {RateLimitType.IP, RateLimitType.TOKEN},
+      maxRequests = 10,
+      timeWindowSeconds = 60
+  )
+  public ResponseEntity<ApiResponse<Object>> resetPassword(...) { ... }
+  ```
 
 ## 相关接口
 
