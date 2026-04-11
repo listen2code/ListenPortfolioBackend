@@ -38,7 +38,7 @@ class TokenBlacklistServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 只在需要时设置 mock
+        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test

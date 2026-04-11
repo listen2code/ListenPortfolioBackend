@@ -1,16 +1,15 @@
 package com.listen.portfolio.api.v1.user;
 
 import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.integration.BaseIntegrationTest;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -22,9 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 说明：测试改进后的 token 提取逻辑
  * 目的：验证从 HTTP 请求头和 SecurityContext 中提取 token 的功能
  */
-@SpringBootTest
-@ActiveProfiles("test")
-public class LogoutTokenExtractionTest {
+public class LogoutTokenExtractionTest extends BaseIntegrationTest {
 
     @Autowired
     private UserController userController;

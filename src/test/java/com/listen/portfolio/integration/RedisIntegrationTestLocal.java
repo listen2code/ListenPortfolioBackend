@@ -6,9 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.concurrent.TimeUnit;
 
@@ -17,13 +15,10 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Redis 集成测试 - 本地 Redis 版本
  * 
- * 说明：测试 Redis 相关服务的真实操作（使用本地 Redis）
- * 目的：验证限流服务和 Token 黑名单在真实 Redis 环境中的行为
- * 注意：此测试需要本地 Redis 服务运行
+ * 说明：测试 Redis 相关服务的真实操作（使用 BaseIntegrationTest 提供的嵌入式 Redis）
+ * 目的：验证限流服务和 Token 黑名单在真实 Redis 协议下的行为
  */
-@SpringBootTest
-@ActiveProfiles("test")
-public class RedisIntegrationTestLocal {
+public class RedisIntegrationTestLocal extends BaseIntegrationTest {
 
     @Autowired
     private RateLimitService rateLimitService;

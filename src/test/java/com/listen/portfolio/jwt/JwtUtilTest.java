@@ -7,13 +7,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.integration.BaseIntegrationTest;
 
 import java.util.Date;
 
@@ -25,10 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * 说明：测试 JWT 工具类的所有核心功能
  * 目的：确保 JWT 生成、验证、解析功能正常工作
  */
-@SpringBootTest
-@ActiveProfiles("test")
 @DisplayName("JwtUtil Unit Tests")
-class JwtUtilTest {
+class JwtUtilTest extends BaseIntegrationTest {
 
     @Autowired
     private JwtUtil jwtUtil;

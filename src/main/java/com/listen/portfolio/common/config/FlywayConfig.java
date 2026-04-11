@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -58,6 +59,7 @@ public class FlywayConfig {
      * @return 配置好的 Flyway 实例
      */
     @Bean
+    @ConditionalOnProperty(name = "spring.flyway.enabled", havingValue = "true", matchIfMissing = true)
     public Flyway flyway(DataSource dataSource) {
         logger.info("Creating Flyway bean manually");
         Flyway flyway = Flyway.configure()
@@ -101,6 +103,7 @@ public class FlywayConfig {
      */
     @Bean
     @Order(1)
+    @ConditionalOnProperty(name = "spring.flyway.enabled", havingValue = "true", matchIfMissing = true)
     public ApplicationRunner flywayMigrationRunner(Flyway flyway) {
         return new ApplicationRunner() {
             @Override

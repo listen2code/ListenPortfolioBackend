@@ -1,16 +1,15 @@
 package com.listen.portfolio.security;
 
 import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.integration.BaseIntegrationTest;
 import com.listen.portfolio.service.RateLimitService;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,9 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 说明：测试系统的安全相关功能
  * 目的：验证 JWT 令牌安全、限流安全、权限控制等
  */
-@SpringBootTest
-@ActiveProfiles("test")
-public class SecurityTest {
+public class SecurityTest extends BaseIntegrationTest {
 
     @Autowired
     private JwtUtil jwtUtil;

@@ -319,6 +319,23 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
+		<!--
+			说明：H2 内存数据库，供 test profile 使用，无需本机 MySQL
+		-->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!--
+			说明：进程内嵌入式 Redis，供集成测试使用（无需 Docker；解决 CI / dockerized Maven 中 Testcontainers 不可用的问题）
+		-->
+		<dependency>
+			<groupId>it.ozimov</groupId>
+			<artifactId>embedded-redis</artifactId>
+			<version>0.7.3</version>
+			<scope>test</scope>
+		</dependency>
  </dependencies>
 
 	<build>

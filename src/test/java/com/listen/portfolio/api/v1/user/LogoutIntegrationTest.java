@@ -1,13 +1,12 @@
 package com.listen.portfolio.api.v1.user;
 
 import com.listen.portfolio.common.jwt.JwtUtil;
+import com.listen.portfolio.integration.BaseIntegrationTest;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,9 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 说明：测试完整的 logout 流程，包括 token 黑名单机制
  * 目的：验证 JWT token 生成、黑名单添加和检查功能
  */
-@SpringBootTest
-@ActiveProfiles("test")
-public class LogoutIntegrationTest {
+public class LogoutIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private JwtUtil jwtUtil;

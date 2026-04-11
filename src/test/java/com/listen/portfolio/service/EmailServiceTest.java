@@ -274,7 +274,7 @@ class EmailServiceTest {
         
         Context context = contextCaptor.getValue();
         assertEquals(username, context.getVariable("username"));
-        assertEquals("http://localhost:8080/password-reset-out-email.html?token=abc123", context.getVariable("resetLink"));
+        assertEquals("http://localhost:3000/password-reset-out-email.html?token=abc123", context.getVariable("resetLink"));
         assertEquals(token, context.getVariable("token"));
         assertEquals("1小时", context.getVariable("expirationTime"));
     }
