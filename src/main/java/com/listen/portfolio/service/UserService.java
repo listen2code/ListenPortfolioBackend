@@ -165,13 +165,20 @@ public class UserService {
      */
     @Transactional
     public boolean deleteAccount(Long userId) {
+        if (userId != null && userId.equals(1L)) {
+            logger.warn("Deletion of seed/admin user (userId = 1) is blocked.");
+            return false;
+        }
         logger.info("Attempting to delete account for user: {}", userId);
         
         return repo.findById(userId)
                 .map(userInfo -> {
-                    // 从数据库中删除用户
-                    repo.delete(userInfo);
-                    logger.info("Account deleted successfully for user: {}", userId);
+                    // 软删除用户，并修改用户名和邮箱以释放唯一索引
+                    userInfo.setDeleted(true);
+                    userInfo.setEmail("deleted_" + System.currentTimeMillis() + "_" + userInfo.getEmail());
+                    userInfo.setName("deleted_" + System.currentTimeMillis() + "_" + userInfo.getName());
+                    repo.save(userInfo);
+                    logger.info("Account soft-deleted successfully for user: {}", userId);
                     return true;
                 })
             // 如果用户不存在，返回false

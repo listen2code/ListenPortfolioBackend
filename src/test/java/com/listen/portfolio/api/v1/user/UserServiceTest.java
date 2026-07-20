@@ -199,37 +199,40 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("deleteAccount - 成功删除账户")
+    @DisplayName("deleteAccount - 成功软删除账户")
     void testDeleteAccount_Success() {
         // Given
-        when(userRepository.findById(1L))
+        mockUserEntity.setId(2L); // 使用非种子用户 ID
+        when(userRepository.findById(2L))
                 .thenReturn(Optional.of(mockUserEntity));
-        doNothing().when(userRepository).delete(mockUserEntity);
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        boolean result = userService.deleteAccount(1L);
+        boolean result = userService.deleteAccount(2L);
 
         // Then
         assertTrue(result);
         
-        verify(userRepository).findById(1L);
-        verify(userRepository).delete(mockUserEntity);
+        verify(userRepository).findById(2L);
+        verify(userRepository).save(mockUserEntity);
+        verify(userRepository, never()).delete(any());
     }
 
     @Test
     @DisplayName("deleteAccount - 用户不存在删除失败")
     void testDeleteAccount_UserNotFound() {
         // Given
-        when(userRepository.findById(1L))
+        when(userRepository.findById(2L))
                 .thenReturn(Optional.empty());
 
         // When
-        boolean result = userService.deleteAccount(1L);
+        boolean result = userService.deleteAccount(2L);
 
         // Then
         assertFalse(result);
         
-        verify(userRepository).findById(1L);
+        verify(userRepository).findById(2L);
+        verify(userRepository, never()).save(any(UserEntity.class));
         verify(userRepository, never()).delete(any(UserEntity.class));
     }
 
@@ -316,7 +319,7 @@ class UserServiceTest {
         assertThrows(RuntimeException.class, () -> userService.getUserByName("testuser"));
         assertThrows(RuntimeException.class, () -> userService.getUserSummaryById(1L));
         assertThrows(RuntimeException.class, () -> userService.changePassword(mockChangePasswordRequest));
-        assertThrows(RuntimeException.class, () -> userService.deleteAccount(1L));
+        assertThrows(RuntimeException.class, () -> userService.deleteAccount(2L));
     }
 
     @Test
@@ -429,7 +432,9 @@ class UserServiceTest {
     @DisplayName("集成测试 - 完整的用户管理流程")
     void testIntegration_CompleteUserManagementFlow() {
         // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUserEntity));
+        mockUserEntity.setId(2L); // 使用非种子用户 ID
+        mockChangePasswordRequest.setUserId("2");
+        when(userRepository.findById(2L)).thenReturn(Optional.of(mockUserEntity));
         when(passwordEncoder.matches("oldPassword", "encodedPassword")).thenReturn(true);
         when(passwordEncoder.encode("newPassword")).thenReturn("encodedNewPassword");
         when(userRepository.save(any(UserEntity.class))).thenReturn(mockUserEntity);
@@ -443,11 +448,12 @@ class UserServiceTest {
         verify(userRepository).save(any(UserEntity.class));
 
         // When - 删除账户
-        boolean deleteAccountResult = userService.deleteAccount(1L);
+        boolean deleteAccountResult = userService.deleteAccount(2L);
 
         // Then - 验证账户删除成功
         assertTrue(deleteAccountResult);
-        verify(userRepository).delete(mockUserEntity);
+        verify(userRepository, times(2)).save(any(UserEntity.class));
+        verify(userRepository, never()).delete(any());
     }
 
     @Test

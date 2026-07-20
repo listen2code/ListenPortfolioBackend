@@ -291,9 +291,10 @@ class UserControllerTest {
             when(securityContext.getAuthentication()).thenReturn(authentication);
             when(authentication.getName()).thenReturn("testuser");
             
+            mockUserEntity.setId(2L); // 使用非种子用户 ID
             when(userService.getUserByName("testuser"))
                     .thenReturn(Optional.of(mockUserEntity));
-            when(userService.deleteAccount(1L))
+            when(userService.deleteAccount(2L))
                     .thenReturn(true);
 
             // When
@@ -306,7 +307,7 @@ class UserControllerTest {
             assertNull(response.getBody().getBody());
 
             verify(userService).getUserByName("testuser");
-            verify(userService).deleteAccount(1L);
+            verify(userService).deleteAccount(2L);
             verify(refreshTokenService).revokeAllRefreshTokens("testuser");
         }
     }
@@ -346,6 +347,36 @@ class UserControllerTest {
             when(securityContext.getAuthentication()).thenReturn(authentication);
             when(authentication.getName()).thenReturn("testuser");
             
+            mockUserEntity.setId(2L); // 使用非种子用户 ID
+            when(userService.getUserByName("testuser"))
+                    .thenReturn(Optional.of(mockUserEntity));
+            when(userService.deleteAccount(2L))
+                    .thenReturn(false);
+
+            // When
+            ResponseEntity<ApiResponse<Object>> response = userController.deleteAccount();
+
+            // Then
+            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("1", response.getBody().getResult());
+            assertEquals("Account deletion failed", response.getBody().getMessage());
+
+            verify(userService).getUserByName("testuser");
+            verify(userService).deleteAccount(2L);
+        }
+    }
+
+    @Test
+    @DisplayName("deleteAccount - 拦截种子用户删除返回500")
+    void testDeleteAccount_SeedUserBlocked() {
+        // Given - 设置 SecurityContext Mock
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+            
+            mockUserEntity.setId(1L); // 种子用户 ID
             when(userService.getUserByName("testuser"))
                     .thenReturn(Optional.of(mockUserEntity));
             when(userService.deleteAccount(1L))
@@ -362,6 +393,7 @@ class UserControllerTest {
 
             verify(userService).getUserByName("testuser");
             verify(userService).deleteAccount(1L);
+            verify(refreshTokenService, never()).revokeAllRefreshTokens(anyString());
         }
     }
 
