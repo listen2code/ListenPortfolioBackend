@@ -27,10 +27,16 @@ public abstract class BaseIntegrationTest {
 
     static {
         try {
-            RedisServer server = RedisServer.builder()
-                    .port(REDIS_PORT)
-                    .setting("maxheap 128M")
-                    .build();
+            var builder = RedisServer.builder()
+                    .port(REDIS_PORT);
+            
+            // maxheap is a Windows-specific configuration of MSOpenTech Redis port.
+            // Applying it on Linux/macOS causes Redis startup failure.
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                builder.setting("maxheap 128M");
+            }
+            
+            RedisServer server = builder.build();
             server.start();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
