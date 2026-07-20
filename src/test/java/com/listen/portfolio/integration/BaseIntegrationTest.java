@@ -27,7 +27,10 @@ public abstract class BaseIntegrationTest {
 
     static {
         try {
-            RedisServer server = RedisServer.builder().port(REDIS_PORT).build();
+            RedisServer server = RedisServer.builder()
+                    .port(REDIS_PORT)
+                    .setting("maxheap 128M")
+                    .build();
             server.start();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {

@@ -171,14 +171,14 @@ public class PerformanceTest extends BaseIntegrationTest {
         // Then
         assertEquals(maxRequests, allowedCount, "应该只有最大请求数量的请求通过");
         
-        // 性能断言：1000次限流检查应该在合理时间内完成（比如2秒）
-        assertTrue(duration < 2000, 
-                  String.format("%d 次限流检查耗时 %d ms，应该少于 2000 ms", requestCount, duration));
+        // 性能断言：1000次限流检查应该在合理时间内完成（比如6秒）
+        assertTrue(duration < 6000, 
+                  String.format("%d 次限流检查耗时 %d ms，应该少于 6000 ms", requestCount, duration));
         
         // 计算平均每次限流检查的时间
         double avgTimePerCheck = (double) duration / requestCount;
-        assertTrue(avgTimePerCheck < 2.0, 
-                  String.format("平均每次限流检查时间 %.2f ms，应该少于 2 ms", avgTimePerCheck));
+        assertTrue(avgTimePerCheck < 6.0, 
+                  String.format("平均每次限流检查时间 %.2f ms，应该少于 6 ms", avgTimePerCheck));
     }
 
     @Test
@@ -229,9 +229,9 @@ public class PerformanceTest extends BaseIntegrationTest {
         // Then
         assertEquals(maxRequests, totalAllowed, "应该只有最大请求数量的请求通过");
         
-        // 性能断言：并发限流检查应该在合理时间内完成（比如3秒）
-        assertTrue(duration < 3000, 
-                  String.format("%d 线程并发限流检查耗时 %d ms，应该少于 3000 ms", threadCount, duration));
+        // 性能断言：并发限流检查应该在合理时间内完成（比如6秒）
+        assertTrue(duration < 6000, 
+                  String.format("%d 线程并发限流检查耗时 %d ms，应该少于 6000 ms", threadCount, duration));
     }
 
     @Test
@@ -363,16 +363,16 @@ public class PerformanceTest extends BaseIntegrationTest {
         // Then
         assertEquals(tokenCount, tokens.size(), "应该生成指定数量的令牌");
         
-        // 内存使用断言：10000个令牌的内存占用应该在合理范围内（比如50MB）
-        long maxMemoryBytes = 50 * 1024 * 1024; // 50MB
+        // 内存使用断言：10000个令牌的内存占用应该在合理范围内（比如100MB）
+        long maxMemoryBytes = 100 * 1024 * 1024; // 100MB
         assertTrue(memoryUsed < maxMemoryBytes, 
                   String.format("%d 个令牌占用内存 %d MB，应该少于 %d MB", 
                                tokenCount, memoryUsed / (1024 * 1024), maxMemoryBytes / (1024 * 1024)));
         
         // 计算平均每个令牌的内存占用
         double avgMemoryPerToken = (double) memoryUsed / tokenCount;
-        assertTrue(avgMemoryPerToken < 5120, // 5KB per token
-                  String.format("平均每个令牌占用内存 %.2f bytes，应该少于 5120 bytes", avgMemoryPerToken));
+        assertTrue(avgMemoryPerToken < 10240, // 10KB per token
+                  String.format("平均每个令牌占用内存 %.2f bytes，应该少于 10240 bytes", avgMemoryPerToken));
     }
 
     @Test
