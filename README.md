@@ -1,4 +1,6 @@
-﻿# ListenPortfolioBackend
+# ListenPortfolioBackend
+
+[![Backend CI](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml/badge.svg)](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml)
 
 ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 Spring Boot 4.0.1 构建。它的首要目标不是做成一个“泛企业平台样板”，而是为 Flutter 作品集 App 提供可信、可维护、可联调的 REST API，同时保留一定工程深度用于展示架构判断。
 
