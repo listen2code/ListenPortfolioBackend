@@ -406,4 +406,13 @@ public class JwtUtil {
             throw e; // 重新抛出异常，让调用者处理
         }
     }
+
+    /**
+     * 获取刷新令牌的过期时间（毫秒）
+     * 
+     * @return 刷新令牌过期时间
+     */
+    public Long getRefreshExpiration() {
+        return refreshExpiration;
+    }
 }

@@ -8,6 +8,7 @@ import com.listen.portfolio.repository.UserRepository;
 import com.listen.portfolio.service.AuthService;
 import com.listen.portfolio.service.EmailService;
 import com.listen.portfolio.service.PasswordResetTokenService;
+import com.listen.portfolio.service.RefreshTokenService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -45,6 +46,9 @@ class AuthServiceTest {
 
     @Mock
     private PasswordResetTokenService passwordResetTokenService;
+    
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AuthService authService;
@@ -442,5 +446,28 @@ class AuthServiceTest {
 
         // Then - 验证日志记录（通过验证方法调用间接验证）
         verify(userRepository, times(2)).findByNameCaseSensitive("testuser");
+    }
+
+    @Test
+    @DisplayName("resetPassword - 密码重置成功并吊销所有 Refresh Token")
+    void testResetPassword_Success() {
+        // Given
+        String token = "valid-reset-token";
+        String newPassword = "newSecurePassword123";
+        when(passwordResetTokenService.getEmailByToken(token)).thenReturn("test@example.com");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUserEntity));
+        when(passwordEncoder.encode(newPassword)).thenReturn("newEncodedPassword");
+
+        // When
+        boolean result = authService.resetPassword(token, newPassword);
+
+        // Then
+        assertTrue(result);
+        verify(passwordResetTokenService).getEmailByToken(token);
+        verify(userRepository).findByEmail("test@example.com");
+        verify(passwordEncoder).encode(newPassword);
+        verify(userRepository).save(mockUserEntity);
+        verify(passwordResetTokenService).deleteToken(token);
+        verify(refreshTokenService).revokeAllRefreshTokens("testuser");
     }
 }

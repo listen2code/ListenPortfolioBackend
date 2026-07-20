@@ -7,6 +7,7 @@ import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
 import com.listen.portfolio.service.TokenBlacklistService;
+import com.listen.portfolio.service.RefreshTokenService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -58,6 +59,9 @@ class UserControllerTest {
 
     @Mock
     private JwtUtil jwtUtil;
+    
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private UserController userController;
@@ -154,6 +158,7 @@ class UserControllerTest {
             assertNotNull(response.getBody());
             assertEquals("0", response.getBody().getResult());
             assertEquals("Logout successful", response.getBody().getMessage());
+            verify(refreshTokenService).revokeAllRefreshTokens("testuser");
         }
     }
 
@@ -189,6 +194,7 @@ class UserControllerTest {
             verify(userService).getUserByName("testuser");
             verify(userService).changePassword(mockChangePasswordRequest);
             verify(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
+            verify(refreshTokenService).revokeAllRefreshTokens("testuser");
         }
     }
 
@@ -301,6 +307,7 @@ class UserControllerTest {
 
             verify(userService).getUserByName("testuser");
             verify(userService).deleteAccount(1L);
+            verify(refreshTokenService).revokeAllRefreshTokens("testuser");
         }
     }
 

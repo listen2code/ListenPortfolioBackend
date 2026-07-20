@@ -8,6 +8,7 @@ import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.service.AuthService;
+import com.listen.portfolio.service.RefreshTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 构造函数 - 全依赖注入
@@ -61,16 +63,19 @@ public class AuthController {
      * @param authenticationManager Spring Security 认证管理器，处理用户认证
      * @param jwtUtil JWT 工具类，处理令牌生成和验证
      * @param userDetailsService Spring Security 用户详情服务，加载用户信息
+     * @param refreshTokenService Refresh Token 服务，用于管理/验证/销毁 Refresh Token
      */
     public AuthController(
             AuthService authService,
             AuthenticationManager authenticationManager,
             JwtUtil jwtUtil,
-            UserDetailsService userDetailsService) {
+            UserDetailsService userDetailsService,
+            RefreshTokenService refreshTokenService) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     
@@ -176,6 +181,9 @@ public class AuthController {
         final String jwt = jwtUtil.generateToken(userDetails);
         final String refreshToken = jwtUtil.generateRefreshToken(jwt);
 
+        // 将生成的 Refresh Token 保存到 Redis
+        refreshTokenService.saveRefreshToken(userDetails.getUsername(), refreshToken, jwtUtil.getRefreshExpiration());
+
         final Long userId = authService.getUserByName(LoginRequest.getUserName())
                 .map(u -> u.getId())
                 .orElse(null);
@@ -195,10 +203,29 @@ public class AuthController {
             @RequestParam @NotBlank(message = "refreshToken must not be blank") String refreshToken) {
         logger.info("Received token refresh request");
 
+        String username;
+        try {
+            username = jwtUtil.extractUsername(refreshToken);
+        } catch (Exception e) {
+            logger.warn("Failed to extract username from refresh token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("INVALID_REFRESH_TOKEN", "Invalid refresh token"));
+        }
+
+        // 校验 Redis 中是否存在该 refresh token
+        if (!refreshTokenService.isRefreshTokenValid(username, refreshToken)) {
+            logger.warn("Refresh token has been revoked or is not active in Redis for user: {}", username);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("INVALID_REFRESH_TOKEN", "Refresh token has been revoked or is invalid"));
+        }
+
         String jwt = jwtUtil.refreshToken(refreshToken);
         String newRefreshToken = jwtUtil.generateRefreshToken(jwt);
 
-        String username = jwtUtil.extractUsername(refreshToken);
+        // 旋转（Rotation）：销毁旧的 refresh token，保存新的 refresh token
+        refreshTokenService.revokeRefreshToken(username, refreshToken);
+        refreshTokenService.saveRefreshToken(username, newRefreshToken, jwtUtil.getRefreshExpiration());
+
         Long userId = authService.getUserByName(username)
                 .map(u -> u.getId())
                 .orElse(null);

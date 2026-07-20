@@ -8,6 +8,7 @@ import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
 import com.listen.portfolio.service.TokenBlacklistService;
+import com.listen.portfolio.service.RefreshTokenService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -51,13 +52,16 @@ public class UserController {
     private final UserService userService;
     private final TokenBlacklistService tokenBlacklistService;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     public UserController(UserService userService, 
                       TokenBlacklistService tokenBlacklistService,
-                      JwtUtil jwtUtil) {
+                      JwtUtil jwtUtil,
+                      RefreshTokenService refreshTokenService) {
         this.userService = userService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.jwtUtil = jwtUtil;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @GetMapping
@@ -103,7 +107,10 @@ public class UserController {
                 // 将 token 加入黑名单
                 tokenBlacklistService.addToBlacklist(token, expiration.getTime());
                 
-                logger.info("User {} logged out successfully, token added to blacklist", username);
+                // 吊销当前用户的所有 Refresh Token
+                refreshTokenService.revokeAllRefreshTokens(username);
+                
+                logger.info("User {} logged out successfully, token added to blacklist and refresh tokens revoked", username);
                 
                 // 清除当前用户的认证上下文
                 SecurityContextHolder.clearContext();
@@ -217,11 +224,14 @@ public class UserController {
                 Date expiration = jwtUtil.extractExpiration(currentToken);
                 tokenBlacklistService.addToBlacklist(currentToken, expiration.getTime());
                 logger.info("Current token added to blacklist after password change for user: {}", username);
-                
-                // 清除当前用户的认证上下文
-                SecurityContextHolder.clearContext();
-                logger.info("Security context cleared after password change for user: {}", username);
             }
+            
+            // 吊销当前用户的所有 Refresh Token
+            refreshTokenService.revokeAllRefreshTokens(username);
+            
+            // 清除当前用户的认证上下文
+            SecurityContextHolder.clearContext();
+            logger.info("Security context and refresh tokens cleared after password change for user: {}", username);
             
             return ResponseEntity.ok(ApiResponse.success("Password changed successfully. Please login again."));
         } else {
@@ -259,6 +269,8 @@ public class UserController {
         
         if (success) {
             logger.info("Account deleted successfully for user: {}", username);
+            // 吊销当前用户的所有 Refresh Token
+            refreshTokenService.revokeAllRefreshTokens(username);
             return ResponseEntity.ok(ApiResponse.success(null));
         } else {
             logger.warn("Account deletion failed for user: {}", username);

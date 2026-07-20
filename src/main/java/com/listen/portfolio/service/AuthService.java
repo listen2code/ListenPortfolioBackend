@@ -66,6 +66,9 @@ public class AuthService implements UserDetailsService {
     
     // 密码重置 Token 服务，用于生成和验证重置 Token
     private final PasswordResetTokenService passwordResetTokenService;
+    
+    // Refresh Token 服务，用于管理/验证/销毁 Refresh Token
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * 构造函数 - 依赖注入
@@ -79,13 +82,16 @@ public class AuthService implements UserDetailsService {
      * @param passwordEncoder Spring Security提供的密码加密器，用于密码的安全加密和验证
      * @param emailService 邮件服务，用于发送密码重置邮件等
      * @param passwordResetTokenService 密码重置 Token 服务，用于生成和验证重置 Token
+     * @param refreshTokenService Refresh Token 服务，用于管理/验证/销毁 Refresh Token
      */
     public AuthService(UserRepository repo, @Lazy PasswordEncoder passwordEncoder, 
-                      EmailService emailService, PasswordResetTokenService passwordResetTokenService) {
+                      EmailService emailService, PasswordResetTokenService passwordResetTokenService,
+                      RefreshTokenService refreshTokenService) {
         this.repo = repo;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.passwordResetTokenService = passwordResetTokenService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     /**
@@ -279,6 +285,9 @@ public class AuthService implements UserDetailsService {
         
         // 删除 Token，防止重复使用
         passwordResetTokenService.deleteToken(token);
+        
+        // 吊销当前用户的所有 Refresh Token，强制所有设备重新登录
+        refreshTokenService.revokeAllRefreshTokens(user.getName());
         
         logger.info("Password reset successfully for user: {}", user.getId());
         return true;

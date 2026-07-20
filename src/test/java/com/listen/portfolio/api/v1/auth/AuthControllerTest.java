@@ -9,6 +9,7 @@ import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.AuthService;
+import com.listen.portfolio.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -51,6 +52,9 @@ class AuthControllerTest {
 
     @Mock
     private HttpServletRequest request;
+    
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     private AuthController authController;
     private SignUpRequest mockSignUpRequest;
@@ -67,7 +71,8 @@ class AuthControllerTest {
                 authService,
                 authenticationManager,
                 jwtUtil,
-                userDetailsService
+                userDetailsService,
+                refreshTokenService
         );
 
         // 初始化测试数据
@@ -152,6 +157,8 @@ class AuthControllerTest {
                 .thenReturn("jwtToken");
         when(jwtUtil.generateRefreshToken("jwtToken"))
                 .thenReturn("refreshToken");
+        when(jwtUtil.getRefreshExpiration())
+                .thenReturn(604800000L);
         when(authService.getUserByName("testuser"))
                 .thenReturn(Optional.of(mockUserEntity));
 
@@ -174,6 +181,8 @@ class AuthControllerTest {
         verify(userDetailsService).loadUserByUsername("testuser");
         verify(jwtUtil).generateToken(mockUserDetails);
         verify(jwtUtil).generateRefreshToken("jwtToken");
+        verify(jwtUtil).getRefreshExpiration();
+        verify(refreshTokenService).saveRefreshToken("testuser", "refreshToken", 604800000L);
         verify(authService).getUserByName("testuser");
     }
 
@@ -211,12 +220,16 @@ class AuthControllerTest {
         String newJwtToken = "newJwtToken";
         String newRefreshToken = "newRefreshToken";
 
+        when(jwtUtil.extractUsername(oldRefreshToken))
+                .thenReturn("testuser");
+        when(refreshTokenService.isRefreshTokenValid("testuser", oldRefreshToken))
+                .thenReturn(true);
         when(jwtUtil.refreshToken(oldRefreshToken))
                 .thenReturn(newJwtToken);
         when(jwtUtil.generateRefreshToken(newJwtToken))
                 .thenReturn(newRefreshToken);
-        when(jwtUtil.extractUsername(oldRefreshToken))
-                .thenReturn("testuser");
+        when(jwtUtil.getRefreshExpiration())
+                .thenReturn(604800000L);
         when(authService.getUserByName("testuser"))
                 .thenReturn(Optional.of(mockUserEntity));
 
@@ -235,9 +248,12 @@ class AuthControllerTest {
         assertEquals(1L, apiResponse.getBody().getUserId());
 
         // 验证调用
+        verify(jwtUtil).extractUsername(oldRefreshToken);
+        verify(refreshTokenService).isRefreshTokenValid("testuser", oldRefreshToken);
         verify(jwtUtil).refreshToken(oldRefreshToken);
         verify(jwtUtil).generateRefreshToken(newJwtToken);
-        verify(jwtUtil).extractUsername(oldRefreshToken);
+        verify(refreshTokenService).revokeRefreshToken("testuser", oldRefreshToken);
+        verify(refreshTokenService).saveRefreshToken("testuser", newRefreshToken, 604800000L);
         verify(authService).getUserByName("testuser");
     }
 
