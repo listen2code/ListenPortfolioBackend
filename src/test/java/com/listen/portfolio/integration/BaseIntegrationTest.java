@@ -2,8 +2,12 @@ package com.listen.portfolio.integration;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.sql.Connection;
+import java.sql.Statement;
+import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -24,6 +28,9 @@ import redis.embedded.RedisServer;
 public abstract class BaseIntegrationTest {
 
     private static final int REDIS_PORT = freePort();
+
+    @Autowired
+    private DataSource dataSource;
 
     static {
         try {
@@ -64,6 +71,17 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.data.redis.port", () -> String.valueOf(REDIS_PORT));
         registry.add("spring.data.redis.timeout", () -> "2000ms");
         registry.add("spring.data.redis.database", () -> "1");
+    }
+
+    @BeforeEach
+    public void initH2Functions() {
+        // 在 H2 中注册 MySQL 的 BINARY 函数别名，保证通过用户名匹配进行大小写敏感校验时的 SQL 兼容性
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE ALIAS IF NOT EXISTS \"BINARY\" DETERMINISTIC FOR \"com.listen.portfolio.integration.H2Functions.binary\"");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @BeforeEach
