@@ -48,7 +48,7 @@ public class ProjectService {
         dto.setDesc(entity.getDesc());
         dto.setImageUrl(entity.getImageUrl());
         dto.setGithubUrl(entity.getGithubUrl());
-        dto.setTechStack(entity.getTechStack());
+        dto.setTechStack(entity.getTechStack() != null ? new java.util.ArrayList<>(entity.getTechStack()) : null);
         return dto;
     }
 }

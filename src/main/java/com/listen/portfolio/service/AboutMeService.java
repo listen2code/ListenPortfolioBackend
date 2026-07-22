@@ -64,7 +64,7 @@ public class AboutMeService {
     }
 
     private List<String> nullToEmpty(List<String> value) {
-        return value == null ? Collections.emptyList() : value;
+        return value == null ? Collections.emptyList() : new java.util.ArrayList<>(value);
     }
 
     private List<StatDto> toStatDtos(List<StatEntity> stats) {
