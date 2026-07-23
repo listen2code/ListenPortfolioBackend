@@ -34,6 +34,8 @@ services:
       # 邮件配置
       MAIL_USERNAME: ${MAIL_USERNAME:-listen2code@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-wlrwwiltnwvbjinn}
+      # 前端 URL（重置密码链接前缀）
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
       # JVM 性能优化参数
       JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200}
     networks:
