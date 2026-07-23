@@ -151,6 +151,17 @@ docker compose --profile local up -d --build
 * **免除 ssh-keyscan 报错依赖**：CI 虚拟环境直接在全局 `~/.ssh/config` 下配置了 `StrictHostKeyChecking no` 和 `UserKnownHostsFile /dev/null`，免去了对 `ssh-keyscan` 命令的调用，彻底避免因服务器防火墙暂时阻断该命令或者 IP 格式兼容引起的 CI 构建崩溃。
 * **基于环境变量解密多行私钥**：在 Step 级别通过 `env` 将 GitHub Secret 注入，使用 Shell 自带的环境变量解密，避免了多行 PEM 证书直接在 YAML 执行区转义导致的格式破损或意外的 EOF。
 
+#### 8.3 智能部署模式（增量 vs. 清库）
+流水线默认采用安全的**增量热部署**，仅在特定指令下才执行**清库重置部署**：
+* **常规增量部署（默认，保留数据）**：
+  - **触发条件**：常规 Git Push，或者 Commit 消息中不包含清库指令。
+  - **云端指令**：`docker compose up -d --build`
+  - **表现**：**保留数据库和缓存中的全部数据卷**。以增量方式热替换后端应用包，停机时间控制在 3-5 秒，数据 100% 安全。
+* **清库重置部署（特定指令）**：
+  - **触发条件**：Git Commit 消息中包含 **`clean deploy`** 或 **`deploy-clean`**。
+  - **云端指令**：`docker compose down -v && docker compose up -d --build`
+  - **表现**：**清除包括 MySQL 数据库数据在内的所有 Docker 挂载数据卷**，并在容器重启时执行 Flyway 重新生成全新的空表及初始测试账号。适用于需要将环境数据进行大版本重构或彻底清洗的场景。
+
 ---
 
 ### 9. 常见部署故障诊断与 FAQ (Troubleshooting)

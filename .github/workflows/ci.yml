@@ -225,7 +225,19 @@ jobs:
           FRONTEND_URL=${{ secrets.FRONTEND_URL || format('http://{0}:8080', secrets.AWS_HOST) }}
           EOF"
 
-      # 步骤 3.9：连入云端 EC2 目录，一键执行 Docker Compose 重建及后台启动
+      # 步骤 3.9：连入云端 EC2 目录，根据 commit 消息决定是增量部署还是清库重构部署
       - name: Launch Containers via Docker Compose on EC2
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d"
+          if [[ "$COMMIT_MESSAGE" == *"clean deploy"* || "$COMMIT_MESSAGE" == *"deploy-clean"* ]]; then
+            echo "=========================================================="
+            echo "检测到包含 'clean deploy'，执行清库部署（删除数据卷）..."
+            echo "=========================================================="
+            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d --build"
+          else
+            echo "=========================================================="
+            echo "执行常规增量部署（保留数据卷，保证数据持久化）..."
+            echo "=========================================================="
+            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local up -d --build"
+          fi
