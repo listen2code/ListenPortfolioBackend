@@ -1,136 +1,170 @@
+# 工作流的名称，显示在 GitHub Actions 界面上
 name: Backend CI/CD
 
+# 触发工作流的事件配置
 on:
+  # 当有代码推送（push）到 master 或 main 分支时触发
   push:
     branches: [ master, main ]
+  # 当针对 master 或 main 分支创建或更新拉取请求（pull_request）时触发
   pull_request:
     branches: [ master, main ]
+  # 支持在 GitHub 网页端手动触发该工作流
   workflow_dispatch:
+    # 手动触发时支持输入的参数配置
     inputs:
       force_deploy:
-        description: 'Force deploy to AWS'
-        required: false
-        default: false
-        type: boolean
+        description: 'Force deploy to AWS' # 输入框的描述文字：是否强制部署到 AWS
+        required: false                    # 是否必填：否
+        default: false                     # 默认值：false（不强制）
+        type: boolean                      # 参数类型：布尔值（勾选框）
 
+# 工作流中包含的并发/串行任务定义
 jobs:
+  # 任务一：检查部署条件判定，输出是否应该进行 AWS 部署
   check-conditions:
-    name: Check Deployment Conditions
-    runs-on: ubuntu-latest
+    name: Check Deployment Conditions # 任务显示名称
+    runs-on: ubuntu-latest            # 运行在最新的 Ubuntu 虚拟环境上
+    # 将此任务中某个步骤的输出暴露给其他后续任务使用
     outputs:
       should_deploy: ${{ steps.check.outputs.should_deploy }}
     steps:
+      # 步骤 1.1：拉取代码仓库
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # 拉取完整提交历史（depth=0），以确保能够读取前一次 commit 的信息
 
+      # 步骤 1.2：执行判定逻辑核心脚本
       - name: Check conditions
-        id: check
+        id: check # 设定 ID 方便其他步骤引用其输出结果
         run: |
+          # 初始化默认部署判定变量为 false
           SHOULD_DEPLOY="false"
           
-          # 1. Check if manually forced via inputs
+          # 检查点 1：如果是通过网页端手动触发，且勾选了 force_deploy
           if [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
             SHOULD_DEPLOY="true"
             echo "Force deploy requested via manual trigger"
           fi
           
-          # 2. Check commit message for special keywords (deploy aws, [deploy aws], [deploy])
+          # 检查点 2：如果还没决定部署，则检查最新的一次 Commit 提交信息
           if [[ "$SHOULD_DEPLOY" == "false" ]]; then
+            # 获取最新一次 commit 的首行提交信息
             COMMIT_MSG=$(git log -1 --pretty=format:"%s")
             echo "Latest commit message: $COMMIT_MSG"
             
-            # Simple contains check (case-insensitive conversion for search)
+            # 将提交信息转换为纯小写，以进行不区分大小写的包含匹配
             LOWER_MSG=$(echo "$COMMIT_MSG" | tr '[:upper:]' '[:lower:]')
+            # 如果提交信息中包含 [deploy aws]、deploy aws 或 [deploy] 关键字，则判定为需要部署
             if [[ "$LOWER_MSG" == *"[deploy aws]"* ]] || [[ "$LOWER_MSG" == *"deploy aws"* ]] || [[ "$LOWER_MSG" == *"[deploy]"* ]]; then
               SHOULD_DEPLOY="true"
               echo "Deployment trigger found in commit message"
             fi
           fi
           
-          # 3. Check time interval (e.g. at least 4 hours since last deploy) for standard push events
+          # 检查点 3：如果是代码推送（push）事件且尚未触发部署，则检查距离上一次成功部署的时间间隔
           if [[ "${{ github.event_name }}" == "push" ]] && [[ "$SHOULD_DEPLOY" == "false" ]]; then
             echo "Checking time since last successful deployment..."
             
+            # 使用 GitHub API 动态拉取当前项目、当前分支上一次成功（status=success）的 Push 运行记录
             LAST_DEPLOY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&event=push&status=success&per_page=1" | \
               jq -r '.workflow_runs[0].created_at // ""')
               
+            # 如果能获取到上一次成功部署的时间
             if [[ -n "$LAST_DEPLOY" ]] && [[ "$LAST_DEPLOY" != "null" ]]; then
+              # 获取当前时间的 UTC 时间戳（秒数）
               CURRENT_TIME=$(date -u +%s)
+              # 将 ISO 格式的上一次部署时间转换为 UTC 时间戳
               LAST_DEPLOY_TIME=$(date -d "$LAST_DEPLOY" -u +%s 2>/dev/null || echo 0)
+              # 计算时间差值（以小时为单位）
               TIME_DIFF=$(( (CURRENT_TIME - LAST_DEPLOY_TIME) / 3600 ))
               
               echo "Last deployment: $LAST_DEPLOY"
               echo "Time difference: $TIME_DIFF hours"
               
-              # Set interval limit: 4 hours
+              # 如果距离上一次成功部署已经过去 4 小时及以上，则自动触发本次部署
               if [[ $TIME_DIFF -ge 4 ]]; then
                 SHOULD_DEPLOY="true"
                 echo "Deploying due to time interval (>= 4 hours elapsed)"
               fi
             else
+              # 如果从来没有成功运行过部署，则默认触发部署
               SHOULD_DEPLOY="true"
               echo "No previous deployment found, triggering build"
             fi
           fi
           
-          # 4. PR runs should never deploy
+          # 检查点 4：如果是 PR（拉取请求）触发的构建，为安全起见强制不允许执行发布部署
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             SHOULD_DEPLOY="false"
             echo "Pull request builds bypass auto deployment"
           fi
           
+          # 将最终的判定结果写入 GitHub 环境变量，使其能够传递给其他 jobs 任务
           echo "should_deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
           echo "Final deployment decision: $SHOULD_DEPLOY"
 
+  # 任务二：自动编译和单测校验（在每次 commit 或 PR 时都会执行）
   build-and-test:
-    name: Build and Test
-    runs-on: ubuntu-latest
+    name: Build and Test # 任务显示名称
+    runs-on: ubuntu-latest # 运行在最新的 Ubuntu 虚拟环境上
     steps:
+      # 步骤 2.1：拉取代码仓库
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 步骤 2.2：搭建 Java 运行环境
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
+          java-version: '17'      # 匹配工程 pom.xml 的编译目标版本 17
+          distribution: 'temurin' # 使用著名的 Eclipse Temurin 发行版 JDK
+          cache: 'maven'          # 开启 Maven 依赖缓存，大幅加快后续构建速度
 
+      # 步骤 2.3：授权本地 Maven Wrapper 执行权限
       - name: Make maven wrapper executable
         run: chmod +x mvnw
 
+      # 步骤 2.4：执行编译与核心单元/集成测试，并生成测试覆盖率报告
+      # 注：-Dtest=!PerformanceTest 剔除了环境依赖强、耗时久的并发性能测试，防止 CI 挂起
       - name: Run Tests and Generate JaCoCo Report
         run: ./mvnw clean test -Dtest=!PerformanceTest jacoco:report
 
+      # 步骤 2.5：执行 SpotBugs 静态代码漏洞扫描
       - name: Run SpotBugs Static Analysis
         run: ./mvnw spotbugs:check
 
+      # 步骤 2.6：上传覆盖率报告为 Actions 可读构建产物
       - name: Upload JaCoCo Coverage Report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() # 即使之前有单测失败，也总是上传报告以供排查
         with:
           name: jacoco-report
           path: target/site/jacoco/
 
+      # 步骤 2.7：上传漏洞分析报告为 Actions 构建产物
       - name: Upload SpotBugs Report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() # 总是上传静态检查报告
         with:
           name: spotbugs-report
           path: target/spotbugs.xml
 
+  # 任务三：AWS EC2 一键云端发布（仅在 check-conditions 判定 should_deploy 为 true 时触发）
   deploy:
-    name: Deploy to AWS EC2
-    needs: [check-conditions, build-and-test]
+    name: Deploy to AWS EC2 # 任务显示名称
+    needs: [check-conditions, build-and-test] # 强依赖：必须等待条件判定与编译测试任务均成功通过才执行
+    # 执行条件：不能是 PR 构建，且 check-conditions 判定的输出变量 should_deploy 必须为 'true'
     if: github.event_name != 'pull_request' && needs.check-conditions.outputs.should_deploy == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # 运行在 Ubuntu 环境上
     steps:
+      # 步骤 3.1：拉取代码仓库
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 步骤 3.2：搭建 Java 开发环境（用于本地打包）
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -138,32 +172,44 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      # 步骤 3.3：授权 Maven 包装器执行权限
       - name: Make maven wrapper executable
         run: chmod +x mvnw
 
+      # 步骤 3.4：本地构建编译 WAR 生产安装包（跳过单测，因为上一步已测试过）
       - name: Build WAR Package
         run: ./mvnw clean package -DskipTests
 
+      # 步骤 3.5：动态提取 GitHub Secrets 配置 SSH 私钥和主机已知指纹
       - name: Configure SSH Private Key
+        env:
+          SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/id_rsa
+          # 将机密变量中的私钥内容安全写入本地 id_rsa 文件，避免 YAML 解析和 Shell 多行转义问题
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          # 授予私钥安全的所有者只读权限（Linux 下 SSH 的强制安全要求）
           chmod 600 ~/.ssh/id_rsa
+          # 自动获取远程主机的 SSH 密钥指纹并写入 known_hosts，防止首次连接弹窗阻断
           ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
 
+      # 步骤 3.6：连入 EC2 预创建应用部署目录和 target 子目录
       - name: Prepare Remote Target Directory
         run: |
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "mkdir -p ~/portfolio/target"
 
+      # 步骤 3.7：使用安全传输协议（SCP）将本地生成的 WAR 包上传至云端 target/ 目录下
       - name: Upload WAR Package via SCP
         run: |
           scp -i ~/.ssh/id_rsa target/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
 
+      # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、docker-compose 和监控目录上传至云端工作目录
       - name: Upload Configurations via SCP
         run: |
           scp -i ~/.ssh/id_rsa Dockerfile docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
           scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
 
+      # 步骤 3.9：连入云端 EC2 目录，一键执行 Docker Compose 重建及后台启动
       - name: Launch Containers via Docker Compose on EC2
         run: |
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d"
