@@ -142,7 +142,7 @@ docker compose --profile local up -d --build
 * **`MAIL_USERNAME`**：发信邮箱账号（例如 `listen2code@gmail.com`，如果不配置，默认使用默认邮箱）。
 * **`MAIL_PASSWORD`**：发信邮箱应用授权码密码（例如 `xqvfldvtlgbjvdnn`，如果不配置，默认使用当前最新验证的应用密码）。
 * **`DB_PASSWORD`**：云端 MySQL 数据库的 root 密码（如不配置，自动使用默认密码 `Ls-88888888`）。
-* **`JWT_SECRET`**：JWT 签名强密钥（如不配置，自动使用系统默认的安全密钥）。
+* **`JWT_SECRET`**：JWT 签名强密钥（在 CI 自动化部署时，流水线会读取 GitHub Actions Secrets 中的同名变量动态写入云端 `.env`；如不配置，自动使用系统默认的安全密钥）。
 
 *如果未在 GitHub Secrets 中配置这些可选变量，CI 流程将默认使用项目当前已配置且通过验证的默认测试账号和最新发信密码进行安全部署，实现开箱即用。*
 
