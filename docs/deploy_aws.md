@@ -134,9 +134,17 @@ docker compose --profile local up -d --build
 后端项目已集成 GitHub Actions 自动化流水线。在您向分支推送代码时，流水线可自动执行编译、单测、代码规范扫描以及向 AWS EC2 的一键式热发布。
 
 #### 8.1 GitHub 仓库机密变量 (Secrets) 配置
-要使 GitHub Actions 拥有向 AWS 实例部署的权限，必须在您的 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中配置以下两个密钥：
+要使 GitHub Actions 拥有向 AWS 实例部署的权限，必须在您的 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中配置以下两个核心密钥：
 * **`AWS_HOST`**：您的 EC2 实例的最新弹性公网 IP 或者是静态 IP（如 `13.218.192.181`），**切勿包含 `http://` 或端口号**。
 * **`AWS_SSH_KEY`**：登录 EC2 的密钥对私钥文件的**完整文本内容**（即 `listen.pem` 文件内容，包含首尾的 `-----BEGIN...` 标识符）。
+
+此外，为了保护云端部署的邮件验证等敏感环境变量，您可以在 GitHub Secrets 中配置以下**可选/推荐机密变量**：
+* **`MAIL_USERNAME`**：发信邮箱账号（例如 `listen2code@gmail.com`，如果不配置，默认使用默认邮箱）。
+* **`MAIL_PASSWORD`**：发信邮箱应用授权码密码（例如 `xqvfldvtlgbjvdnn`，如果不配置，默认使用当前最新验证的应用密码）。
+* **`DB_PASSWORD`**：云端 MySQL 数据库的 root 密码（如不配置，自动使用默认密码 `Ls-88888888`）。
+* **`JWT_SECRET`**：JWT 签名强密钥（如不配置，自动使用系统默认的安全密钥）。
+
+*如果未在 GitHub Secrets 中配置这些可选变量，CI 流程将默认使用项目当前已配置且通过验证的默认测试账号和最新发信密码进行安全部署，实现开箱即用。*
 
 #### 8.2 GitHub Actions 部署稳定性架构设计
 在 `.github/workflows/ci.yml` 中，针对常见的 CI 部署环境进行了如下稳定性保障：

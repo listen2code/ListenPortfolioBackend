@@ -213,6 +213,18 @@ jobs:
           scp -i ~/.ssh/id_rsa Dockerfile docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
           scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
 
+      # 步骤 3.8.5：在 EC2 服务器上动态生成 .env 配置文件，注入数据库及邮件等环境变量
+      - name: Generate .env File on EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cat > ~/portfolio/.env <<'EOF'
+          DB_USERNAME=${{ secrets.DB_USERNAME || 'root' }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD || 'Ls-88888888' }}
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'your-super-strong-secret-key-that-is-at-least-256-bits-long' }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME || 'listen2code@gmail.com' }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD || 'xqvfldvtlgbjvdnn' }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL || format('http://{0}:8080', secrets.AWS_HOST) }}
+          EOF"
+
       # 步骤 3.9：连入云端 EC2 目录，一键执行 Docker Compose 重建及后台启动
       - name: Launch Containers via Docker Compose on EC2
         run: |
