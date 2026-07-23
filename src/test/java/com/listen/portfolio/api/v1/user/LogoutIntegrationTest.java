@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -23,6 +25,9 @@ public class LogoutIntegrationTest extends BaseIntegrationTest {
     
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
+
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
 
     @Test
     void testCompleteLogoutFlow() {
@@ -79,10 +84,14 @@ public class LogoutIntegrationTest extends BaseIntegrationTest {
         long expirationTime = jwtUtil.extractExpiration(token).getTime();
         long currentTime = System.currentTimeMillis();
         
-        // 验证过期时间合理（应该在当前时间 + 5分钟左右）
-        long expectedExpiration = currentTime + 300000; // 5分钟
-        assertTrue(Math.abs(expirationTime - expectedExpiration) < 10000, 
-                  "Token 过期时间不合理");
+        // 验证过期时间合理（应该在当前时间 + 配置的过期时间左右）
+        long expectedExpiration = currentTime + jwtExpiration;
+        long timeDifference = Math.abs(expirationTime - expectedExpiration);
+        assertTrue(timeDifference < 10000, 
+                  "Token 过期时间不合理: jwtExpiration=" + jwtExpiration + 
+                  ", expirationTime=" + expirationTime + 
+                  ", expectedExpiration=" + expectedExpiration + 
+                  ", diff=" + timeDifference);
         
         System.out.println("✅ Token 过期时间验证通过");
         
