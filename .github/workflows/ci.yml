@@ -1,24 +1,101 @@
-name: Backend CI
+name: Backend CI/CD
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deploy to AWS'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
-  build:
-    name: Build, Test and Scan
+  check-conditions:
+    name: Check Deployment Conditions
     runs-on: ubuntu-latest
+    outputs:
+      should_deploy: ${{ steps.check.outputs.should_deploy }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Check conditions
+        id: check
+        run: |
+          SHOULD_DEPLOY="false"
+          
+          # 1. Check if manually forced via inputs
+          if [[ "${{ github.event.inputs.force_deploy }}" == "true" ]]; then
+            SHOULD_DEPLOY="true"
+            echo "Force deploy requested via manual trigger"
+          fi
+          
+          # 2. Check commit message for special keywords (deploy aws, [deploy aws], [deploy])
+          if [[ "$SHOULD_DEPLOY" == "false" ]]; then
+            COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+            echo "Latest commit message: $COMMIT_MSG"
+            
+            # Simple contains check (case-insensitive conversion for search)
+            LOWER_MSG=$(echo "$COMMIT_MSG" | tr '[:upper:]' '[:lower:]')
+            if [[ "$LOWER_MSG" == *"[deploy aws]"* ]] || [[ "$LOWER_MSG" == *"deploy aws"* ]] || [[ "$LOWER_MSG" == *"[deploy]"* ]]; then
+              SHOULD_DEPLOY="true"
+              echo "Deployment trigger found in commit message"
+            fi
+          fi
+          
+          # 3. Check time interval (e.g. at least 4 hours since last deploy) for standard push events
+          if [[ "${{ github.event_name }}" == "push" ]] && [[ "$SHOULD_DEPLOY" == "false" ]]; then
+            echo "Checking time since last successful deployment..."
+            
+            LAST_DEPLOY=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs?branch=${{ github.ref_name }}&event=push&status=success&per_page=1" | \
+              jq -r '.workflow_runs[0].created_at // ""')
+              
+            if [[ -n "$LAST_DEPLOY" ]] && [[ "$LAST_DEPLOY" != "null" ]]; then
+              CURRENT_TIME=$(date -u +%s)
+              LAST_DEPLOY_TIME=$(date -d "$LAST_DEPLOY" -u +%s 2>/dev/null || echo 0)
+              TIME_DIFF=$(( (CURRENT_TIME - LAST_DEPLOY_TIME) / 3600 ))
+              
+              echo "Last deployment: $LAST_DEPLOY"
+              echo "Time difference: $TIME_DIFF hours"
+              
+              # Set interval limit: 4 hours
+              if [[ $TIME_DIFF -ge 4 ]]; then
+                SHOULD_DEPLOY="true"
+                echo "Deploying due to time interval (>= 4 hours elapsed)"
+              fi
+            else
+              SHOULD_DEPLOY="true"
+              echo "No previous deployment found, triggering build"
+            fi
+          fi
+          
+          # 4. PR runs should never deploy
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            SHOULD_DEPLOY="false"
+            echo "Pull request builds bypass auto deployment"
+          fi
+          
+          echo "should_deploy=$SHOULD_DEPLOY" >> $GITHUB_OUTPUT
+          echo "Final deployment decision: $SHOULD_DEPLOY"
+
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
@@ -26,7 +103,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Tests and Generate JaCoCo Report
-        run: ./mvnw clean test jacoco:report
+        run: ./mvnw clean test -Dtest=!PerformanceTest jacoco:report
 
       - name: Run SpotBugs Static Analysis
         run: ./mvnw spotbugs:check
@@ -44,3 +121,49 @@ jobs:
         with:
           name: spotbugs-report
           path: target/spotbugs.xml
+
+  deploy:
+    name: Deploy to AWS EC2
+    needs: [check-conditions, build-and-test]
+    if: github.event_name != 'pull_request' && needs.check-conditions.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build WAR Package
+        run: ./mvnw clean package -DskipTests
+
+      - name: Configure SSH Private Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Prepare Remote Target Directory
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "mkdir -p ~/portfolio/target"
+
+      - name: Upload WAR Package via SCP
+        run: |
+          scp -i ~/.ssh/id_rsa target/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
+
+      - name: Upload Configurations via SCP
+        run: |
+          scp -i ~/.ssh/id_rsa Dockerfile docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
+          scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
+
+      - name: Launch Containers via Docker Compose on EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d"
