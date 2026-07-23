@@ -180,7 +180,7 @@ jobs:
       - name: Build WAR Package
         run: ./mvnw clean package -DskipTests
 
-      # 步骤 3.5：动态提取 GitHub Secrets 配置 SSH 私钥和主机已知指纹
+      # 步骤 3.5：动态提取 GitHub Secrets 配置 SSH 私钥并禁用严格的主机密钥校验
       - name: Configure SSH Private Key
         env:
           SSH_KEY: ${{ secrets.AWS_SSH_KEY }}
@@ -190,8 +190,12 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/id_rsa
           # 授予私钥安全的所有者只读权限（Linux 下 SSH 的强制安全要求）
           chmod 600 ~/.ssh/id_rsa
-          # 自动获取远程主机的 SSH 密钥指纹并写入 known_hosts，防止首次连接弹窗阻断
-          ssh-keyscan -H ${{ secrets.AWS_HOST }} >> ~/.ssh/known_hosts
+          # 配置 SSH 客户端禁用严格的主机密钥校验，防止首次连接时因未录入指纹而弹窗挂起
+          cat >> ~/.ssh/config <<EOF
+          Host *
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+          EOF
 
       # 步骤 3.6：连入 EC2 预创建应用部署目录和 target 子目录
       - name: Prepare Remote Target Directory
