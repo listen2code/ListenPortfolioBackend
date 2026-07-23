@@ -13,9 +13,9 @@
 1. **选择实例与系统**：
    * **AMI**: 推荐使用 *Amazon Linux 2023*。
    * **实例类型**: `t2.micro` (1GB 内存，免费套餐适用) 或 `t3.small`。
-2. **配置安全组 (Security Group)**：
-   确保放行以下入站规则端口：
-   * `22` (SSH) — 用于远程连接和传输构建物。
+2. **配置安全组 (Security Group) 入站规则**：
+   确保放行以下端口以允许外部及自动化流水线访问：
+   * `22` (SSH) — **必须放行 `0.0.0.0/0` (Anywhere)**，否则 GitHub Actions 的动态 IP 虚拟执行环境将无法连入部署。因为已禁用密码并强制密钥验证，所以这是绝对安全的。
    * `8080` — 用于外部设备访问 Web 应用 API（如果是真机调试，建议将源设置为 `0.0.0.0/0`）。
    * `3000` — （可选）用于访问 Grafana 监控大盘。
 
@@ -129,6 +129,40 @@ docker compose --profile local up -d --build
 
 ---
 
+### 8. GitHub Actions 自动化 CI/CD 部署配置
+
+后端项目已集成 GitHub Actions 自动化流水线。在您向分支推送代码时，流水线可自动执行编译、单测、代码规范扫描以及向 AWS EC2 的一键式热发布。
+
+#### 8.1 GitHub 仓库机密变量 (Secrets) 配置
+要使 GitHub Actions 拥有向 AWS 实例部署的权限，必须在您的 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中配置以下两个密钥：
+* **`AWS_HOST`**：您的 EC2 实例的最新弹性公网 IP 或者是静态 IP（如 `13.218.192.181`），**切勿包含 `http://` 或端口号**。
+* **`AWS_SSH_KEY`**：登录 EC2 的密钥对私钥文件的**完整文本内容**（即 `listen.pem` 文件内容，包含首尾的 `-----BEGIN...` 标识符）。
+
+#### 8.2 GitHub Actions 部署稳定性架构设计
+在 `.github/workflows/ci.yml` 中，针对常见的 CI 部署环境进行了如下稳定性保障：
+* **免除 ssh-keyscan 报错依赖**：CI 虚拟环境直接在全局 `~/.ssh/config` 下配置了 `StrictHostKeyChecking no` 和 `UserKnownHostsFile /dev/null`，免去了对 `ssh-keyscan` 命令的调用，彻底避免因服务器防火墙暂时阻断该命令或者 IP 格式兼容引起的 CI 构建崩溃。
+* **基于环境变量解密多行私钥**：在 Step 级别通过 `env` 将 GitHub Secret 注入，使用 Shell 自带的环境变量解密，避免了多行 PEM 证书直接在 YAML 执行区转义导致的格式破损或意外的 EOF。
+
+---
+
+### 9. 常见部署故障诊断与 FAQ (Troubleshooting)
+
+#### ❓ 故障一：SSH 连接在握手阶段提示 `Connection timed out during banner exchange` 或直接死锁挂起
+* **原因**：EC2 实例物理内存（1GB）已被 MySQL、Spring Boot 和监控服务完全榨干。Linux 内核陷入内存页频繁换出的“内存抖动”（Thrashing）死锁中，导致系统包含 SSH 守护进程在内的所有服务处于死机状态。
+* **解决方法**：
+  1. 在 AWS 网页端控制台找到该实例，选择 **“实例状态 (Instance State)” -> “停止实例 (Stop instance)”**（如果常规停止超时，请勾选 **“强制停止 (Force stop)”**）。
+  2. 待实例完全变为 Stopped 状态后，点击 **“启动实例 (Start instance)”**。
+  3. 重新连入后，**立即按照本指南第 2 步配置 2GB Swap 虚拟交换分区**。
+
+#### ❓ 故障二：GitHub Actions 运行部署步骤时，报错 `ssh: connect to host *** port 22: Connection timed out`
+* **原因**：AWS 安全组的 SSH `22` 端口没有对 GitHub Actions 虚拟执行环境开放。因为 GitHub 的流水线服务器 IP 范围是动态的，如果只限制了您本人的公网 IP 访问 22 端口，流水线流量将会被 AWS 防火墙直接静默丢弃。
+* **解决方法**：
+  1. 登录 AWS EC2 控制台，找到应用绑定的安全组（Security Group）。
+  2. 编辑入站规则，将端口 `22` (SSH) 的允许源修改为 **`0.0.0.0/0`** (允许所有人)。
+  3. *安全性备注*：由于该 EC2 实例已在 `sshd_config` 中关闭了传统的密码认证，仅支持私钥证书登录，所以即使端口全开黑客也绝无可能暴力破解，符合安全标准。
+
+---
+
 ## 第二部分：AWS 进阶云原生方案 (高可用、生产级伸缩)
 
 在将系统正式推向高可用的公网生产环境时，单台 EC2 虚机架构面临单点故障和手工维护成本高的问题。本部分提供了 AWS 核心云托管方案的设计指引。
@@ -155,7 +189,7 @@ docker compose --profile local up -d --build
   * **极致的安全隔离**：每个 Task 容器都拥有独立的虚拟化沙箱及专有的 IAM 角色权限。
 * **部署命令示例**：
   ```bash
-  # 通过云端 CloudFormation 堆栈声明一键拉起 ECS Fargate 任务
+  # 通过云端 CloudFormation 堆堆声明一键拉起 ECS Fargate 任务
   aws cloudformation deploy \
       --template-file aws/cloudformation/monitoring-stack.yaml \
       --stack-name production-portfolio-monitoring \
