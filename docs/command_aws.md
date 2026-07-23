@@ -2,7 +2,7 @@
 ### ssh login
 ```
 ssh -i xxx.pem [ec2 username]@[ec2 公有 IPv4 地址]
-ssh -i tool/listen.pem ec2-user@18.181.198.209
+ssh -i tool/listen.pem ec2-user@13.218.192.181
 ```
 
 ### upload files
@@ -20,5 +20,5 @@ docker exec -it portfolio-db-1 mysql -u root -pLs-88888888 portfolio
 
 # 进入 MySQL 命令行后：
 show tables;
-select * from user_info;
+select * from users;
 ```
