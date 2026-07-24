@@ -39,7 +39,7 @@ public class ProjectController {
         logger.info("Get project list");
         List<ProjectDto> projects = projectService.getProjects();
         if (projects.isEmpty()) {
-            return ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "No projects found");
+            return ApiResponse.error(Constants.ERR_PROJECTS_NOT_FOUND, "No projects found");
         }
         return ApiResponse.success(projects);
     }

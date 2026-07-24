@@ -76,7 +76,7 @@ public class UserController {
         logger.info("Get user info, userId: {}", id);
         return userService.getUserSummaryById(id)
                 .map(ApiResponse::success)
-                .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
+                .orElse(ApiResponse.error(Constants.ERR_ACCOUNT_NOT_FOUND, "User not found"));
     }
 
     @PostMapping("/logout")
@@ -124,7 +124,7 @@ public class UserController {
         } catch (Exception e) {
             logger.error("Error during logout: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Logout failed"));
+                    .body(ApiResponse.error(Constants.ERR_LOGOUT_FAILED, "Logout failed"));
         }
     }
     
@@ -200,7 +200,7 @@ public class UserController {
         if (userOpt.isEmpty()) {
             logger.warn("User not found for change-password request: {}", username);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
+                    .body(ApiResponse.error(Constants.ERR_ACCOUNT_NOT_FOUND, "User not found"));
         }
 
         var user = userOpt.get();
@@ -210,7 +210,7 @@ public class UserController {
             logger.warn("User {} attempted to change password for different user ID: {}", 
                        username, changePasswordRequest.getUserId());
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Cannot change password for other users"));
+                    .body(ApiResponse.error(Constants.ERR_ACCESS_DENIED, "Cannot change password for other users"));
         }
         
         boolean success = userService.changePassword(changePasswordRequest);
@@ -237,7 +237,7 @@ public class UserController {
         } else {
             logger.warn("Password change failed for user: {}", username);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Password change failed"));
+                    .body(ApiResponse.error(Constants.ERR_CURRENT_PASSWORD_INCORRECT, "Password change failed"));
         }
     }
 
@@ -261,7 +261,7 @@ public class UserController {
         if (userOpt.isEmpty()) {
             logger.warn("User not found for delete-account request: {}", username);
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "User not found"));
+                    .body(ApiResponse.error(Constants.ERR_ACCOUNT_NOT_FOUND, "User not found"));
         }
 
         var user = userOpt.get();
@@ -275,7 +275,7 @@ public class UserController {
         } else {
             logger.warn("Account deletion failed for user: {}", username);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Account deletion failed"));
+                    .body(ApiResponse.error(Constants.ERR_DELETE_ACCOUNT_FAILED, "Account deletion failed"));
         }
     }
 }

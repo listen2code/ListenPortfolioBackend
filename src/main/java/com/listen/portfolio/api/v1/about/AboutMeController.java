@@ -42,13 +42,13 @@ public class AboutMeController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null) {
             logger.warn("No authenticated user found for AboutMe page.");
-            return ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "About me not found");
+            return ApiResponse.error(Constants.ERR_ABOUT_ME_NOT_FOUND, "About me not found");
         }
         
         String username = authentication.getName();
         logger.info("Get about-me information");
         return aboutMeService.getAboutMeDto(username)
                 .map(ApiResponse::success)
-                .orElse(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "About me not found"));
+                .orElse(ApiResponse.error(Constants.ERR_ABOUT_ME_NOT_FOUND, "About me not found"));
     }
 }

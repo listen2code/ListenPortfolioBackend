@@ -123,7 +123,7 @@ public class AuthController {
 
         logger.warn("Username {} already exists, sign-up failed", signUpRequest.getUserName());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Username already exists"));
+                .body(ApiResponse.error(Constants.ERR_USERNAME_EXISTS, "Username already exists"));
     }
 
     @PostMapping("/login")
@@ -174,7 +174,7 @@ public class AuthController {
             // 记录 user 与 reason，便于排查（不会打印密码/token 等敏感信息）
             logger.warn("Invalid credentials for user {}, reason: {}", LoginRequest.getUserName(), e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(ApiResponse.error(Constants.DEFAULT_SERVER_ERROR, "Invalid credentials"));
+                    .body(ApiResponse.error(Constants.ERR_INVALID_CREDENTIALS, "Invalid credentials"));
         }
 
         final UserDetails userDetails = userDetailsService.loadUserByUsername(LoginRequest.getUserName());
