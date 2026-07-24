@@ -116,7 +116,7 @@ class ProjectControllerTest {
         // Then
         assertNotNull(response);
         assertEquals("1", response.getResult());
-        assertEquals(Constants.DEFAULT_SERVER_ERROR, response.getMessageId());
+        assertEquals(Constants.ERR_PROJECTS_NOT_FOUND, response.getMessageId());
         assertEquals("No projects found", response.getMessage());
         assertNull(response.getBody());
 
@@ -300,7 +300,7 @@ class ProjectControllerTest {
         
         // 验证错误响应结构
         assertEquals("1", response.getResult());
-        assertEquals(Constants.DEFAULT_SERVER_ERROR, response.getMessageId());
+        assertEquals(Constants.ERR_PROJECTS_NOT_FOUND, response.getMessageId());
         assertEquals("No projects found", response.getMessage());
         assertNull(response.getBody());
     }

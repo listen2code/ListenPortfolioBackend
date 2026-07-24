@@ -94,7 +94,7 @@ class AboutMeControllerTest {
         // Then
         assertNotNull(response);
         assertEquals("1", response.getResult());
-        assertEquals(Constants.DEFAULT_SERVER_ERROR, response.getMessageId());
+        assertEquals(Constants.ERR_ABOUT_ME_NOT_FOUND, response.getMessageId());
         assertEquals("About me not found", response.getMessage());
         assertNull(response.getBody());
 
@@ -178,7 +178,7 @@ class AboutMeControllerTest {
         // Then
         assertNotNull(response);
         assertEquals("1", response.getResult());
-        assertEquals(Constants.DEFAULT_SERVER_ERROR, response.getMessageId());
+        assertEquals(Constants.ERR_ABOUT_ME_NOT_FOUND, response.getMessageId());
         assertEquals("About me not found", response.getMessage());
         assertNull(response.getBody());
 
