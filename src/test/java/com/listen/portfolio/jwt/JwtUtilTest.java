@@ -31,6 +31,7 @@ class JwtUtilTest extends BaseIntegrationTest {
     private JwtUtil jwtUtil;
 
     private UserDetails testUser;
+    private Long originalExpiration;
 
     @BeforeEach
     void setUp() {
@@ -38,6 +39,16 @@ class JwtUtilTest extends BaseIntegrationTest {
                 .password("password")
                 .roles("USER")
                 .build();
+        if (originalExpiration == null) {
+            originalExpiration = (Long) ReflectionTestUtils.getField(jwtUtil, "expiration");
+        }
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (originalExpiration != null) {
+            ReflectionTestUtils.setField(jwtUtil, "expiration", originalExpiration);
+        }
     }
 
     @Test
@@ -122,7 +133,7 @@ class JwtUtilTest extends BaseIntegrationTest {
         }
         
         // 恢复正常的过期时间
-        ReflectionTestUtils.setField(jwtUtil, "expiration", 3600000L);
+        ReflectionTestUtils.setField(jwtUtil, "expiration", originalExpiration);
         
         boolean isValid = jwtUtil.validateToken(token, testUser);
         
@@ -174,7 +185,7 @@ class JwtUtilTest extends BaseIntegrationTest {
         }
         
         // 恢复正常的过期时间
-        ReflectionTestUtils.setField(jwtUtil, "expiration", 3600000L);
+        ReflectionTestUtils.setField(jwtUtil, "expiration", originalExpiration);
         
         // When & Then - 捕获异常而不是直接调用方法
         ExpiredJwtException exception = assertThrows(ExpiredJwtException.class, () -> 
