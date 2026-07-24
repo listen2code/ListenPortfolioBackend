@@ -2,6 +2,7 @@ package com.listen.portfolio.api.v1.user;
 
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
+import com.listen.portfolio.api.v1.user.dto.UploadAvatarRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
@@ -802,5 +803,66 @@ class UserControllerTest {
         
         // Then - 应该正常处理（@Min注解在单元测试中可能不生效）
         assertNotNull(response);
+    }
+
+    @Test
+    @DisplayName("uploadAvatar - 上传成功返回200和更新后的用户摘要")
+    void testUploadAvatar_Success() {
+        // Given
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+
+            UploadAvatarRequest request = new UploadAvatarRequest();
+            request.setAvatar("data:image/png;base64,mockbase64data");
+
+            UserSummaryDto updatedUser = new UserSummaryDto();
+            updatedUser.setId(2L);
+            updatedUser.setName("testuser");
+            updatedUser.setAvatarUrl("data:image/png;base64,mockbase64data");
+
+            when(userService.updateAvatar("testuser", "data:image/png;base64,mockbase64data"))
+                    .thenReturn(Optional.of(updatedUser));
+
+            // When
+            ResponseEntity<ApiResponse<UserSummaryDto>> response = userController.uploadAvatar(request);
+
+            // Then
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("0", response.getBody().getResult());
+            assertEquals(updatedUser, response.getBody().getBody());
+
+            verify(userService).updateAvatar("testuser", "data:image/png;base64,mockbase64data");
+        }
+    }
+
+    @Test
+    @DisplayName("uploadAvatar - 用户不存在返回404")
+    void testUploadAvatar_UserNotFound() {
+        // Given
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+
+            UploadAvatarRequest request = new UploadAvatarRequest();
+            request.setAvatar("data:image/png;base64,mockbase64data");
+
+            when(userService.updateAvatar("testuser", "data:image/png;base64,mockbase64data"))
+                    .thenReturn(Optional.empty());
+
+            // When
+            ResponseEntity<ApiResponse<UserSummaryDto>> response = userController.uploadAvatar(request);
+
+            // Then
+            assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("1", response.getBody().getResult());
+            assertEquals("User not found", response.getBody().getMessage());
+
+            verify(userService).updateAvatar("testuser", "data:image/png;base64,mockbase64data");
+        }
     }
 }

@@ -184,4 +184,23 @@ public class UserService {
             // 如果用户不存在，返回false
                 .orElse(false);
     }
+
+    /**
+     * 更新用户头像 (Base64)
+     * 
+     * @param username 用户名
+     * @param base64Data Base64格式的图片数据
+     * @return 更新成功后的 UserSummaryDto，如果用户不存在则返回 Optional.empty()
+     */
+    @Transactional
+    public Optional<UserSummaryDto> updateAvatar(String username, String base64Data) {
+        logger.info("Attempting to update avatar for user: {}", username);
+        return getUserByName(username)
+                .map(user -> {
+                    user.setAvatarUrl(base64Data);
+                    UserEntity savedUser = repo.save(user);
+                    logger.info("Avatar updated successfully for user: {}", username);
+                    return toUserSummaryDto(savedUser);
+                });
+    }
 }

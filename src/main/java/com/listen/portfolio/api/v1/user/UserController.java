@@ -2,6 +2,7 @@ package com.listen.portfolio.api.v1.user;
 
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
+import com.listen.portfolio.api.v1.user.dto.UploadAvatarRequest;
 import com.listen.portfolio.common.ApiResponse;
 import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.common.jwt.JwtUtil;
@@ -276,6 +277,32 @@ public class UserController {
             logger.warn("Account deletion failed for user: {}", username);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(Constants.ERR_DELETE_ACCOUNT_FAILED, "Account deletion failed"));
+        }
+    }
+
+    @PostMapping("/upload-avatar")
+    @Operation(summary = "Upload avatar", description = "Upload/update avatar with base64 data",
+              security = @SecurityRequirement(name = "bearerAuth"))
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.USER},
+        maxRequests = 10,
+        timeWindowSeconds = 60
+    )
+    public ResponseEntity<ApiResponse<UserSummaryDto>> uploadAvatar(@Valid @RequestBody UploadAvatarRequest uploadAvatarRequest) {
+        // 获取当前认证用户的用户名
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        
+        logger.info("Received upload-avatar request for current user: {}", username);
+
+        Optional<UserSummaryDto> updatedUser = userService.updateAvatar(username, uploadAvatarRequest.getAvatar());
+        if (updatedUser.isPresent()) {
+            logger.info("Avatar uploaded successfully for user: {}", username);
+            return ResponseEntity.ok(ApiResponse.success(updatedUser.get()));
+        } else {
+            logger.warn("User not found for upload-avatar request: {}", username);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(Constants.ERR_ACCOUNT_NOT_FOUND, "User not found"));
         }
     }
 }
