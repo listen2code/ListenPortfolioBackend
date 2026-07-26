@@ -38,7 +38,9 @@
 **现状**：刷新 Token 生成后不存储，无法主动吊销。  
 **目标**：将 Refresh Token 持久化到 Redis 或 DB，支持主动吊销。  
 **为什么现在做**：这是安全闭环里最容易被追问的缺口。  
-**验收标准**：修改密码或注销后，旧 refresh token 失效。
+**验收标准**：
+- [ ] 修改密码或注销后，旧 refresh token 失效。
+- [ ] 优化 `/v1/user/logout` 安全验证，防范 Access Token 过期 401 拦截导致 Redis 中的 Refresh Token 无法被清除（可配合前端静默刷新机制，或允许在 logout 时直接传递 Refresh Token 进行销毁）。
 
 ### 3. delete-account 软删除修复
 
