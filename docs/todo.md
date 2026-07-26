@@ -1,4 +1,4 @@
-﻿# 📋 TODO 清单
+# 📋 TODO 清单
 
 ## 项目现状判断
 
@@ -92,6 +92,16 @@ src/test/java/com/listen/portfolio/
 **现状**：当前为 Redis INCR 固定窗口。  
 **目标**：如确有必要，再升级为滑动窗口或令牌桶。  
 **验收标准**：只有在真实需要更高精度时再推进，不为“概念更高级”而升级。
+
+### 4. 数据库动态内容国际化 (方案 B)
+
+**现状**：当前从 MySQL 数据库拉取的动态字段（Bio, 项目介绍等）仅有英文列，导致客户端切换多语言时无法实现内容同步切换。  
+**目标**：实现后端多语言字段的解耦与 Locale 动态分发。  
+**验收标准**：
+- [ ] 编写 Liquibase / Flyway Migration 迁移脚本，为 `about_me` 与 `projects` 等表添加 `_zh` / `_ja` 后缀多语言字段或选用 JSON 字段支持
+- [ ] 后端 Java Entity 扩展多语言属性及 getter/setter 映射
+- [ ] Service 业务层引入 Locale 动态解析（利用 `LocaleContextHolder`），实现 DTO 的对应语言文本自动转换装配
+- [ ] 注册 `AcceptHeaderLocaleResolver` 与拦截器处理客户端 Dio 传入的 `Accept-Language` 请求头
 
 ## Later
 
