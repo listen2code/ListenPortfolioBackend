@@ -168,9 +168,12 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
         String refreshToken = tokens[1];
 
         // When - 发起退出登录请求 (需要带上 Access Token)
-        mockMvc.perform(post("/v1/user/logout")
+        MvcResult mvcResult = mockMvc.perform(post("/v1/user/logout")
                         .header("Authorization", "Bearer " + accessToken))
-                .andExpect(status().isOk());
+                .andReturn();
+        System.out.println("LOGOUT RESPONSE STATUS: " + mvcResult.getResponse().getStatus());
+        System.out.println("LOGOUT RESPONSE BODY: " + mvcResult.getResponse().getContentAsString());
+        assertEquals(200, mvcResult.getResponse().getStatus());
 
         // Then - 验证 Refresh Token 在 Redis 中已失效
         assertFalse(refreshTokenService.isRefreshTokenValid("refreshuser", refreshToken));
