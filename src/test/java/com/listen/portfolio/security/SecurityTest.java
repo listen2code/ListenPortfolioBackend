@@ -105,11 +105,16 @@ public class SecurityTest extends BaseIntegrationTest {
 
     @Test
     @DisplayName("限流安全 - 高频请求防护")
-    void testRateLimitHighFrequencyProtection() {
+    void testRateLimitHighFrequencyProtection() throws Exception {
         // Given
-        String identifier = "security:test";
+        String identifier = "security:test:" + java.util.UUID.randomUUID();
         int maxRequests = 5;
-        int timeWindowSeconds = 10;
+        int timeWindowSeconds = 60;
+
+        // 若处于 60 秒时间窗口切换边缘（最后 2 秒），稍微等待避开跨窗口触发重置
+        if (System.currentTimeMillis() % (timeWindowSeconds * 1000L) > (timeWindowSeconds * 1000L - 2000L)) {
+            Thread.sleep(2100L);
+        }
 
         // When - 快速发送大量请求
         int allowedCount = 0;
@@ -133,8 +138,8 @@ public class SecurityTest extends BaseIntegrationTest {
     @DisplayName("限流安全 - 不同标识符隔离")
     void testRateLimitIdentifierIsolation() {
         // Given
-        String attackerId = "attacker";
-        String legitimateUserId = "legitimate";
+        String attackerId = "attacker:" + java.util.UUID.randomUUID();
+        String legitimateUserId = "legitimate:" + java.util.UUID.randomUUID();
         int maxRequests = 3;
         int timeWindowSeconds = 60;
 
