@@ -4,6 +4,7 @@ import com.listen.portfolio.common.aspect.RateLimit;
 import com.listen.portfolio.common.aspect.RateLimitAspect;
 import com.listen.portfolio.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,12 @@ class RateLimitAspectTest {
         mockRequest = new MockHttpServletRequest();
         mockRequest.setRemoteAddr("127.0.0.1");
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(mockRequest));
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+        RequestContextHolder.resetRequestAttributes();
     }
 
     /**
