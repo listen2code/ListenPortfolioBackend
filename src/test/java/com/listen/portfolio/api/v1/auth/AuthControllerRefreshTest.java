@@ -58,19 +58,19 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
 
         // 清理数据库中所有用户
         userRepository.deleteAll();
+    }
 
+    private String[] loginAndGetTokens(String username) throws Exception {
         // 注册一个测试用的非种子用户 (ID 将自动生成，通常 > 1)
         UserEntity user = new UserEntity();
-        user.setName("refreshuser");
-        user.setEmail("refreshuser@example.com");
+        user.setName(username);
+        user.setEmail(username + "@example.com");
         user.setPassword(passwordEncoder.encode("password123"));
         user.setDeleted(false);
         testUser = userRepository.save(user);
-    }
 
-    private String[] loginAndGetTokens() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
-        loginRequest.setUserName("refreshuser");
+        loginRequest.setUserName(username);
         loginRequest.setPassword("password123");
 
         MvcResult result = mockMvc.perform(post("/v1/auth/login")
@@ -97,18 +97,18 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
     @DisplayName("1. 登录成功后，Refresh Token 应成功存入 Redis")
     void testLogin_ShouldSaveRefreshTokenInRedis() throws Exception {
         // When - 登录并提取 Token
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("loginuser");
         String refreshToken = tokens[1];
 
         // Then - 校验 Redis 中是否存在该 Refresh Token
-        assertTrue(refreshTokenService.isRefreshTokenValid("refreshuser", refreshToken));
+        assertTrue(refreshTokenService.isRefreshTokenValid("loginuser", refreshToken));
     }
 
     @Test
     @DisplayName("2. 刷新 Token 成功时应执行旋转 (Rotation) 逻辑")
     void testRefresh_ShouldRotateTokensAndInvalidateOldOne() throws Exception {
         // Given - 登录获取 Token
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("rotateuser");
         String originalRefreshToken = tokens[1];
 
         // 睡眠 1.1 秒跨越 JWT 的秒级时间戳精度（iat/exp），确保旋转后生成内容/签名不同的新 Token
@@ -131,17 +131,17 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
         assertNotEquals(originalRefreshToken, newRefreshToken);
 
         // Then - 校验旧 Refresh Token 在 Redis 中已被吊销/删除
-        assertFalse(refreshTokenService.isRefreshTokenValid("refreshuser", originalRefreshToken));
+        assertFalse(refreshTokenService.isRefreshTokenValid("rotateuser", originalRefreshToken));
 
         // Then - 校验新 Refresh Token 在 Redis 中为有效状态
-        assertTrue(refreshTokenService.isRefreshTokenValid("refreshuser", newRefreshToken));
+        assertTrue(refreshTokenService.isRefreshTokenValid("rotateuser", newRefreshToken));
     }
 
     @Test
     @DisplayName("3. 旋转发生后，尝试重放/重用旧的 Refresh Token 应被拒绝并返回 401")
     void testRefresh_ReplayAttackShouldBeBlocked() throws Exception {
         // Given - 登录并进行第一次刷新旋转
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("replayuser");
         String originalRefreshToken = tokens[1];
 
         // 睡眠 1.1 秒跨越时间戳精度限制
@@ -163,20 +163,17 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
     @DisplayName("4. 用户退出登录时，名下的所有 Refresh Token 均应被吊销")
     void testLogout_ShouldRevokeAllRefreshTokens() throws Exception {
         // Given - 登录获取 Token
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("logoutuser");
         String accessToken = tokens[0];
         String refreshToken = tokens[1];
 
         // When - 发起退出登录请求 (需要带上 Access Token)
-        MvcResult mvcResult = mockMvc.perform(post("/v1/user/logout")
+        mockMvc.perform(post("/v1/user/logout")
                         .header("Authorization", "Bearer " + accessToken))
-                .andReturn();
-        System.out.println("LOGOUT RESPONSE STATUS: " + mvcResult.getResponse().getStatus());
-        System.out.println("LOGOUT RESPONSE BODY: " + mvcResult.getResponse().getContentAsString());
-        assertEquals(200, mvcResult.getResponse().getStatus());
+                .andExpect(status().isOk());
 
         // Then - 验证 Refresh Token 在 Redis 中已失效
-        assertFalse(refreshTokenService.isRefreshTokenValid("refreshuser", refreshToken));
+        assertFalse(refreshTokenService.isRefreshTokenValid("logoutuser", refreshToken));
 
         // Then - 尝试刷新应该被拒绝
         mockMvc.perform(post("/v1/auth/refresh")
@@ -188,7 +185,7 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
     @DisplayName("5. 修改密码成功后，原所有的 Refresh Token 均应被吊销")
     void testChangePassword_ShouldRevokeAllRefreshTokens() throws Exception {
         // Given - 登录并拿到 Token
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("passuser");
         String accessToken = tokens[0];
         String refreshToken = tokens[1];
 
@@ -206,7 +203,7 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
                 .andExpect(status().isOk());
 
         // Then - 验证旧的 Refresh Token 在 Redis 中已被吊销
-        assertFalse(refreshTokenService.isRefreshTokenValid("refreshuser", refreshToken));
+        assertFalse(refreshTokenService.isRefreshTokenValid("passuser", refreshToken));
 
         // Then - 尝试刷新应该被拒绝
         mockMvc.perform(post("/v1/auth/refresh")
@@ -218,7 +215,7 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
     @DisplayName("6. 账户注销(注销)成功后，名下所有的 Refresh Token 均应被吊销")
     void testDeleteAccount_ShouldRevokeAllRefreshTokens() throws Exception {
         // Given - 登录获取 Token
-        String[] tokens = loginAndGetTokens();
+        String[] tokens = loginAndGetTokens("deleteuser");
         String accessToken = tokens[0];
         String refreshToken = tokens[1];
 
@@ -228,7 +225,7 @@ public class AuthControllerRefreshTest extends BaseIntegrationTest {
                 .andExpect(status().isOk());
 
         // Then - 验证 Refresh Token 在 Redis 中已失效
-        assertFalse(refreshTokenService.isRefreshTokenValid("refreshuser", refreshToken));
+        assertFalse(refreshTokenService.isRefreshTokenValid("deleteuser", refreshToken));
 
         // Then - 尝试刷新应该被拒绝
         mockMvc.perform(post("/v1/auth/refresh")
