@@ -4,6 +4,7 @@ import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.integration.BaseIntegrationTest;
 import com.listen.portfolio.service.TokenBlacklistService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.core.Authentication;
@@ -31,6 +32,12 @@ public class LogoutTokenExtractionTest extends BaseIntegrationTest {
     
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+        RequestContextHolder.resetRequestAttributes();
+    }
 
     @Test
     void testTokenExtractionFromAuthorizationHeader() {
