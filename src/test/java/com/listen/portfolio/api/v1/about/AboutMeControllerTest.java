@@ -57,8 +57,7 @@ class AboutMeControllerTest {
     void getAboutMe_WhenDataExists_ShouldReturnSuccessResponse() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(aboutMeService.getAboutMeDto("testuser")).thenReturn(Optional.of(mockAboutMeDto));
+        when(aboutMeService.getAboutMeDto(1L)).thenReturn(Optional.of(mockAboutMeDto));
 
         // When
         ApiResponse<AboutMeDto> response = aboutMeController.getAboutMe();
@@ -76,8 +75,7 @@ class AboutMeControllerTest {
         assertEquals(mockAboutMeDto.getGithub(), response.getBody().getGithub());
         assertEquals(mockAboutMeDto.getMajor(), response.getBody().getMajor());
 
-        verify(aboutMeService, times(1)).getAboutMeDto("testuser");
-        verify(authentication, times(1)).getName();
+        verify(aboutMeService, times(1)).getAboutMeDto(1L);
     }
 
     @Test
@@ -85,8 +83,7 @@ class AboutMeControllerTest {
     void getAboutMe_WhenDataNotExists_ShouldReturnErrorResponse() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(aboutMeService.getAboutMeDto("testuser")).thenReturn(Optional.empty());
+        when(aboutMeService.getAboutMeDto(1L)).thenReturn(Optional.empty());
 
         // When
         ApiResponse<AboutMeDto> response = aboutMeController.getAboutMe();
@@ -98,8 +95,7 @@ class AboutMeControllerTest {
         assertEquals("About me not found", response.getMessage());
         assertNull(response.getBody());
 
-        verify(aboutMeService, times(1)).getAboutMeDto("testuser");
-        verify(authentication, times(1)).getName();
+        verify(aboutMeService, times(1)).getAboutMeDto(1L);
     }
 
     @Test
@@ -107,15 +103,13 @@ class AboutMeControllerTest {
     void getAboutMe_ShouldCallServiceMethodOnce() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(aboutMeService.getAboutMeDto("testuser")).thenReturn(Optional.of(mockAboutMeDto));
+        when(aboutMeService.getAboutMeDto(1L)).thenReturn(Optional.of(mockAboutMeDto));
 
         // When
         aboutMeController.getAboutMe();
 
         // Then
-        verify(aboutMeService, times(1)).getAboutMeDto("testuser");
-        verify(authentication, times(1)).getName();
+        verify(aboutMeService, times(1)).getAboutMeDto(1L);
         verifyNoMoreInteractions(aboutMeService);
     }
 
@@ -124,16 +118,14 @@ class AboutMeControllerTest {
     void getAboutMe_WhenServiceReturnsNull_ShouldHandleGracefully() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(aboutMeService.getAboutMeDto("testuser")).thenReturn(null);
+        when(aboutMeService.getAboutMeDto(1L)).thenReturn(null);
 
         // When & Then
         assertThrows(NullPointerException.class, () -> {
             aboutMeController.getAboutMe();
         });
 
-        verify(aboutMeService, times(1)).getAboutMeDto("testuser");
-        verify(authentication, times(1)).getName();
+        verify(aboutMeService, times(1)).getAboutMeDto(1L);
     }
 
     @Test
@@ -141,8 +133,7 @@ class AboutMeControllerTest {
     void getAboutMe_WhenSuccessful_ShouldReturnCorrectResponseStructure() {
         // Given
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("testuser");
-        when(aboutMeService.getAboutMeDto("testuser")).thenReturn(Optional.of(mockAboutMeDto));
+        when(aboutMeService.getAboutMeDto(1L)).thenReturn(Optional.of(mockAboutMeDto));
 
         // When
         ApiResponse<AboutMeDto> response = aboutMeController.getAboutMe();
@@ -162,8 +153,7 @@ class AboutMeControllerTest {
             response.getBody();
         });
         
-        verify(aboutMeService, times(1)).getAboutMeDto("testuser");
-        verify(authentication, times(1)).getName();
+        verify(aboutMeService, times(1)).getAboutMeDto(1L);
     }
 
     @Test
@@ -182,7 +172,7 @@ class AboutMeControllerTest {
         assertEquals("About me not found", response.getMessage());
         assertNull(response.getBody());
 
-        verify(aboutMeService, never()).getAboutMeDto(anyString());
+        verify(aboutMeService, never()).getAboutMeDto(any(Long.class));
         verify(securityContext, times(1)).getAuthentication();
     }
 }

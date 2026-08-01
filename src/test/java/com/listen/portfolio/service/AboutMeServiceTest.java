@@ -96,10 +96,10 @@ class AboutMeServiceTest {
     @DisplayName("getAboutMeDto - 成功获取用户信息")
     void testGetAboutMeDto_Success() {
         // Given
-        when(userRepository.findByName("testuser")).thenReturn(Optional.of(mockUserEntity));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUserEntity));
 
         // When
-        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto("testuser");
+        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(1L);
 
         // Then
         assertTrue(result.isPresent());
@@ -145,49 +145,46 @@ class AboutMeServiceTest {
         assertEquals("Programming", dto.getSkills().get(0).getCategory());
         assertEquals(Arrays.asList("Java", "Python", "JavaScript"), dto.getSkills().get(0).getItems());
 
-        verify(userRepository).findByName("testuser");
+        verify(userRepository).findById(1L);
     }
 
     @Test
     @DisplayName("getAboutMeDto - 用户不存在返回空Optional")
     void testGetAboutMeDto_UserNotFound() {
         // Given
-        when(userRepository.findByName("nonexistent")).thenReturn(Optional.empty());
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
         // When
-        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto("nonexistent");
+        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(999L);
 
         // Then
         assertFalse(result.isPresent());
-        verify(userRepository).findByName("nonexistent");
+        verify(userRepository).findById(999L);
     }
 
     @Test
-    @DisplayName("getAboutMeDto - null用户名处理")
-    void testGetAboutMeDto_NullUsername() {
-        // Given
-        when(userRepository.findByName(null)).thenReturn(Optional.empty());
-
+    @DisplayName("getAboutMeDto - null用户ID处理")
+    void testGetAboutMeDto_NullUserId() {
         // When
         Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(null);
 
         // Then
         assertFalse(result.isPresent());
-        verify(userRepository).findByName(null);
+        verifyNoInteractions(userRepository);
     }
 
     @Test
-    @DisplayName("getAboutMeDto - 空用户名处理")
-    void testGetAboutMeDto_EmptyUsername() {
+    @DisplayName("getAboutMeDto - 无效用户ID处理")
+    void testGetAboutMeDto_InvalidUserId() {
         // Given
-        when(userRepository.findByName("")).thenReturn(Optional.empty());
+        when(userRepository.findById(0L)).thenReturn(Optional.empty());
 
         // When
-        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto("");
+        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(0L);
 
         // Then
         assertFalse(result.isPresent());
-        verify(userRepository).findByName("");
+        verify(userRepository).findById(0L);
     }
 
     @Test
@@ -203,10 +200,10 @@ class AboutMeServiceTest {
         userWithNulls.setSkills(null);
         userWithNulls.setCertifications(null);
 
-        when(userRepository.findByName("testuser")).thenReturn(Optional.of(userWithNulls));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(userWithNulls));
 
         // When
-        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto("testuser");
+        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(1L);
 
         // Then
         assertTrue(result.isPresent());
@@ -529,10 +526,10 @@ class AboutMeServiceTest {
         userWithEmptyCollections.setLanguages(new ArrayList<>());
         userWithEmptyCollections.setSkills(new ArrayList<>());
 
-        when(userRepository.findByName("testuser")).thenReturn(Optional.of(userWithEmptyCollections));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(userWithEmptyCollections));
 
         // When
-        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto("testuser");
+        Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(1L);
 
         // Then
         assertTrue(result.isPresent());

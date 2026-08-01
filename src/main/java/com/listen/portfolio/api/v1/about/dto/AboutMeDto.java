@@ -13,6 +13,8 @@ import java.util.List;
  * - 字段命名与前端期望保持一致（例如 github 对应 users.githubUrl）
  */
 public class AboutMeDto {
+    private String name;
+    private String avatarUrl;
     private String status;
     private String jobTitle;
     private String bio;

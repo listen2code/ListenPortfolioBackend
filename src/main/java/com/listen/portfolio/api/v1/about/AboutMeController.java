@@ -45,9 +45,8 @@ public class AboutMeController {
             return ApiResponse.error(Constants.ERR_ABOUT_ME_NOT_FOUND, "About me not found");
         }
         
-        String username = authentication.getName();
-        logger.info("Get about-me information");
-        return aboutMeService.getAboutMeDto(username)
+        logger.info("Get about-me information for owner id: 1");
+        return aboutMeService.getAboutMeDto(1L)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.error(Constants.ERR_ABOUT_ME_NOT_FOUND, "About me not found"));
     }
