@@ -105,6 +105,17 @@ src/test/java/com/listen/portfolio/
 - [ ] Service 业务层引入 Locale 动态解析（利用 `LocaleContextHolder`），实现 DTO 的对应语言文本自动转换装配
 - [ ] 注册 `AcceptHeaderLocaleResolver` 与拦截器处理客户端 Dio 传入的 `Accept-Language` 请求头
 
+### 5. Nginx 反向代理与 Let's Encrypt HTTPS 部署
+
+**现状**：已在 AWS EC2 上顺利安装并启动 Nginx，并已向 `is-a.dev` 提交 `listen2code.is-a.dev` 免费域名 PR。  
+**目标**：实现隐藏 8080 端口、端口转发与全站 SSL/HTTPS 安全通信加密。  
+**验收标准**：
+- [x] 在 AWS EC2 服务器上安装与启动 Nginx 服务
+- [ ] 待 `is-a.dev` 免费域名 `listen2code.is-a.dev` PR 审核合并生效
+- [ ] 配置 `/etc/nginx/conf.d/portfolio.conf` 将 80 端口隐藏代理至容器 8080 端口
+- [ ] 使用 Certbot 命令行自动向 Let's Encrypt 申请并配置 HTTPS 证书及自动续签 Cron
+- [ ] 在 Flutter `env_config.dart` 中将 prod 环境 BaseUrl 更新为 `https://listen2code.is-a.dev`
+
 ## Later
 
 ### 1. 生产安全与运维增强
