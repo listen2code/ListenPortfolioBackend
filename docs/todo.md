@@ -204,9 +204,9 @@ src/test/java/com/listen/portfolio/
 - [x] Prometheus + Grafana
 - [x] 健康检查 / 探针
 - [x] 结构化 JSON 日志
-- [ ] GitHub Actions CI
+- [x] GitHub Actions CI
 - [ ] OSIV 正式关闭
 
 ---
 
-📅 **最后更新**: 2026-04-08
+📅 **最后更新**: 2026-08-02
