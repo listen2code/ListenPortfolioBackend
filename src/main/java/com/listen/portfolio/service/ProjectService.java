@@ -1,14 +1,17 @@
 package com.listen.portfolio.service;
 
 import com.listen.portfolio.api.v1.projects.dto.ProjectDto;
+import com.listen.portfolio.common.util.I18nUtils;
 import com.listen.portfolio.entity.ProjectEntity;
 import com.listen.portfolio.repository.ProjectRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,34 +25,31 @@ public class ProjectService {
     }
 
     /**
-     * 事务说明：
+     * 事务与国际化说明：
      * - 使用 @Transactional(readOnly = true) 开启只读事务
-     * - 目的：降低事务开销、避免不必要的脏检查；在同一持久化上下文中完成查询与 DTO 装配
-     * - 注意：只读事务中不执行写操作；DTO 转换在事务内完成，避免序列化阶段触发懒加载
+     * - 根据 LocaleContextHolder 获取当前客户端 Accept-Language 对应的 Locale
+     * - 映射 title, subtitle, desc 的多语言版本
      */
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjects() {
-        // 只读查询使用 readOnly=true，避免无意义的脏检查，提高性能并减少锁竞争
-        logger.info("Fetching all projects from the database.");
-        // 不要直接把 JPA Entity 透传给 Controller/序列化层，避免 Lazy 字段在事务外触发导致报错
-        // 原理：在事务内完成实体到 DTO 的转换，序列化只依赖 DTO 的普通字段，不依赖 Hibernate Session
+        logger.info("Fetching all projects from the database with i18n support.");
+        Locale locale = LocaleContextHolder.getLocale();
         return projectRepository.findAll()
                 .stream()
-                .map(this::toDto)
+                .map(entity -> toDto(entity, locale))
                 .collect(Collectors.toList());
     }
 
-    private ProjectDto toDto(ProjectEntity entity) {
+    private ProjectDto toDto(ProjectEntity entity, Locale locale) {
         ProjectDto dto = new ProjectDto();
         dto.setId(entity.getId());
         dto.setBusinessId(entity.getBusinessId());
-        dto.setTitle(entity.getTitle());
-        dto.setSubtitle(entity.getSubtitle());
-        dto.setDesc(entity.getDesc());
+        dto.setTitle(I18nUtils.getLocalizedText(entity.getTitle(), entity.getTitleZh(), entity.getTitleJa(), locale));
+        dto.setSubtitle(I18nUtils.getLocalizedText(entity.getSubtitle(), entity.getSubtitleZh(), entity.getSubtitleJa(), locale));
+        dto.setDesc(I18nUtils.getLocalizedText(entity.getDesc(), entity.getDescZh(), entity.getDescJa(), locale));
         dto.setImageUrl(entity.getImageUrl());
         dto.setGithubUrl(entity.getGithubUrl());
         dto.setTechStack(entity.getTechStack() != null ? new java.util.ArrayList<>(entity.getTechStack()) : null);
         return dto;
     }
 }
-

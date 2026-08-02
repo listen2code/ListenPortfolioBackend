@@ -50,16 +50,26 @@ public class UserEntity {
     private String password;
 
     private String location;
+    private String locationZh;
+    private String locationJa;
     private String avatarUrl;
     private String status;
     private String jobTitle;
+    private String jobTitleZh;
+    private String jobTitleJa;
 
     @Column(columnDefinition = "TEXT")
     private String bio;
+    @Column(name = "bio_zh", columnDefinition = "TEXT")
+    private String bioZh;
+    @Column(name = "bio_ja", columnDefinition = "TEXT")
+    private String bioJa;
 
     private String graduationYear;
     private String githubUrl;
     private String major;
+    private String majorZh;
+    private String majorJa;
 
     @Column(name = "created_at", nullable = true, updatable = false)
     @CreatedDate
@@ -258,5 +268,69 @@ public class UserEntity {
 
     public void setSkills(List<SkillEntity> skills) {
         this.skills = skills;
+    }
+
+    public String getLocationZh() {
+        return locationZh;
+    }
+
+    public void setLocationZh(String locationZh) {
+        this.locationZh = locationZh;
+    }
+
+    public String getLocationJa() {
+        return locationJa;
+    }
+
+    public void setLocationJa(String locationJa) {
+        this.locationJa = locationJa;
+    }
+
+    public String getJobTitleZh() {
+        return jobTitleZh;
+    }
+
+    public void setJobTitleZh(String jobTitleZh) {
+        this.jobTitleZh = jobTitleZh;
+    }
+
+    public String getJobTitleJa() {
+        return jobTitleJa;
+    }
+
+    public void setJobTitleJa(String jobTitleJa) {
+        this.jobTitleJa = jobTitleJa;
+    }
+
+    public String getBioZh() {
+        return bioZh;
+    }
+
+    public void setBioZh(String bioZh) {
+        this.bioZh = bioZh;
+    }
+
+    public String getBioJa() {
+        return bioJa;
+    }
+
+    public void setBioJa(String bioJa) {
+        this.bioJa = bioJa;
+    }
+
+    public String getMajorZh() {
+        return majorZh;
+    }
+
+    public void setMajorZh(String majorZh) {
+        this.majorZh = majorZh;
+    }
+
+    public String getMajorJa() {
+        return majorJa;
+    }
+
+    public void setMajorJa(String majorJa) {
+        this.majorJa = majorJa;
     }
 }

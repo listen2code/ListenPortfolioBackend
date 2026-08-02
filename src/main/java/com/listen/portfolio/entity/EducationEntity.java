@@ -23,9 +23,15 @@ public class EducationEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String degree;
+    private String degreeZh;
+    private String degreeJa;
     private String school;
+    private String schoolZh;
+    private String schoolJa;
     private String period;
     private String description;
+    private String descriptionZh;
+    private String descriptionJa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -77,6 +83,54 @@ public class EducationEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getDegreeZh() {
+        return degreeZh;
+    }
+
+    public void setDegreeZh(String degreeZh) {
+        this.degreeZh = degreeZh;
+    }
+
+    public String getDegreeJa() {
+        return degreeJa;
+    }
+
+    public void setDegreeJa(String degreeJa) {
+        this.degreeJa = degreeJa;
+    }
+
+    public String getSchoolZh() {
+        return schoolZh;
+    }
+
+    public void setSchoolZh(String schoolZh) {
+        this.schoolZh = schoolZh;
+    }
+
+    public String getSchoolJa() {
+        return schoolJa;
+    }
+
+    public void setSchoolJa(String schoolJa) {
+        this.schoolJa = schoolJa;
+    }
+
+    public String getDescriptionZh() {
+        return descriptionZh;
+    }
+
+    public void setDescriptionZh(String descriptionZh) {
+        this.descriptionZh = descriptionZh;
+    }
+
+    public String getDescriptionJa() {
+        return descriptionJa;
+    }
+
+    public void setDescriptionJa(String descriptionJa) {
+        this.descriptionJa = descriptionJa;
     }
 }
 

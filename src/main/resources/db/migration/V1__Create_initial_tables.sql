@@ -1,27 +1,35 @@
 -- ===================================================================
 -- Portfolio 应用数据库初始化脚本
 -- 版本: V1
--- 说明: 创建项目的基础表结构
+-- 说明: 创建项目的基础表结构（包含国际化多语言扩展字段）
 -- ===================================================================
 
 -- ===================================================================
 -- 用户表 (users)
 -- ===================================================================
--- 说明: 存储用户基本信息和认证数据
+-- 说明: 存储用户基本信息和认证数据，扩展多语言字段
 -- 索引: email (唯一)
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID，主键自增',
     name VARCHAR(255) NOT NULL COMMENT '用户姓名',
     email VARCHAR(255) UNIQUE NOT NULL COMMENT '邮箱地址，唯一',
     password VARCHAR(255) NOT NULL COMMENT '密码，BCrypt加密',
-    location VARCHAR(255) COMMENT '所在地',
-    avatar_url VARCHAR(255) COMMENT '头像URL',
+    location VARCHAR(255) COMMENT '所在地 (默认/英文)',
+    location_zh VARCHAR(255) COMMENT '所在地 (中文)',
+    location_ja VARCHAR(255) COMMENT '所在地 (日语)',
+    avatar_url LONGTEXT COMMENT '头像URL或Base64数据',
     status VARCHAR(255) COMMENT '用户状态',
-    job_title VARCHAR(255) COMMENT '职位头衔',
-    bio TEXT COMMENT '个人简介',
+    job_title VARCHAR(255) COMMENT '职位头衔 (默认/英文)',
+    job_title_zh VARCHAR(255) COMMENT '职位头衔 (中文)',
+    job_title_ja VARCHAR(255) COMMENT '职位头衔 (日语)',
+    bio TEXT COMMENT '个人简介 (默认/英文)',
+    bio_zh TEXT COMMENT '个人简介 (中文)',
+    bio_ja TEXT COMMENT '个人简介 (日语)',
     graduation_year VARCHAR(10) COMMENT '毕业年份',
     github_url VARCHAR(255) COMMENT 'GitHub链接',
-    major VARCHAR(255) COMMENT '专业',
+    major VARCHAR(255) COMMENT '专业 (默认/英文)',
+    major_zh VARCHAR(255) COMMENT '专业 (中文)',
+    major_ja VARCHAR(255) COMMENT '专业 (日语)',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     deleted BOOLEAN NOT NULL DEFAULT FALSE COMMENT '软删除标记',
@@ -44,13 +52,19 @@ CREATE TABLE IF NOT EXISTS user_certifications (
 -- ===================================================================
 -- 项目表 (projects)
 -- ===================================================================
--- 说明: 项目信息表
+-- 说明: 项目信息表，扩展多语言字段
 CREATE TABLE IF NOT EXISTS projects (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '项目ID，主键自增',
     business_id VARCHAR(255) UNIQUE COMMENT '业务逻辑ID',
-    title VARCHAR(255) NOT NULL COMMENT '项目标题',
-    subtitle VARCHAR(255) COMMENT '项目副标题',
-    project_desc TEXT COMMENT '项目描述',
+    title VARCHAR(255) NOT NULL COMMENT '项目标题 (默认/英文)',
+    title_zh VARCHAR(255) COMMENT '项目标题 (中文)',
+    title_ja VARCHAR(255) COMMENT '项目标题 (日语)',
+    subtitle VARCHAR(255) COMMENT '项目副标题 (默认/英文)',
+    subtitle_zh VARCHAR(255) COMMENT '项目副标题 (中文)',
+    subtitle_ja VARCHAR(255) COMMENT '项目副标题 (日语)',
+    project_desc TEXT COMMENT '项目描述 (默认/英文)',
+    project_desc_zh TEXT COMMENT '项目描述 (中文)',
+    project_desc_ja TEXT COMMENT '项目描述 (日语)',
     image_url VARCHAR(255) COMMENT '项目图片URL',
     github_url VARCHAR(255) COMMENT 'GitHub仓库URL',
     
@@ -72,14 +86,20 @@ CREATE TABLE IF NOT EXISTS project_tech_stack (
 -- ===================================================================
 -- 工作经历表 (experiences)
 -- ===================================================================
--- 说明: 用户工作经历
+-- 说明: 用户工作经历，扩展多语言字段
 CREATE TABLE IF NOT EXISTS experiences (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '经历ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
-    title VARCHAR(255) COMMENT '职位标题',
-    company VARCHAR(255) COMMENT '公司名称',
+    title VARCHAR(255) COMMENT '职位标题 (默认/英文)',
+    title_zh VARCHAR(255) COMMENT '职位标题 (中文)',
+    title_ja VARCHAR(255) COMMENT '职位标题 (日语)',
+    company VARCHAR(255) COMMENT '公司名称 (默认/英文)',
+    company_zh VARCHAR(255) COMMENT '公司名称 (中文)',
+    company_ja VARCHAR(255) COMMENT '公司名称 (日语)',
     period VARCHAR(255) COMMENT '工作时间段',
-    description TEXT COMMENT '工作描述',
+    description TEXT COMMENT '工作描述 (默认/英文)',
+    description_zh TEXT COMMENT '工作描述 (中文)',
+    description_ja TEXT COMMENT '工作描述 (日语)',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     
     INDEX idx_experiences_user_id (user_id),
@@ -89,14 +109,20 @@ CREATE TABLE IF NOT EXISTS experiences (
 -- ===================================================================
 -- 教育经历表 (education)
 -- ===================================================================
--- 说明: 用户教育背景
+-- 说明: 用户教育背景，扩展多语言字段
 CREATE TABLE IF NOT EXISTS education (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '教育ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
-    degree VARCHAR(255) COMMENT '学位',
-    school VARCHAR(255) COMMENT '学校名称',
+    degree VARCHAR(255) COMMENT '学位 (默认/英文)',
+    degree_zh VARCHAR(255) COMMENT '学位 (中文)',
+    degree_ja VARCHAR(255) COMMENT '学位 (日语)',
+    school VARCHAR(255) COMMENT '学校名称 (默认/英文)',
+    school_zh VARCHAR(255) COMMENT '学校名称 (中文)',
+    school_ja VARCHAR(255) COMMENT '学校名称 (日语)',
     period VARCHAR(255) COMMENT '学习时间段',
-    description TEXT COMMENT '教育描述',
+    description TEXT COMMENT '教育描述 (默认/英文)',
+    description_zh TEXT COMMENT '教育描述 (中文)',
+    description_ja TEXT COMMENT '教育描述 (日语)',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     
     INDEX idx_education_user_id (user_id),
@@ -131,12 +157,16 @@ CREATE TABLE IF NOT EXISTS skill_items (
 -- ===================================================================
 -- 语言表 (languages)
 -- ===================================================================
--- 说明: 用户语言能力
+-- 说明: 用户语言能力，扩展多语言字段
 CREATE TABLE IF NOT EXISTS languages (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '语言ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
-    name VARCHAR(255) COMMENT '语言名称',
-    level VARCHAR(255) COMMENT '语言水平',
+    name VARCHAR(255) COMMENT '语言名称 (默认/英文)',
+    name_zh VARCHAR(255) COMMENT '语言名称 (中文)',
+    name_ja VARCHAR(255) COMMENT '语言名称 (日语)',
+    level VARCHAR(255) COMMENT '语言水平 (默认/英文)',
+    level_zh VARCHAR(255) COMMENT '语言水平 (中文)',
+    level_ja VARCHAR(255) COMMENT '语言水平 (日语)',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     
     INDEX idx_languages_user_id (user_id),
@@ -169,90 +199,3 @@ CREATE TABLE IF NOT EXISTS stat_tags (
     PRIMARY KEY (stat_id, tag_name),
     FOREIGN KEY (stat_id) REFERENCES stats(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='统计标签表';
-
--- ===================================================================
--- 插入初始数据
--- ===================================================================
-
--- 插入用户数据
-INSERT IGNORE INTO users (id, name, email, password, location, avatar_url, status, job_title, bio, graduation_year, github_url, major) VALUES
-(1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK', 'Japan / Tokyo', 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available', 'Senior Android / Flutter Engineer', 'Senior Android Engineer with 11+ years of mobile development experience and 3+ years in Flutter. Expertise in client architecture (componentization, plugin systems), performance optimization, and APM infrastructure. Key achievements include reducing Feed timeout rates from 1.5% to 0.3%, building full-stack APM monitoring platforms, and leading Flutter app development for securities trading at Rakuten. JLPT N1, BJT J2 certified, currently based in Tokyo, Japan.', '2013', 'https://github.com/listen2code', 'softwareEngineering');
-
--- 插入项目数据
-INSERT IGNORE INTO projects (id, business_id, title, subtitle, project_desc, image_url, github_url) VALUES
-(1, 'lportfolio-flutter', 'lPortfolio Flutter', 'Current Project', 'My personal portfolio app (this one!). Demonstrating Clean Architecture, MVI pattern, and advanced Riverpod state management in Flutter.', 'localhost/images/project1.jpg', 'https://github.com/listen2code/ListenPortfolioFlutter'),
-(2, 'listen-core-flutter', 'Listen Core Flutter', 'Framework', 'A foundational framework for Flutter projects providing base classes for MVI, standardized network wrappers, and lifecycle management.', 'localhost/images/project2.jpg', 'https://github.com/listen2code/ListenCoreFlutter'),
-(3, 'listen-ui-kit', 'Listen UI Kit', 'Common Library', 'A comprehensive UI component library for consistent branding and rapid development across multiple Flutter applications.', 'localhost/images/project3.jpg', 'https://github.com/listen2code/ListenUikitFlutter'),
-(4, 'portfolio-backend', 'Portfolio Backend', 'Cloud Infrastructure', 'The server-side implementation for this portfolio, managing user data, projects, and dynamic configurations.', 'localhost/images/project4.jpg', 'https://github.com/listen2code/ListenPortfolioBackend'),
-(5, 'tech-knowledge-base', 'Tech Knowledge Base', 'Articles & Docs', 'A curated collection of my technical articles, architecture notes, and development experiences over the past 10 years.', 'localhost/images/project5.jpg', 'https://github.com/listen2code/article');
-
--- 插入项目技术栈数据
-INSERT IGNORE INTO project_tech_stack (project_id, tech_name) VALUES
-(1, 'Flutter'), (1, 'Riverpod'), (1, 'Clean Architecture'), (1, 'MVI'),
-(2, 'Dart'), (2, 'Riverpod'), (2, 'Dio'), (2, 'Architecture'),
-(3, 'Flutter'), (3, 'Design System'), (3, 'CustomPainter'),
-(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'),
-(5, 'Markdown'), (5, 'Documentation'), (5, 'Knowledge Sharing');
-
--- 插入工作经历数据
-INSERT IGNORE INTO experiences (id, user_id, title, company, period, description) VALUES
-(1, 1, 'Android / Flutter Engineer', 'LYC Corp. (Rakuten Securities Project)', '2023.02 - Present', 'Lead developer for new securities Flutter app: architecture design, framework development, FIDO2 authentication integration, and Flutter version upgrades. Maintaining Android stock trading app and conducting code reviews for team members.'),
-(2, 1, 'Android Engineer — Mobile Infrastructure', 'Youzan Technology', '2021.10 - 2022.07', 'Built mobile APM stutter/ANR detection SDK with optimized data reporting and aggregation. Created full-stack monitoring dashboards (React/AntDesign frontend + Spring Boot backend with RESTful APIs). Participated in Commerce SDK Redux-pattern refactoring.'),
-(3, 1, 'Android Engineer', 'Duolu (Yin''ai Network Technology)', '2019.11 - 2021.10', 'Established Feed monitoring system, reducing timeout rate from 1.5% to 0.3% and latency by 40%+. Led componentization (module + module_api + module_run) and plugin architecture (Shadow framework). Built dev-stage performance monitoring tools and automated testing (44 Feed cases via AirTest).'),
-(4, 1, 'Android Engineer', 'Qibei Technology (Bike-sharing)', '2016.09 - 2019.08', 'Developed bike-sharing apps (Qibei Bike, Dingda Transit) across 4+ major versions. Implemented hot-fix (Tinker), online performance monitoring (Matrix), and reduced build time by 30%+ via Gradle optimization. Set up Jenkins CI pipeline with wireless ADB deployment.'),
-(5, 1, 'Android Engineer', 'Baidu (Waimai Delivery)', '2014.12 - 2016.06', 'Independently maintained delivery rider app (Xiaodu Knight v1.4-2.9). Designed dynamic GPS tracking strategy reducing redundant uploads by 10%+. Developed PassSDK for unified B-side authentication with AES/JNI encryption. Built logistics development framework for multi-app scaffolding.'),
-(6, 1, 'Java Developer', 'NewLand Software Engineering', '2013.05 - 2014.09', 'Developed business management and analytics modules for China Mobile support system using J2EE, S2SH framework, and Oracle database.');
-
--- 插入教育经历数据
-INSERT IGNORE INTO education (id, user_id, degree, school, period, description) VALUES
-(1, 1, 'Bachelor of Software Engineering', 'Fujian University of Technology', '2011.09 - 2013.06', 'Outstanding Graduation Thesis: Design and Implementation of CRM System Based on Intelligent Evaluation System'),
-(2, 1, 'Associate in Computer Applications', 'Fujian Normal University (IT College)', '2008.09 - 2011.06', 'Provincial Outstanding Student, First-class Scholarship, Outstanding Student Cadre');
-
--- 插入技能数据
-INSERT IGNORE INTO skills (id, user_id, category) VALUES
-(1, 1, 'Mobile'),
-(2, 1, 'Architecture'),
-(3, 1, 'Performance & APM'),
-(4, 1, 'Backend & DevOps');
-
--- 插入技能项目数据
-INSERT IGNORE INTO skill_items (skill_id, item_name) VALUES
-(1, 'Flutter'), (1, 'Android Native'), (1, 'Dart'), (1, 'Kotlin'), (1, 'Java'),
-(2, 'Clean Architecture'), (2, 'Componentization'), (2, 'Plugin Architecture'), (2, 'MVI'), (2, 'MVVM'), (2, 'SOLID'),
-(3, 'Profiling'), (3, 'Memory Optimization'), (3, 'Feed Monitoring'), (3, 'Systrace'), (3, 'LeakCanary'),
-(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'), (4, 'CI/CD');
-
--- 插入语言数据
-INSERT IGNORE INTO languages (id, user_id, name, level) VALUES
-(1, 1, 'Japanese', 'JLPT N1 (131), BJT J2 (512)'),
-(2, 1, 'Chinese', 'Native'),
-(3, 1, 'English', 'CET-4');
-
--- 插入用户认证数据
-INSERT IGNORE INTO user_certifications (user_id, certification_name) VALUES
-(1, 'jlptN1'),
-(1, 'bjtJ2');
-
--- 插入统计数据
-INSERT IGNORE INTO stats (id, user_id, business_id, year, label) VALUES
-(1, 1, 'android', '11', 'androidExp'),
-(2, 1, 'flutter', '3', 'flutterExp'),
-(3, 1, 'java_web', '1', 'javaWeb');
-
--- 插入统计标签数据
-INSERT IGNORE INTO stat_tags (stat_id, tag_name) VALUES
-(1, 'archDesign'),
-(1, 'perfOptimization'),
-(1, 'componentization'),
-(2, 'cleanArchitecture'),
-(2, 'stateManagement'),
-(2, 'riverpod'),
-(3, 'springBoot'),
-(3, 'restApi');
-
--- ===================================================================
--- 性能优化说明
--- ===================================================================
--- 1. 外键索引：MySQL 会自动为外键创建索引
--- 2. 表定义中已包含必要的索引
--- 3. 额外索引可在后续版本的迁移脚本中添加

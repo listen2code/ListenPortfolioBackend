@@ -6,6 +6,7 @@ import com.listen.portfolio.api.v1.about.dto.ExperienceDto;
 import com.listen.portfolio.api.v1.about.dto.LanguageDto;
 import com.listen.portfolio.api.v1.about.dto.SkillDto;
 import com.listen.portfolio.api.v1.about.dto.StatDto;
+import com.listen.portfolio.common.util.I18nUtils;
 import com.listen.portfolio.entity.EducationEntity;
 import com.listen.portfolio.entity.ExperienceEntity;
 import com.listen.portfolio.entity.LanguageEntity;
@@ -15,11 +16,13 @@ import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -35,8 +38,8 @@ public class AboutMeService {
 
     /**
      * 说明：
-     * - 新版接口建议返回 DTO（AboutMeDto），避免 JPA Entity 直接暴露到 API 层导致耦合与懒加载风险
-     * - 原理：在 Service 的只读事务内完成实体到 DTO 的转换，Controller 只返回 DTO
+     * - 在 Service 的只读事务内完成实体到 DTO 的转换
+     * - 根据 LocaleContextHolder 获取客户端 Accept-Language 并做多语言字段动态映射
      */
     @Transactional(readOnly = true)
     public Optional<AboutMeDto> getAboutMeDto(Long userId) {
@@ -51,20 +54,23 @@ public class AboutMeService {
         }
 
         UserEntity userInfo = userInfoOptional.get();
+        Locale locale = LocaleContextHolder.getLocale();
+
         AboutMeDto dto = new AboutMeDto();
         dto.setName(userInfo.getName());
+        dto.setLocation(I18nUtils.getLocalizedText(userInfo.getLocation(), userInfo.getLocationZh(), userInfo.getLocationJa(), locale));
         dto.setAvatarUrl(userInfo.getAvatarUrl());
         dto.setStatus(userInfo.getStatus());
-        dto.setJobTitle(userInfo.getJobTitle());
-        dto.setBio(userInfo.getBio());
+        dto.setJobTitle(I18nUtils.getLocalizedText(userInfo.getJobTitle(), userInfo.getJobTitleZh(), userInfo.getJobTitleJa(), locale));
+        dto.setBio(I18nUtils.getLocalizedText(userInfo.getBio(), userInfo.getBioZh(), userInfo.getBioJa(), locale));
         dto.setGraduationYear(userInfo.getGraduationYear());
         dto.setGithub(userInfo.getGithubUrl());
-        dto.setMajor(userInfo.getMajor());
+        dto.setMajor(I18nUtils.getLocalizedText(userInfo.getMajor(), userInfo.getMajorZh(), userInfo.getMajorJa(), locale));
         dto.setCertifications(nullToEmpty(userInfo.getCertifications()));
         dto.setStats(toStatDtos(userInfo.getStats()));
-        dto.setExperiences(toExperienceDtos(userInfo.getExperiences()));
-        dto.setEducation(toEducationDtos(userInfo.getEducation()));
-        dto.setLanguages(toLanguageDtos(userInfo.getLanguages()));
+        dto.setExperiences(toExperienceDtos(userInfo.getExperiences(), locale));
+        dto.setEducation(toEducationDtos(userInfo.getEducation(), locale));
+        dto.setLanguages(toLanguageDtos(userInfo.getLanguages(), locale));
         dto.setSkills(toSkillDtos(userInfo.getSkills()));
         return Optional.of(dto);
     }
@@ -93,57 +99,81 @@ public class AboutMeService {
     }
 
     private List<ExperienceDto> toExperienceDtos(List<ExperienceEntity> experiences) {
+        return toExperienceDtos(experiences, LocaleContextHolder.getLocale());
+    }
+
+    private List<ExperienceDto> toExperienceDtos(List<ExperienceEntity> experiences, Locale locale) {
         if (experiences == null) {
             return Collections.emptyList();
         }
         return experiences.stream()
-                .map(this::toExperienceDto)
+                .map(entity -> toExperienceDto(entity, locale))
                 .collect(Collectors.toList());
     }
 
     private ExperienceDto toExperienceDto(ExperienceEntity entity) {
+        return toExperienceDto(entity, LocaleContextHolder.getLocale());
+    }
+
+    private ExperienceDto toExperienceDto(ExperienceEntity entity, Locale locale) {
         ExperienceDto dto = new ExperienceDto();
         dto.setId(entity.getId());
-        dto.setTitle(entity.getTitle());
-        dto.setCompany(entity.getCompany());
+        dto.setTitle(I18nUtils.getLocalizedText(entity.getTitle(), entity.getTitleZh(), entity.getTitleJa(), locale));
+        dto.setCompany(I18nUtils.getLocalizedText(entity.getCompany(), entity.getCompanyZh(), entity.getCompanyJa(), locale));
         dto.setPeriod(entity.getPeriod());
-        dto.setDescription(entity.getDescription());
+        dto.setDescription(I18nUtils.getLocalizedText(entity.getDescription(), entity.getDescriptionZh(), entity.getDescriptionJa(), locale));
         return dto;
     }
 
     private List<EducationDto> toEducationDtos(List<EducationEntity> education) {
+        return toEducationDtos(education, LocaleContextHolder.getLocale());
+    }
+
+    private List<EducationDto> toEducationDtos(List<EducationEntity> education, Locale locale) {
         if (education == null) {
             return Collections.emptyList();
         }
         return education.stream()
-                .map(this::toEducationDto)
+                .map(entity -> toEducationDto(entity, locale))
                 .collect(Collectors.toList());
     }
 
     private EducationDto toEducationDto(EducationEntity entity) {
+        return toEducationDto(entity, LocaleContextHolder.getLocale());
+    }
+
+    private EducationDto toEducationDto(EducationEntity entity, Locale locale) {
         EducationDto dto = new EducationDto();
         dto.setId(entity.getId());
-        dto.setDegree(entity.getDegree());
-        dto.setSchool(entity.getSchool());
+        dto.setDegree(I18nUtils.getLocalizedText(entity.getDegree(), entity.getDegreeZh(), entity.getDegreeJa(), locale));
+        dto.setSchool(I18nUtils.getLocalizedText(entity.getSchool(), entity.getSchoolZh(), entity.getSchoolJa(), locale));
         dto.setPeriod(entity.getPeriod());
-        dto.setDescription(entity.getDescription());
+        dto.setDescription(I18nUtils.getLocalizedText(entity.getDescription(), entity.getDescriptionZh(), entity.getDescriptionJa(), locale));
         return dto;
     }
 
     private List<LanguageDto> toLanguageDtos(List<LanguageEntity> languages) {
+        return toLanguageDtos(languages, LocaleContextHolder.getLocale());
+    }
+
+    private List<LanguageDto> toLanguageDtos(List<LanguageEntity> languages, Locale locale) {
         if (languages == null) {
             return Collections.emptyList();
         }
         return languages.stream()
-                .map(this::toLanguageDto)
+                .map(entity -> toLanguageDto(entity, locale))
                 .collect(Collectors.toList());
     }
 
     private LanguageDto toLanguageDto(LanguageEntity entity) {
+        return toLanguageDto(entity, LocaleContextHolder.getLocale());
+    }
+
+    private LanguageDto toLanguageDto(LanguageEntity entity, Locale locale) {
         LanguageDto dto = new LanguageDto();
         dto.setId(entity.getId());
-        dto.setName(entity.getName());
-        dto.setLevel(entity.getLevel());
+        dto.setName(I18nUtils.getLocalizedText(entity.getName(), entity.getNameZh(), entity.getNameJa(), locale));
+        dto.setLevel(I18nUtils.getLocalizedText(entity.getLevel(), entity.getLevelZh(), entity.getLevelJa(), locale));
         return dto;
     }
 

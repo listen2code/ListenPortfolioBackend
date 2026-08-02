@@ -23,7 +23,11 @@ public class LanguageEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
+    private String nameZh;
+    private String nameJa;
     private String level;
+    private String levelZh;
+    private String levelJa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -59,6 +63,38 @@ public class LanguageEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getNameZh() {
+        return nameZh;
+    }
+
+    public void setNameZh(String nameZh) {
+        this.nameZh = nameZh;
+    }
+
+    public String getNameJa() {
+        return nameJa;
+    }
+
+    public void setNameJa(String nameJa) {
+        this.nameJa = nameJa;
+    }
+
+    public String getLevelZh() {
+        return levelZh;
+    }
+
+    public void setLevelZh(String levelZh) {
+        this.levelZh = levelZh;
+    }
+
+    public String getLevelJa() {
+        return levelJa;
+    }
+
+    public void setLevelJa(String levelJa) {
+        this.levelJa = levelJa;
     }
 }
 

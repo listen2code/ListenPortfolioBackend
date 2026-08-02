@@ -32,10 +32,19 @@ public class ProjectEntity {
     private String businessId;
 
     private String title;
+    private String titleZh;
+    private String titleJa;
+
     private String subtitle;
+    private String subtitleZh;
+    private String subtitleJa;
 
     @Column(name = "project_desc", columnDefinition = "TEXT")
     private String desc;
+    @Column(name = "project_desc_zh", columnDefinition = "TEXT")
+    private String descZh;
+    @Column(name = "project_desc_ja", columnDefinition = "TEXT")
+    private String descJa;
 
     private String imageUrl;
     private String githubUrl;
@@ -107,6 +116,54 @@ public class ProjectEntity {
 
     public void setTechStack(List<String> techStack) {
         this.techStack = techStack;
+    }
+
+    public String getTitleZh() {
+        return titleZh;
+    }
+
+    public void setTitleZh(String titleZh) {
+        this.titleZh = titleZh;
+    }
+
+    public String getTitleJa() {
+        return titleJa;
+    }
+
+    public void setTitleJa(String titleJa) {
+        this.titleJa = titleJa;
+    }
+
+    public String getSubtitleZh() {
+        return subtitleZh;
+    }
+
+    public void setSubtitleZh(String subtitleZh) {
+        this.subtitleZh = subtitleZh;
+    }
+
+    public String getSubtitleJa() {
+        return subtitleJa;
+    }
+
+    public void setSubtitleJa(String subtitleJa) {
+        this.subtitleJa = subtitleJa;
+    }
+
+    public String getDescZh() {
+        return descZh;
+    }
+
+    public void setDescZh(String descZh) {
+        this.descZh = descZh;
+    }
+
+    public String getDescJa() {
+        return descJa;
+    }
+
+    public void setDescJa(String descJa) {
+        this.descJa = descJa;
     }
 }
 

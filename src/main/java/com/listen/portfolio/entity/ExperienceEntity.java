@@ -23,9 +23,15 @@ public class ExperienceEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
+    private String titleZh;
+    private String titleJa;
     private String company;
+    private String companyZh;
+    private String companyJa;
     private String period;
     private String description;
+    private String descriptionZh;
+    private String descriptionJa;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -77,6 +83,54 @@ public class ExperienceEntity {
 
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    public String getTitleZh() {
+        return titleZh;
+    }
+
+    public void setTitleZh(String titleZh) {
+        this.titleZh = titleZh;
+    }
+
+    public String getTitleJa() {
+        return titleJa;
+    }
+
+    public void setTitleJa(String titleJa) {
+        this.titleJa = titleJa;
+    }
+
+    public String getCompanyZh() {
+        return companyZh;
+    }
+
+    public void setCompanyZh(String companyZh) {
+        this.companyZh = companyZh;
+    }
+
+    public String getCompanyJa() {
+        return companyJa;
+    }
+
+    public void setCompanyJa(String companyJa) {
+        this.companyJa = companyJa;
+    }
+
+    public String getDescriptionZh() {
+        return descriptionZh;
+    }
+
+    public void setDescriptionZh(String descriptionZh) {
+        this.descriptionZh = descriptionZh;
+    }
+
+    public String getDescriptionJa() {
+        return descriptionJa;
+    }
+
+    public void setDescriptionJa(String descriptionJa) {
+        this.descriptionJa = descriptionJa;
     }
 }
 

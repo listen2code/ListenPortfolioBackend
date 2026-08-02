@@ -14,6 +14,7 @@ import java.util.List;
  */
 public class AboutMeDto {
     private String name;
+    private String location;
     private String avatarUrl;
     private String status;
     private String jobTitle;
