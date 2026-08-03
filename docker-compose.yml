@@ -36,8 +36,8 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-wlrwwiltnwvbjinn}
       # 前端 URL（重置密码链接前缀）
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
-      # JVM 性能优化参数
-      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200}
+      # JVM 性能与内存优化参数（适于 1GB RAM 服务器）
+      JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200}
     networks:
       - portfolio-network
     restart: unless-stopped
