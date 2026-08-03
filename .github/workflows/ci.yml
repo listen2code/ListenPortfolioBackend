@@ -195,6 +195,10 @@ jobs:
           Host *
             StrictHostKeyChecking no
             UserKnownHostsFile /dev/null
+            ConnectTimeout 30
+            ConnectionAttempts 5
+            ServerAliveInterval 15
+            ServerAliveCountMax 3
           EOF
 
       # 步骤 3.6：连入 EC2 预创建应用部署目录和 target 子目录
