@@ -209,7 +209,7 @@ src/test/java/com/listen/portfolio/
 - [x] 结构化 JSON 日志
 - [x] GitHub Actions CI/CD 防抖与自动部署
 - [x] OSIV 正式关闭
-
+- [] 将maven编译的项目改成gradle
 ---
 
 📅 **最后更新**: 2026-08-04
