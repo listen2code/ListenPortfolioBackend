@@ -152,7 +152,7 @@ class UserControllerTest {
             doNothing().when(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -448,7 +448,7 @@ class UserControllerTest {
             when(securityContext.getAuthentication()).thenReturn(null);
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -475,7 +475,7 @@ class UserControllerTest {
             when(request.getHeader("Authorization")).thenReturn(null);
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -501,7 +501,7 @@ class UserControllerTest {
             when(request.getHeader("Authorization")).thenReturn("");
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -527,7 +527,7 @@ class UserControllerTest {
             when(request.getHeader("Authorization")).thenReturn("invalid-token");
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -556,7 +556,7 @@ class UserControllerTest {
             when(jwtUtil.extractExpiration(anyString())).thenThrow(new RuntimeException("JWT processing error"));
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -586,7 +586,7 @@ class UserControllerTest {
             doThrow(new RuntimeException("Redis error")).when(tokenBlacklistService).addToBlacklist(anyString(), anyLong());
 
             // When
-            ResponseEntity<ApiResponse<String>> response = userController.logout();
+            ResponseEntity<ApiResponse<String>> response = userController.logout(null);
 
             // Then
             assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());

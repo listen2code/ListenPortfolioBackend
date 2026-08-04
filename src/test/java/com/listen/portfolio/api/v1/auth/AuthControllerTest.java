@@ -370,12 +370,22 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("边界测试 - 空请求处理")
-    void testNullRequestHandling() {
-        // 测试空请求不会导致 NullPointerException
-        assertDoesNotThrow(() -> {
-            // 这些测试需要根据实际的验证逻辑来调整
-            // authController.signUp(null); // 可能抛出验证异常
-        });
+    @DisplayName("authLogout - 成功公开登出并吊销 Refresh Token")
+    void testAuthLogout_Success() {
+        // Given
+        String refreshToken = "valid-refresh-token";
+        when(jwtUtil.extractUsername(refreshToken)).thenReturn("testuser");
+
+        // When
+        ResponseEntity<ApiResponse<String>> response = authController.authLogout(refreshToken);
+
+        // Then
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("0", response.getBody().getResult());
+        assertEquals("Logout successful", response.getBody().getBody());
+
+        verify(jwtUtil).extractUsername(refreshToken);
+        verify(refreshTokenService).revokeRefreshToken("testuser", refreshToken);
     }
 }
