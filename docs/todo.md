@@ -51,10 +51,10 @@
 
 ### 4. OSIV 关闭验证与落地
 
-**现状**：`spring.jpa.open-in-view=false` 仍处于注释状态。  
+**现状**：已完成。`spring.jpa.open-in-view=false` 已在主配置 `application.properties` 与测试配置 `application-test.properties` 中全面生效，消除了 Spring Boot 启动警告。  
 **目标**：正式关闭 OSIV，把懒加载问题收敛到 Service 层解决。  
 **为什么现在做**：这直接关系到分层纪律是否真实成立。  
-**验收标准**：应用正常启动，测试通过，无 `LazyInitializationException`。
+**验收标准**：应用正常启动，全量 338+ 单元测试 100% 绿色通过（BUILD SUCCESS），无任何 `LazyInitializationException`。
 
 ### 5. GitHub Actions CI
 
@@ -208,7 +208,7 @@ src/test/java/com/listen/portfolio/
 - [x] 健康检查 / 探针
 - [x] 结构化 JSON 日志
 - [x] GitHub Actions CI/CD 防抖与自动部署
-- [ ] OSIV 正式关闭
+- [x] OSIV 正式关闭
 
 ---
 
