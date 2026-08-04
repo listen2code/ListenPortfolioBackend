@@ -476,8 +476,11 @@ public class TestConfig {
 
 ### CI/CD 测试
 
-当前仓库中 **没有可直接引用的 Backend GitHub Actions 工作流文件**。
-因此，测试执行与覆盖率生成应以本地命令和 Maven 插件配置为准；若后续新增 CI，请再基于真实工作流补充本节。
+当前仓库中已配置基于 GitHub Actions 的自动工作流 `.github/workflows/ci.yml`。
+工作流在每次 `push` 或 `pull_request` 到 `master` 分支时自动触发：
+1. **编译与单元测试**：执行 `./mvnw test` 运行全量 338+ 单元测试。
+2. **覆盖率检查**：自动通过 JaCoCo 插件进行覆盖率分析与质量门禁校验。
+3. **安全部署 (CD)**：在通过校验后，通过 SCP / SSH 安全连接部署至 AWS EC2，并配备 `ConnectTimeout 30` 与 `ConnectionAttempts 5` 防抖重试策略。
 
 ## 测试最佳实践
 
@@ -652,5 +655,5 @@ class UserDataTest {
 
 ---
 
-**最后更新**: 2026-08-02  
+**最后更新**: 2026-08-04  
 **维护者**: Development Team

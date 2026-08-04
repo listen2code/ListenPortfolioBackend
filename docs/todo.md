@@ -58,10 +58,12 @@
 
 ### 5. GitHub Actions CI
 
-**现状**：`.github/workflows/` 为空。  
-**目标**：建立最小可信 CI：测试 + JaCoCo + SpotBugs。  
-**为什么现在做**：当前代码质量只能本地证明，不能自动证明。  
-**验收标准**：Push / PR 自动触发校验；README 可挂 badge。
+**现状**：已成功搭建，包含编译校验、单元测试、JaCoCo 报告以及基于 SSH / SCP 的 AWS EC2 自动构建部署流。已加入 `ConnectTimeout 30` 与 `ConnectionAttempts 5` 超时重试防抖机制。  
+**目标**：建立最小可信 CI：测试 + JaCoCo + SpotBugs + 自动 CD 部署。  
+**为什么现在做**：保证 Push / PR 自动完成防抖校验与部署上线。  
+**验收标准**：
+- [x] Push / PR 自动触发校验；README 挂载状态。
+- [x] 增加 SSH `ConnectTimeout` 与 `ConnectionAttempts` 避免 EC2 瞬态握手超时。
 
 ## Next
 
@@ -83,11 +85,11 @@ src/test/java/com/listen/portfolio/
 
 **验收标准**：关键链路覆盖更完整，JaCoCo 报告不再只靠现有样本测试支撑。
 
-### 2. V2 迁移脚本
+### 2. V2 迁移脚本与 Flyway 整合
 
-**现状**：V1 迁移适合新环境初始化，但已部署环境的数据更新仍需额外脚本。  
-**目标**：为真实简历数据更新提供 `V2__Update_seed_data.sql`。  
-**验收标准**：已部署环境执行 V2 后与当前真实简历内容一致。
+**现状**：已完成。Flyway 脚本精简整合为 `V1`（纯 DDL 建表，含多语言扩展字段与 `LONGTEXT`）与 `V2`（纯 DML 填充中/英/日三语简历与项目测试数据）。  
+**目标**：为真实简历数据更新提供 Flyway 迁移脚本。  
+**验收标准**：执行 V1 与 V2 脚本后与当前真实简历及多语言数据保持一致。
 
 ### 3. 限流算法升级
 
@@ -95,15 +97,16 @@ src/test/java/com/listen/portfolio/
 **目标**：如确有必要，再升级为滑动窗口或令牌桶。  
 **验收标准**：只有在真实需要更高精度时再推进，不为“概念更高级”而升级。
 
-### 4. 数据库动态内容国际化 (方案 B)
+### 4. 数据库动态内容国际化与 App 拦截器解耦 (ListenCore 0.0.49)
 
-**现状**：已完成。静态 UI 文案与 MySQL 数据库拉取的动态字段（Bio, 项目介绍, 履历, 教育背景, 语言能力等）均已支持英/中/日三语动态解耦与 Locale 自动转换。  
-**目标**：实现后端多语言字段的解耦与 Locale 动态分发。  
+**现状**：已完成。后端多语言解析、表结构扩展（`_zh` / `_ja`）与 App 端拦截器请求头重构已全部落地。ListenCore 升级至 `0.0.49`，实现了 `onInjectAuthHeader`（仅注入 Authorization）与 `onInjectCommonHeaders`（无条件注入 Accept-Language）的完全解耦。  
+**目标**：实现后端多语言字段的解耦与 Locale 动态分发及 App 拦截器职责分离。  
 **验收标准**：
 - [x] 编写 Flyway Migration 迁移脚本（整合为 `V1` 建表与 `V2` 测试数据），为 `users`、`projects`、`experiences`、`education`、`languages` 表添加 `_zh` / `_ja` 多语言列
 - [x] 后端 Java Entity 扩展多语言属性及 getter/setter 映射
 - [x] Service 业务层引入 Locale 动态解析（利用 `LocaleContextHolder` 与 `I18nUtils`），实现 DTO 的对应语言文本自动转换装配
 - [x] 注册 `AcceptHeaderLocaleResolver` 与拦截器处理客户端 Dio 传入的 `Accept-Language` 请求头
+- [x] ListenCore 升级 `0.0.49`，解耦 `onInjectCommonHeaders` 拦截器，确保公开/访客接口（如 `/v1/projects`）也注入 `Accept-Language`
 
 ### 5. Nginx 反向代理与 Let's Encrypt HTTPS 部署
 
@@ -193,9 +196,9 @@ src/test/java/com/listen/portfolio/
 - [x] Flutter login / refresh userId 修正为数字类型
 - [x] V1 DB 种子数据替换为真实简历内容
 - [x] 创建 `docs/api_reference.md`
-- [ ] Flutter 端适配 `ProjectDto.businessId`
-- [ ] Flutter 端适配 `StatDto.id` vs `businessId` 映射
-- [ ] Flutter dev 环境配置指向后端 API URL
+- [x] Flutter 端适配 `ProjectDto.businessId`
+- [x] Flutter 端适配 `StatDto.id` vs `businessId` 映射
+- [x] Flutter dev 环境配置指向后端 API URL
 - [x] V2 迁移脚本
 
 ### 工程化
@@ -204,9 +207,9 @@ src/test/java/com/listen/portfolio/
 - [x] Prometheus + Grafana
 - [x] 健康检查 / 探针
 - [x] 结构化 JSON 日志
-- [x] GitHub Actions CI
+- [x] GitHub Actions CI/CD 防抖与自动部署
 - [ ] OSIV 正式关闭
 
 ---
 
-📅 **最后更新**: 2026-08-02
+📅 **最后更新**: 2026-08-04
