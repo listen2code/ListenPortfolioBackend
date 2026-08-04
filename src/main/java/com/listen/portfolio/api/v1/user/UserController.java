@@ -89,6 +89,11 @@ public class UserController {
         timeWindowSeconds = 60
     )
     public ResponseEntity<ApiResponse<String>> logout() {
+        return logout(null);
+    }
+
+    public ResponseEntity<ApiResponse<String>> logout(
+            @RequestParam(required = false) String refreshToken) {
         logger.info("Received logout request");
         
         try {
@@ -108,8 +113,12 @@ public class UserController {
                 // 将 token 加入黑名单
                 tokenBlacklistService.addToBlacklist(token, expiration.getTime());
                 
-                // 吊销当前用户的所有 Refresh Token
-                refreshTokenService.revokeAllRefreshTokens(username);
+                // 若指定了 refreshToken，仅吊销特定 token，否则吊销当前用户的所有 Refresh Token
+                if (refreshToken != null && !refreshToken.isBlank()) {
+                    refreshTokenService.revokeRefreshToken(username, refreshToken);
+                } else {
+                    refreshTokenService.revokeAllRefreshTokens(username);
+                }
                 
                 logger.info("User {} logged out successfully, token added to blacklist and refresh tokens revoked", username);
                 

@@ -233,6 +233,28 @@ public class AuthController {
         logger.info("Token refreshed successfully, user: {}", username);
         return ResponseEntity.ok(ApiResponse.success(new LoginResponse(jwt, newRefreshToken, userId)));
     }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Auth Logout", description = "Revoke refresh token and logout user without requiring an active access token")
+    @com.listen.portfolio.common.aspect.RateLimit(
+        types = {com.listen.portfolio.common.aspect.RateLimit.RateLimitType.IP},
+        maxRequests = 20,
+        timeWindowSeconds = 60
+    )
+    public ResponseEntity<ApiResponse<String>> authLogout(
+            @RequestParam(required = false) String refreshToken) {
+        logger.info("Received public auth logout request");
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            try {
+                String username = jwtUtil.extractUsername(refreshToken);
+                refreshTokenService.revokeRefreshToken(username, refreshToken);
+                logger.info("Successfully revoked refresh token during public auth logout for user: {}", username);
+            } catch (Exception e) {
+                logger.warn("Failed to extract username or revoke refresh token during public logout: {}", e.getMessage());
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+    }
     
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Send password reset email to user")
