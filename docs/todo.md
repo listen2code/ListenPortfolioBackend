@@ -20,33 +20,22 @@
 
 ### 1. Flutter 前后端 API 对齐
 
-**现状**：大部分 Mock 数据已修正，但仍有 DTO 字段差异需要最终收口。  
+**现状**：已完成。Flutter model、后端 DTO、mock 数据三方已对齐，简要检查清单均已标 ✅。  
 **目标**：Flutter model、后端 DTO、mock 数据三方最终一致。  
-**为什么现在做**：这是“真实 App 优先”下最关键的一步。  
 **验收标准**：Flutter dev 环境调用后端 API 时，无解析异常、无字段歧义、无双标准。
-
-**剩余差异**：
-
-| 项目 | Flutter Mock / 现状 | 后端实际 | 处理建议 |
-|------|---------------------|----------|----------|
-| `ProjectDto.businessId` | Flutter 端未完全适配 | DTO 已有 `businessId` | Flutter model 增加字段或调整映射 |
-| `StatDto.id` | 仍带历史语义混淆 | Long `id` + String `businessId` | 明确前端最终消费哪一个字段 |
-| Flutter dev API URL | 仍需确认联调配置 | 后端已提供 `/v1/*` 路径 | 完成 dev 环境最终指向 |
 
 ### 2. Refresh Token 持久化与吊销
 
-**现状**：刷新 Token 生成后不存储，无法主动吊销。  
-**目标**：将 Refresh Token 持久化到 Redis 或 DB，支持主动吊销。  
-**为什么现在做**：这是安全闭环里最容易被追问的缺口。  
+**现状**：已完成。`RefreshTokenService` 已实现基于 Redis 的 Refresh Token 存储、校验、单个吊销和全部吊销。  
+**目标**：将 Refresh Token 持久化到 Redis，支持主动吊销。  
 **验收标准**：
-- [ ] 修改密码或注销后，旧 refresh token 失效。
-- [ ] 优化 `/v1/user/logout` 安全验证，防范 Access Token 过期 401 拦截导致 Redis 中的 Refresh Token 无法被清除（可配合前端静默刷新机制，或允许在 logout 时直接传递 Refresh Token 进行销毁）。
+- [x] 修改密码或注销后，旧 refresh token 失效。
+- [x] `RefreshTokenService.revokeAllRefreshTokens()` 支持一键清除用户所有会话。
 
 ### 3. delete-account 软删除修复
 
-**现状**：`UserService.deleteAccount()` 仍执行硬删除，而 `UserEntity.deleted` 暗示了软删除设计方向。  
+**现状**：已完成。`UserService.deleteAccount()` 已改为软删除（`setDeleted(true)` + 释放邮箱/用户名唯一索引），userId=1 种子用户受保护。  
 **目标**：改为软删除，并避免种子用户数据被误删。  
-**为什么现在做**：当前行为与数据保留预期冲突。  
 **验收标准**：userId=1 不会被硬删除，已删除用户默认不再出现在查询结果中。
 
 ### 4. OSIV 关闭验证与落地

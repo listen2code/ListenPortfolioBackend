@@ -28,12 +28,16 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 
 - **JWT + Spring Security**：无状态鉴权
 - **Redis Token 黑名单**：退出登录、修改密码后立即失效当前 Token
+- **Refresh Token 持久化与吊销**：Redis 存储，支持单个/全部吊销（修改密码、注销时自动清除）
 - **AOP 限流**：按 IP / EMAIL / TOKEN / USER / CUSTOM 维度限流
 - **Flyway 迁移**：应用启动时执行数据库迁移
+- **OSIV 已关闭**：`spring.jpa.open-in-view=false`，懒加载收敛到 Service 层
 - **Prometheus / Grafana / Actuator**：基础监控与健康检查
 - **结构化 JSON 日志**：便于后续接入 ELK / Loki
+- **GitHub Actions CI/CD**：Push/PR 自动编译、测试、JaCoCo 报告、SSH 部署到 AWS EC2
 - **JaCoCo + SpotBugs**：覆盖率与静态分析工具链已接入
 - **Docker 全栈部署**：App + MySQL + Redis + Prometheus + Grafana
+- **账号软删除**：`delete-account` 标记删除并释放唯一索引，种子用户受保护
 
 ## 📡 当前 API 概览
 
@@ -54,7 +58,8 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 | `GET` | `/v1/user?id={id}` | 获取用户摘要 |
 | `POST` | `/v1/user/logout` | 退出登录 |
 | `POST` | `/v1/user/change-password` | 修改密码 |
-| `DELETE` | `/v1/user/delete-account` | 删除账号 |
+| `POST` | `/v1/user/upload-avatar` | 上传头像（Base64） |
+| `DELETE` | `/v1/user/delete-account` | 软删除账号 |
 
 ### 作品集接口
 
@@ -184,7 +189,7 @@ $env:MAIL_PASSWORD="your-gmail-app-password"
 
 - 已有 Controller / Service / Repository / Integration 测试基础
 - JaCoCo 和 SpotBugs 工具链已接入
-- 当前还**没有 GitHub Actions CI 工作流**
+- **GitHub Actions CI/CD 已接入**：Push/PR 自动触发编译、测试与部署
 - 一部分测试依赖 Redis，本地未启动 Redis 时会失败
 
 ## 🐳 Docker 与部署
@@ -212,10 +217,6 @@ cp .env.example .env
 
 ## ⚠️ 当前限制与风险
 
-- **Flutter / Backend 契约仍有收尾工作**：例如 `businessId` 与部分字段映射仍需最终统一
-- **OSIV 关闭尚未正式启用**：`spring.jpa.open-in-view=false` 仍待验证后落地
-- **Refresh Token 仍未持久化**：当前不能主动吊销旧 refresh token
-- **CI 尚未接入**：没有 GitHub Actions 自动化校验
 - **部分文档历史上写得比实现更理想化**：目前正在持续收口
 
 ## 📚 文档索引
@@ -228,22 +229,18 @@ cp .env.example .env
 
 以下内容是后续规划，不代表已经全部落地：
 
-- Refresh Token 持久化与吊销
-- GitHub Actions CI
-- 正式关闭 OSIV 并补齐懒加载问题
-- delete-account 软删除修复
 - 更完整的 HTTPS / 生产部署方案
+- 测试覆盖率持续提升
+- 限流算法升级（当前为固定窗口，可升级为滑动窗口）
 
 ## 🧾 待删除备份区
 
 以下表述已从主文降级，先保留在此，后续继续清理：
 
 - 不再把 `WAR` 部署能力放在 README 首页高位
-- 不再把“企业级平台化”作为本项目的主叙事
+- 不再把"企业级平台化"作为本项目的主叙事
 - 不再使用 `accessToken` 指代登录返回字段，当前实现字段名是 `token`
-- 不再把“OSIV 已关闭”写成既成事实；当前仍属于待落地项
-- 不再把“GitHub Actions CI 已具备”或类似表述写进主文
 
 ---
 
-📅 **最后更新**: 2026-04-08 | 🏷️ **版本**: 0.0.1-SNAPSHOT | 👤 **作者**: Listen — listen2code@gmail.com | [GitHub](https://github.com/listen2code)
+📅 **最后更新**: 2026-08-05 | 🏷️ **版本**: 0.0.1-SNAPSHOT | 👤 **作者**: Listen — listen2code@gmail.com | [GitHub](https://github.com/listen2code)
