@@ -197,6 +197,10 @@ public class UserService {
         logger.info("Attempting to update avatar for user: {}", username);
         return getUserByName(username)
                 .map(user -> {
+                    if (user.getId() != null && user.getId() != 1L) {
+                        logger.warn("User {} (id={}) is not permitted to update avatar", username, user.getId());
+                        throw new IllegalArgumentException("Only user with id 1 is permitted to change avatar");
+                    }
                     user.setAvatarUrl(base64Data);
                     UserEntity savedUser = repo.save(user);
                     logger.info("Avatar updated successfully for user: {}", username);

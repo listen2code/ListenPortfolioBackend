@@ -191,6 +191,7 @@ public class AuthService implements UserDetailsService {
         // 使用BCrypt算法在存储前对密码进行加密
         userInfo.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         userInfo.setEmail(signUpRequest.getEmail());
+        userInfo.setAvatarUrl("https://api.dicebear.com/10.x/bottts/svg?seed=" + signUpRequest.getUserName());
         
         // 将新用户保存到数据库
         repo.save(userInfo);

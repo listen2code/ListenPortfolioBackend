@@ -175,7 +175,7 @@ POST /v1/auth/refresh?refreshToken=eyJhbGciOiJIUzI1NiJ9...
     "name": "Listen",
     "location": "Japan / Tokyo",
     "email": "listen2code@gmail.com",
-    "avatarUrl": "https://api.dicebear.com/7.x/avataaars/png?seed=Listen"
+    "avatarUrl": "https://api.dicebear.com/10.x/bottts/svg?seed=Listen"
   }
 }
 ```

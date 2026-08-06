@@ -8,7 +8,7 @@
 INSERT IGNORE INTO users (id, name, email, password, location, location_zh, location_ja, avatar_url, status, job_title, job_title_zh, job_title_ja, bio, bio_zh, bio_ja, graduation_year, github_url, major, major_zh, major_ja) VALUES
 (1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK',
  'Japan / Tokyo', '日本 / 东京', '日本 / 東京',
- 'https://api.dicebear.com/7.x/avataaars/png?seed=Listen', 'available',
+ 'https://api.dicebear.com/10.x/bottts/svg?seed=Listen', 'available',
  'Senior Android / Flutter Engineer', '资深 Android / Flutter 开发专家', 'シニア Android / Flutter エンジニア',
  'Senior Android Engineer with 11+ years of mobile development experience and 3+ years in Flutter. Expertise in client architecture (componentization, plugin systems), performance optimization, and APM infrastructure. Key achievements include reducing Feed timeout rates from 1.5% to 0.3%, building full-stack APM monitoring platforms, and leading Flutter app development for securities trading at Rakuten. JLPT N1, BJT J2 certified, currently based in Tokyo, Japan.',
  '具有 11 年以上移动端开发经验及 3 年以上 Flutter 经验的资深工程师。精通客户端架构（组件化、插件化体系）、性能优化及 APM 监控基础设施。主要成就包括将 Feed 流超时率从 1.5% 降低至 0.3%，构建全栈 APM 性能监控平台，以及在乐天领衔开发证券交易 Flutter 应用。持日语 N1 与 BJT J2 证书，现定居日本东京。',
@@ -18,7 +18,7 @@ INSERT IGNORE INTO users (id, name, email, password, location, location_zh, loca
 
 (2, 'Listen2', 'listen4Future@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK',
  'Test Location', '测试地点', 'テスト地域',
- 'https://example.com/avatar.jpg', 'active',
+ 'https://api.dicebear.com/10.x/bottts/svg?seed=Listen2', 'active',
  'Test Engineer', '测试工程师', 'テストエンジニア',
  'This is a test user for demonstration and multi-language verification.',
  '这是一个用于演示和多语言验证的测试用户。',
