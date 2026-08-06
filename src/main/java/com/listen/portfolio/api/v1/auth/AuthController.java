@@ -114,11 +114,15 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Object>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         logger.info("Received sign-up request, user: {}", signUpRequest.getUserName());
 
-        boolean success = authService.signUp(signUpRequest);
+        AuthService.SignUpResult result = authService.signUpResult(signUpRequest);
 
-        if (success) {
+        if (result == AuthService.SignUpResult.SUCCESS) {
             logger.info("User {} signed up successfully", signUpRequest.getUserName());
             return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(null));
+        } else if (result == AuthService.SignUpResult.EMAIL_EXISTS) {
+            logger.warn("Email {} already exists, sign-up failed", signUpRequest.getEmail());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(Constants.ERR_EMAIL_EXISTS, "Email already exists"));
         }
 
         logger.warn("Username {} already exists, sign-up failed", signUpRequest.getUserName());

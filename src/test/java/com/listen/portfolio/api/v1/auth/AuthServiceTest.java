@@ -191,6 +191,27 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("signUp - 邮箱已存在注册失败")
+    void testSignUp_EmailAlreadyExists() {
+        // Given
+        when(userRepository.findByNameCaseSensitive("testuser"))
+                .thenReturn(Optional.empty());
+        when(userRepository.findByEmail("test@example.com"))
+                .thenReturn(Optional.of(mockUserEntity));
+
+        // When
+        AuthService.SignUpResult result = authService.signUpResult(mockSignUpRequest);
+
+        // Then
+        assertEquals(AuthService.SignUpResult.EMAIL_EXISTS, result);
+        
+        verify(userRepository).findByNameCaseSensitive("testuser");
+        verify(userRepository).findByEmail("test@example.com");
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    @Test
     @DisplayName("forgotPassword - 成功发送密码重置邮件")
     void testForgotPassword_Success() {
         // Given

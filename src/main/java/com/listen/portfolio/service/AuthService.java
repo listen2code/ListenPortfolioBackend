@@ -157,14 +157,31 @@ public class AuthService implements UserDetailsService {
      * @param signUpRequest 注册请求对象，包含用户名、密码、邮箱等信息
      * @return 注册成功返回true，用户名已存在返回false
      */
+    public enum SignUpResult {
+        SUCCESS,
+        USERNAME_EXISTS,
+        EMAIL_EXISTS
+    }
+
+    /**
+     * 详细注册接口，区分用户名与邮箱冲突
+     */
     @Transactional
-    public boolean signUp(SignUpRequest signUpRequest) {
+    public SignUpResult signUpResult(SignUpRequest signUpRequest) {
         logger.info("Signing up new user: {}", signUpRequest.getUserName());
         
         // 检查用户名是否已存在（防止重复用户名）
         if (repo.findByNameCaseSensitive(signUpRequest.getUserName()).isPresent()) {
             logger.warn("Username {} already exists", signUpRequest.getUserName());
-            return false;
+            return SignUpResult.USERNAME_EXISTS;
+        }
+
+        // 检查邮箱是否已存在（防止重复邮箱导致的 500 异常）
+        if (signUpRequest.getEmail() != null && !signUpRequest.getEmail().isBlank()) {
+            if (repo.findByEmail(signUpRequest.getEmail()).isPresent()) {
+                logger.warn("Email {} already exists", signUpRequest.getEmail());
+                return SignUpResult.EMAIL_EXISTS;
+            }
         }
         
         // 创建新用户对象
@@ -172,14 +189,18 @@ public class AuthService implements UserDetailsService {
         userInfo.setName(signUpRequest.getUserName());
         
         // 使用BCrypt算法在存储前对密码进行加密
-        // 严禁存储明文密码！这确保了安全性
         userInfo.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
         userInfo.setEmail(signUpRequest.getEmail());
         
         // 将新用户保存到数据库
         repo.save(userInfo);
         logger.info("User {} signed up successfully", signUpRequest.getUserName());
-        return true;
+        return SignUpResult.SUCCESS;
+    }
+
+    @Transactional
+    public boolean signUp(SignUpRequest signUpRequest) {
+        return signUpResult(signUpRequest) == SignUpResult.SUCCESS;
     }
 
     /**

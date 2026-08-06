@@ -14,6 +14,7 @@ public class Constants {
     
     // Business error codes
     public static final String ERR_USERNAME_EXISTS = "BIZ_0500";
+    public static final String ERR_EMAIL_EXISTS = "BIZ_0501";
     public static final String ERR_CURRENT_PASSWORD_INCORRECT = "BIZ_0502";
     public static final String ERR_DELETE_ACCOUNT_FAILED = "BIZ_0503";
     public static final String ERR_LOGOUT_FAILED = "BIZ_0504";

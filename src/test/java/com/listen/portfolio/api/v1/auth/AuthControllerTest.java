@@ -6,6 +6,7 @@ import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
 import com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest;
 import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.AuthService;
@@ -105,8 +106,8 @@ class AuthControllerTest {
     @DisplayName("signUp - 成功注册新用户")
     void testSignUp_Success() {
         // Given
-        when(authService.signUp(any(SignUpRequest.class)))
-                .thenReturn(true);
+        when(authService.signUpResult(any(SignUpRequest.class)))
+                .thenReturn(AuthService.SignUpResult.SUCCESS);
 
         // When
         ResponseEntity<ApiResponse<Object>> response = authController.signUp(mockSignUpRequest);
@@ -118,15 +119,15 @@ class AuthControllerTest {
         assertNull(response.getBody().getBody());
 
         // 验证调用
-        verify(authService).signUp(any(SignUpRequest.class));
+        verify(authService).signUpResult(any(SignUpRequest.class));
     }
 
     @Test
     @DisplayName("signUp - 用户名已存在注册失败")
     void testSignUp_UsernameAlreadyExists() {
         // Given
-        when(authService.signUp(any(SignUpRequest.class)))
-                .thenReturn(false);
+        when(authService.signUpResult(any(SignUpRequest.class)))
+                .thenReturn(AuthService.SignUpResult.USERNAME_EXISTS);
 
         // When
         ResponseEntity<ApiResponse<Object>> response = authController.signUp(mockSignUpRequest);
@@ -138,7 +139,28 @@ class AuthControllerTest {
         assertEquals("Username already exists", response.getBody().getMessage());
 
         // 验证调用
-        verify(authService).signUp(any(SignUpRequest.class));
+        verify(authService).signUpResult(any(SignUpRequest.class));
+    }
+
+    @Test
+    @DisplayName("signUp - 邮箱已存在注册失败")
+    void testSignUp_EmailAlreadyExists() {
+        // Given
+        when(authService.signUpResult(any(SignUpRequest.class)))
+                .thenReturn(AuthService.SignUpResult.EMAIL_EXISTS);
+
+        // When
+        ResponseEntity<ApiResponse<Object>> response = authController.signUp(mockSignUpRequest);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("1", response.getBody().getResult());
+        assertEquals(Constants.ERR_EMAIL_EXISTS, response.getBody().getMessageId());
+        assertEquals("Email already exists", response.getBody().getMessage());
+
+        // 验证调用
+        verify(authService).signUpResult(any(SignUpRequest.class));
     }
 
     // 注意：IP 限流现在由 AOP 切面处理，不再需要单独测试
