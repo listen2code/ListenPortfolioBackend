@@ -86,7 +86,7 @@ INSERT IGNORE INTO experiences (id, user_id, title, title_zh, title_ja, company,
  'モバイルAPMのUIカクつき・ANR検知SDKを構築、データ上報・集計を最適化。フルスタック監視ダッシュボード（React + Spring Boot）を開発。EC SDKのReduxパターンリファクタリングに参加。'),
 
 (3, 1, 'Android Engineer', 'Android 研发工程师', 'Android エンジニア',
- 'Duolu (Yin''ai Network Technology)', '多路（印爱网络科技）', 'Duolu（印愛ネットワーク）', '2019.11 - 2021.10',
+ 'Duolu (Yin''ai Network Technology)', '多鹿（因爱网络科技）', 'Duolu（因愛ネットワーク）', '2019.11 - 2021.10',
  'Established Feed monitoring system, reducing timeout rate from 1.5% to 0.3% and latency by 40%+. Led componentization (module + module_api + module_run) and plugin architecture (Shadow framework). Built dev-stage performance monitoring tools and automated testing (44 Feed cases via AirTest).',
  '建立 Feed 流专项监控体系，将超时率从 1.5% 降至 0.3%，时延降低 40%+；主导客户端组件化（module + module_api + module_run）与插件化（Shadow 框架）架构落地；搭建研发期监控工具与自动化测试体系。',
  'Feedタイムアウト率を1.5%から0.3%へ、レイテンシを40%+削減する監視システムを確立。コンポーネント化およびプラグイン構造（Shadow）を主導。開発期パフォーマンス測定ツールと自動テスト（AirTest 44ケース）を構築。'),
