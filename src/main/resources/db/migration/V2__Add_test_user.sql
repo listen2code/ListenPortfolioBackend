@@ -1,7 +1,7 @@
 -- ===================================================================
 -- Portfolio 应用初始测试数据填充脚本
 -- 版本: V2
--- 说明: 插入基础用户、简历、项目经历及多语言测试数据
+-- 说明: 插入真实用户履历 (Listen)、简历、工作经历及多语言测试数据
 -- ===================================================================
 
 -- 1. 插入用户数据 (包含英文默认、中文 _zh、日语 _ja)
@@ -9,9 +9,9 @@ INSERT IGNORE INTO users (id, name, email, password, location, location_zh, loca
 (1, 'Listen', 'listen2code@gmail.com', '$2a$10$3Fa2JeWy.qEFQulYDtYhGO4g/gHg8nKgkSkp0KvEmGiZZIJqbdVIK',
  'Japan / Tokyo', '日本 / 东京', '日本 / 東京',
  'https://api.dicebear.com/10.x/bottts/svg?seed=Listen', 'available',
- 'Senior Android / Flutter Engineer', '资深 Android / Flutter 开发专家', 'シニア Android / Flutter エンジニア',
+ 'Senior Android / Flutter Engineer', '资深 Android / Flutter 研发专家', 'シニア Android / Flutter エンジニア',
  'Senior Android Engineer with 11+ years of mobile development experience and 3+ years in Flutter. Expertise in client architecture (componentization, plugin systems), performance optimization, and APM infrastructure. Key achievements include reducing Feed timeout rates from 1.5% to 0.3%, building full-stack APM monitoring platforms, and leading Flutter app development for securities trading at Rakuten. JLPT N1, BJT J2 certified, currently based in Tokyo, Japan.',
- '具有 11 年以上移动端开发经验及 3 年以上 Flutter 经验的资深工程师。精通客户端架构（组件化、插件化体系）、性能优化及 APM 监控基础设施。主要成就包括将 Feed 流超时率从 1.5% 降低至 0.3%，构建全栈 APM 性能监控平台，以及在乐天领衔开发证券交易 Flutter 应用。持日语 N1 与 BJT J2 证书，现定居日本东京。',
+ '11年以上移动端开发经验（精通Android系统机制、核心组件分层及APM体系设计），3年以上Flutter跨平台开发实战经验。具备日本乐天证券交易App架构改修、FIDO2免密安全认证及Flutter大版本升级落地经验。主要成就包括将Feed流超时率从1.5%降低至0.3%，构建全栈APM性能监控平台，以及在乐天领衔开发证券交易Flutter应用。持日语JLPT N1与BJT J2证书，现定居日本东京。',
  '11年以上のモバイル開発経験と3年以上のFlutter経験を持つシニアエンジニア。クライアントアーキテクチャ（コンポーネント化、プラグイン構造）、パフォーマンス最適化、APMインフラに精通。Feedタイムアウト率を1.5%から0.3%に削減、フルスタックAPM監視プラットフォームの構築、楽天での証券取引Flutterアプリ開発をリード。JLPT N1、BJT J2取得、東京在住。',
  '2013', 'https://github.com/listen2code',
  'softwareEngineering', '软件工程', 'ソフトウェア工学'),
@@ -75,53 +75,53 @@ INSERT IGNORE INTO project_tech_stack (project_id, tech_name) VALUES
 INSERT IGNORE INTO experiences (id, user_id, title, title_zh, title_ja, company, company_zh, company_ja, period, description, description_zh, description_ja) VALUES
 (1, 1, 'Android / Flutter Engineer', 'Android / Flutter 开发专家', 'Android / Flutter エンジニア',
  'LYC Corp. (Rakuten Securities Project)', 'LYC 株式会社（乐天证券项目）', 'LYC 株式会社（楽天証券プロジェクト）', '2023.02 - Present',
- 'Lead developer for new securities Flutter app: architecture design, framework development, FIDO2 authentication integration, and Flutter version upgrades. Maintaining Android stock trading app and conducting code reviews for team members.',
- '全新证券 Flutter 应用核心主导人：负责整体架构设计、基础框架搭建、FIDO2 生物识别认证集成及 Flutter 大版本平滑升级；同时维护 Android 股票交易 App 并负责团队 Code Review。',
- '新規証券Flutterアプリの主導開発者：アーキテクチャ設計、基盤開発、FIDO2認証統合、Flutterバージョンアップを推進。Android株取引アプリの保守およびコードレビューを担当。'),
+ 'Lead developer for new securities Flutter app (60-person project site): architecture design, framework development, FIDO2 authentication integration, and Flutter version upgrades. Maintained Android stock trading app and conducted code reviews for team members.',
+ '主导新版乐天证券交易 App 的架构设计、先行技术调查、基础框架搭建与核心功能开发；负责 FIDO2 生物免密安全认证落地及 Flutter 大版本重构升级。持续维护 Android 原生股票交易应用并为团队成员提供 Code Review 指导（60人现场）。',
+ '新規楽天証券Flutterアプリの主導開発者（60人現場）：先行技術調査、アーキテクチャ設計、基盤開発、FIDO2認証統合、Flutterバージョンアップを推進。Android株取引アプリの保守およびコードレビューを担当。'),
 
 (2, 1, 'Android Engineer — Mobile Infrastructure', 'Android 基础设施工程师', 'Android インフラエンジニア',
- 'Youzan Technology', '有赞科技', 'Youzan テクノロジー', '2021.10 - 2022.07',
- 'Built mobile APM stutter/ANR detection SDK with optimized data reporting and aggregation. Created full-stack monitoring dashboards (React/AntDesign frontend + Spring Boot backend with RESTful APIs). Participated in Commerce SDK Redux-pattern refactoring.',
- '主导移动端 APM 卡顿与 ANR 监控 SDK 建设，优化上报与数据聚合逻辑；搭建全栈性能监控平台（React 前端 + Spring Boot 后端）；参与微商城 SDK 的 Redux 架构重构。',
- 'モバイルAPMのUIカクつき・ANR検知SDKを構築、データ上報・集計を最適化。フルスタック監視ダッシュボード（React + Spring Boot）を開発。EC SDKのReduxパターンリファクタリングに参加。'),
+ 'Hangzhou Youzan Technology Co., Ltd.', '杭州有赞科技有限公司', '杭州有賛科技有限公司', '2021.10 - 2022.07',
+ 'Built mobile APM stutter/ANR detection SDK with optimized data reporting and aggregation. Created full-stack monitoring dashboards (React/AntDesign frontend + Spring Boot backend with RESTful APIs). Participated in Commerce SDK Redux-pattern refactoring and WeChat Mall App iterations.',
+ '主导移动端 APM 卡顿与 ANR 监控 SDK 建设，优化上报与数据聚合逻辑；基于 React + Spring Boot 搭建全栈性能监控平台；参与商品 SDK 的 Redux 模式重构（理解 Effect/Middleware 角色）及微商城 App 业务迭代。',
+ 'モバイルAPMのUIカクつき・ANR検知SDKを構築、データ上報・集計を最適化。フルスタック監視ダッシュボード（React + Spring Boot）を開発。商品SDKのReduxパターンリファクタリングに参加。'),
 
 (3, 1, 'Android Engineer', 'Android 研发工程师', 'Android エンジニア',
- 'Duolu (Yin''ai Network Technology)', '多鹿（因爱网络科技）', 'Duolu（因愛ネットワーク）', '2019.11 - 2021.10',
- 'Established Feed monitoring system, reducing timeout rate from 1.5% to 0.3% and latency by 40%+. Led componentization (module + module_api + module_run) and plugin architecture (Shadow framework). Built dev-stage performance monitoring tools and automated testing (44 Feed cases via AirTest).',
- '建立 Feed 流专项监控体系，将超时率从 1.5% 降至 0.3%，时延降低 40%+；主导客户端组件化（module + module_api + module_run）与插件化（Shadow 框架）架构落地；搭建研发期监控工具与自动化测试体系。',
- 'Feedタイムアウト率を1.5%から0.3%へ、レイテンシを40%+削減する監視システムを確立。コンポーネント化およびプラグイン構造（Shadow）を主導。開発期パフォーマンス測定ツールと自動テスト（AirTest 44ケース）を構築。'),
+ 'Hangzhou Yin\'ai Network Technology Co., Ltd. (Duolu)', '杭州因爱网络科技有限公司（多鹿 / 多鹿老师）', '杭州因愛ネットワーク（Duolu）', '2019.11 - 2021.10',
+ 'Established Feed monitoring system, reducing timeout rate from 1.5% to 0.3% and latency by 40%+. Led componentization (1+2 module mode + shell scaffolding) and plugin architecture (Shadow framework with auto-fallback). Built dev-stage performance tools and automated testing (44 Feed cases via AirTest).',
+ '建立 Feed 流专项可视化监控体系，将超时率从 1.5% 降至 0.3%，耗时降低 40%+；主导客户端组件化改造（基于 module + module_api + module_run 1+2 模式并编写 Shell 自动化生成脚本）；基于 Shadow 框架实现低侵入插件化架构；编写 AirTest 自动化脚本覆盖 44 种 Feed 发布 Case；开发期基于 Hook（epic）检测 Bitmap 泄漏与频繁 GC。',
+ 'Feedタイムアウト率を1.5%から0.3%へ、レイテンシを40%+削減する監視システムを確立。コンポーネント化（1+2構造）およびプラグイン構造（Shadow）を主導。開発期パフォーマンス測定ツールと自動テスト（AirTest 44ケース）を構築。'),
 
 (4, 1, 'Android Engineer', 'Android 研发工程师', 'Android エンジニア',
- 'Qibei Technology (Bike-sharing)', '骑呗科技（共享单车）', 'Qibei テクノロジー（シェアサイクル）', '2016.09 - 2019.08',
- 'Developed bike-sharing apps (Qibei Bike, Dingda Transit) across 4+ major versions. Implemented hot-fix (Tinker), online performance monitoring (Matrix), and reduced build time by 30%+ via Gradle optimization. Set up Jenkins CI pipeline with wireless ADB deployment.',
- '负责骑呗单车与叮嗒出行 App 4 个以上大版本研发；集成 Tinker 热修复与 Matrix 线上监控；通过 Gradle 编译优化提升 30%+ 构建速度；搭建 Jenkins CI/CD 自动化构建与无线部署流水线。',
- 'シェアサイクルアプリ（Qibei Bike、Dingda Transit）の4つ以上のメジャーバージョンを開発。Tinker熱修正、Matrix監視を導入し、Gradle最適化でビルド時間を30%+削減。Jenkins CIパイプラインを構築。'),
+ 'Hangzhou Qibei Technology Co., Ltd. (Qibei Bike / Dingda Transit)', '杭州骑呗科技有限公司（骑呗单车 / 叮嗒出行）', '杭州騎唄テクノロジー', '2016.09 - 2019.08',
+ 'Developed bike-sharing apps (Qibei Bike, Dingda Transit, Luban Operations) across 4+ major versions. Implemented hot-fix (Tinker), online performance monitoring (Matrix), MVP scaffolding, and reduced build time by 30%+ via Gradle optimization. Set up Jenkins CI pipeline with wireless ADB deployment.',
+ '负责骑呗单车（1.9-3.1）、叮嗒出行（杭州小红车 3.2-4.2）、骑遇季、鲁班运维大师等 App 4 个以上大版本迭代研发；集成 Tinker/RocooFix 热修复与 Matrix 线上性能监控；通过 Gradle 排除 Task 与 aar 预编译将构建耗时降低 30%+；封装 MVP 脚手架与 UI 组件库；搭建 Jenkins CI/CD 自动化构建与无线 ADB 一键安装。',
+ 'シェアサイクルアプリ（Qibei Bike、Dingda Transit、魯班運用）の4つ以上のメジャーバージョンを開発。Tinker熱修正、Matrix監視を導入し、Gradle最適化でビルド時間を30%+削減。Jenkins CIパイプラインと無線ADB自動インストールを構築。'),
 
 (5, 1, 'Android Engineer', 'Android 研发工程师', 'Android エンジニア',
- 'Baidu (Waimai Delivery)', '百度（百度外卖）', 'Baidu（百度外売）', '2014.12 - 2016.06',
- 'Independently maintained delivery rider app (Xiaodu Knight v1.4-2.9). Designed dynamic GPS tracking strategy reducing redundant uploads by 10%+. Developed PassSDK for unified B-side authentication with AES/JNI encryption. Built logistics development framework for multi-app scaffolding.',
- '独立负责百度骑士 App（v1.4-v2.9）研发；设计动态 GPS 上报策略降低 10%+ 冗余流量；开发 PassSDK（JNI/AES 加密）统一 B 端登录；搭建物流开发框架供多 App 复用。',
+ 'Beijing Baidu Times Network Technology Co., Ltd. (Baidu Waimai)', '北京百度时代网络技术有限公司（百度外卖）', '北京百度時代ネットワーク（Baidu Waimai）', '2014.12 - 2016.06',
+ 'Independently maintained delivery rider app (Xiaodu Knight v1.4-2.9). Designed dynamic GPS tracking strategy with location offset guard, reducing redundant uploads by 10%+. Developed PassSDK for unified B-side authentication with AES/JNI encryption. Built logistics development framework for multi-app scaffolding.',
+ '独立负责小度骑士 App（v1.4 - v2.9）版本迭代；主导并设计动态 GPS 定位轨迹上传策略（时间间隔 + 位置偏移守护），降低 10%+ 重复上传，并通过 Service 提优及守护进程实现后台保活；独立开发 PassSDK（JNI + AES 签名加密）统一 B 端登录；搭建物流端开发框架脚手架支持多产品线（小度骑兵、小度 QC、小度众包）。',
  '配達員アプリ（小度騎士 v1.4-2.9）を独立保守。動的GPS追跡戦略を設計し冗余アップロードを10%+削減。B端統一認証PassSDK（AES/JNI暗号化）および物流開発フレームワークを構築。'),
 
 (6, 1, 'Java Developer', 'Java 软件工程师', 'Java ソフトウェアエンジニア',
- 'NewLand Software Engineering', '新大陆软件工程', 'NewLand ソフトウェア', '2013.05 - 2014.09',
- 'Developed business management and analytics modules for China Mobile support system using J2EE, S2SH framework, and Oracle database.',
- '参与中国移动网管支撑系统业务管理与分析模块开发，使用 J2EE、S2SH 框架及 Oracle 数据库。',
- '中国移動（China Mobile）サポートシステムの業務管理および分析モジュールをJ2EE、S2SH、Oracleデータベースを用いて開発。');
+ 'Fuzhou NewLand Software Engineering Co., Ltd.', '福州新大陆软件工程有限公司', '福州新大陸ソフトウェア', '2013.05 - 2014.09',
+ 'Developed business management and analytics modules for China Mobile support system (BOSS) using J2EE, S2SH framework, and Oracle database.',
+ '运用 J2EE + S2SH + Oracle 技术，参与中国移动业务运营支撑系统（BOSS）业务管理与运营分析模块开发。',
+ '中国移動（China Mobile）サポートシステム（BOSS）の業務管理および分析モジュールをJ2EE、S2SH、Oracleデータベースを用いて開発。');
 
 -- 5. 插入教育经历数据 (包含英文默认、中文 _zh、日语 _ja)
 INSERT IGNORE INTO education (id, user_id, degree, degree_zh, degree_ja, school, school_zh, school_ja, period, description, description_zh, description_ja) VALUES
-(1, 1, 'Bachelor of Software Engineering', '软件工程 学士学位', 'ソフトウェア工学 学士',
+(1, 1, 'Bachelor of Software Engineering', '软件工程 学士学位 (全日制)', 'ソフトウェア工学 学士',
  'Fujian University of Technology', '福建工程学院（现福建理工大学）', '福建工程学院', '2011.09 - 2013.06',
  'Outstanding Graduation Thesis: Design and Implementation of CRM System Based on Intelligent Evaluation System',
  '优秀毕业设计：《基于智能评估系统的 CRM 系统设计与实现》',
  '優秀卒業論文：『インテリジェント評価システムに基づくCRMシステムの実装と設計』'),
 
 (2, 1, 'Associate in Computer Applications', '计算机应用技术 大专', 'コンピュータ応用 専門士',
- 'Fujian Normal University (IT College)', '福建师范大学（软件学院/IT学院）', '福建師範大学（IT学院）', '2008.09 - 2011.06',
- 'Provincial Outstanding Student, First-class Scholarship, Outstanding Student Cadre',
- '省级优秀毕业生、一等奖学金、优秀学生干部',
- '省級優秀卒業生、一等奨学金、優秀学生幹部');
+ 'Fujian Normal University (IT College)', '福建师范大学（信息技术学院）', '福建師範大学（IT学院）', '2008.09 - 2011.06',
+ 'Fujian Provincial Outstanding Student, University Outstanding Graduate, First & Second Class Scholarships, Outstanding Student Cadre',
+ '福建省省级“三好生”、校级优秀毕业生、一/二等奖学金、优秀团干部标兵',
+ '福建省級優秀学生、大学優秀卒業生、一等・二等奨学金、優秀学生幹部');
 
 -- 6. 插入技能数据
 INSERT IGNORE INTO skills (id, user_id, category) VALUES
