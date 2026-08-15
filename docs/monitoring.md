@@ -84,7 +84,7 @@ Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing
 
 ```powershell
 # 1. 构建应用
-.\mvnw.cmd clean package -DskipTests
+.\gradlew.bat bootWar
 
 # 2. 启动服务
 docker-compose --profile local up -d --build

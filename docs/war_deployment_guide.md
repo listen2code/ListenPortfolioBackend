@@ -1,4 +1,4 @@
-# WAR 部署完整指南
+﻿# WAR 部署完整指南
 
 ## 概述
 
@@ -111,7 +111,7 @@ public class ServletInitializer extends SpringBootServletInitializer {
 
 ```bash
 # 1. 清理并构建
-./mvnw clean package -DskipTests
+./gradlew bootWar
 
 # 2. 查看生成的 WAR 包
 ls -la target/portfolio-0.0.1-SNAPSHOT.war

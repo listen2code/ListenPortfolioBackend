@@ -35,6 +35,7 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 - **Prometheus / Grafana / Actuator**：基础监控与健康检查
 - **结构化 JSON 日志**：便于后续接入 ELK / Loki
 - **GitHub Actions CI/CD**：Push/PR 自动编译、测试、JaCoCo 报告、SSH 部署到 AWS EC2
+- **Maven + Gradle 双构建支持**：提供标准 Gradle (v8.5) 脚本与 Wrapper，支持在 Android Studio 中一键导入、调试、开发与运行单元测试
 - **JaCoCo + SpotBugs**：覆盖率与静态分析工具链已接入
 - **Docker 全栈部署**：App + MySQL + Redis + Prometheus + Grafana
 - **账号软删除**：`delete-account` 标记删除并释放唯一索引，种子用户受保护
@@ -136,7 +137,8 @@ $env:MAIL_PASSWORD="your-gmail-app-password"
 ### 3. 启动应用
 
 ```bash
-./mvnw spring-boot:run
+# 使用 Gradle Wrapper 启动
+./gradlew bootRun
 ```
 
 说明：
@@ -180,9 +182,10 @@ $env:MAIL_PASSWORD="your-gmail-app-password"
 ### 常用命令
 
 ```bash
-./mvnw test
-./mvnw clean test jacoco:report
-./mvnw spotbugs:check
+./gradlew compileJava
+./gradlew test
+./gradlew jacocoTestReport
+./gradlew spotbugsMain
 ```
 
 ### 当前状态判断

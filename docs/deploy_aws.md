@@ -1,4 +1,4 @@
-# AWS 部署与云原生运维指南
+﻿# AWS 部署与云原生运维指南
 
 本指南介绍如何将 Web 应用部署到 AWS 平台。主要包括两部分内容：
 1. **轻量级单实例方案 (EC2 + Docker Compose)**：适合开发联调、演示及低成本轻量级环境运行，已针对 `t2.micro` 等低内存实例进行了性能加固。
@@ -83,7 +83,7 @@ docker-compose --version
 
 在您的本地开发机（Windows / Mac）的后端项目根路径下，通过 Maven 快速打包：
 ```powershell
-./mvnw clean package -DskipTests
+./gradlew bootWar
 ```
 构建成功后，在本地的 `target/` 目录下生成 `portfolio-0.0.1-SNAPSHOT.war` 文件。
 

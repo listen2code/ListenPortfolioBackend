@@ -1,4 +1,4 @@
-# 安全功能完整指南
+﻿# 安全功能完整指南
 
 **Status**: `Partially Implemented`
 
@@ -377,10 +377,10 @@ management.endpoints.web.exposure.include=health,info,prometheus
 
 ```bash
 # 使用 Maven 检查依赖漏洞
-./mvnw org.owasp:dependency-check-maven:check
+./gradlew org.owasp:dependency-check-maven:check
 
 # 使用 SpotBugs 进行安全检查
-./mvnw spotbugs:check
+./gradlew spotbugsMain
 ```
 
 #### 2. 配置审计

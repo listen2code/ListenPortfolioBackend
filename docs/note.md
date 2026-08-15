@@ -5,10 +5,10 @@
 * prometheus: http://localhost:9090/
 * prometheus: http://localhost:3000/
     * admin admin123
-* start project: .\mvnw spring-boot:run
-* clean project: .\mvnw clean install
-* compile project: .\mvnw compile
-* package project: .\mvnw clean package
-* junit test: .\mvnw test
+* start project: .\gradlew.bat bootRun
+* clean project: .\gradlew.bat clean
+* compile project: .\gradlew.bat compileJava
+* package project: .\gradlew.bat bootWar
+* junit test: .\gradlew.bat test
 * netstat -ano | findstr :8080
 * taskkill /F /IM java.exe

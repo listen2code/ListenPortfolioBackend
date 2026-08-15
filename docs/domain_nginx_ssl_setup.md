@@ -1,4 +1,4 @@
-# 🌐 域名注册、Nginx 反向代理与 Let's Encrypt HTTPS 配置指南
+﻿# 🌐 域名注册、Nginx 反向代理与 Let's Encrypt HTTPS 配置指南
 
 本文档记录了从注册免费开发者域名 `listen2code.is-a.dev`，到在 AWS EC2 服务器上配置 Nginx 反向代理（隐藏端口号 `:8080`），以及通过 Certbot 自动化集成 Let's Encrypt 免费 HTTPS 安全证书的全流程与实操命令。
 

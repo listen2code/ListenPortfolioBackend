@@ -1,4 +1,4 @@
-# 开发环境设置指南
+﻿# 开发环境设置指南
 
 **Status**: `Implemented with Current-Setup Scope`
 
@@ -14,19 +14,20 @@
 
 ### 基础环境
 
-| 组件 | 最低版本 | 推荐版本 | 说明 |
+| Component | Minimum Version | Recommended Version | Description |
 |------|----------|----------|------|
-| **Java** | 17 | 17 LTS | 必须使用 Java 17 |
-| **Maven** | 3.8.0 | 3.9.0+ | 构建工具 |
-| **MySQL** | 8.0 | 8.0.33+ | 数据库 |
-| **Redis** | 7.0 | 7.2+ | 缓存和黑名单 |
-| **Git** | 2.30 | 2.40+ | 版本控制 |
+| **Java** | 17 | 17 LTS | Must use Java 17 |
+| **Gradle** | 8.5 | 8.5+ (Wrapper Included) | Recommended build tool for Android Studio |
+| **Maven** | 3.8.0 | 3.9.0+ | Maven build tool |
+| **MySQL** | 8.0 | 8.0.33+ | Database |
+| **Redis** | 7.0 | 7.2+ | Cache and Blacklist |
+| **Git** | 2.30 | 2.40+ | Version Control |
 
 ### 开发工具
 
 | 工具 | 推荐版本 | 说明 |
 |------|----------|------|
-| **IDE** | IntelliJ IDEA 2023.3+ / VS Code | Java 开发 |
+| **IDE** | Android Studio 2023+ / IntelliJ IDEA / VS Code | Java / Spring Boot 开发 |
 | **Docker** | 20.10+ | 容器化开发 |
 | **Docker Compose** | 2.0+ | 多容器编排 |
 | **Postman** | 10.0+ | API 测试 |
@@ -73,7 +74,7 @@ export MAIL_PASSWORD="your-gmail-app-password"
 # 如需覆盖 docker-compose.yml 默认值，请手动创建 `.env`
 ```
 
-> 本地直接执行 `./mvnw spring-boot:run` 时，默认使用 `application.properties` 中的 localhost 配置，无需额外指定 `dev` profile。
+> 本地直接执行 `./gradlew bootRun` 时，默认使用 `application.properties` 中的 localhost 配置，无需额外指定 `dev` profile。
 > 如果你是“本地运行 Spring Boot + Docker Compose 提供 MySQL/Redis”，则需要把 `DB_URL` 改成 `jdbc:mysql://localhost:3307/portfolio?...`，因为 Compose 中的 MySQL 暴露端口是宿主机 `3307`。
 
 ### 3. 启动依赖服务
@@ -91,7 +92,7 @@ docker-compose ps
 docker-compose logs -f db redis
 ```
 
-> 注意：此方式启动的 MySQL 会映射到宿主机 `3307`。如果应用不是在 Docker 内运行，而是在本机通过 `./mvnw spring-boot:run` 启动，请同步覆盖 `DB_URL`。
+> 注意：此方式启动的 MySQL 会映射到宿主机 `3307`。如果应用不是在 Docker 内运行，而是在本机通过 `./gradlew bootRun` 启动，请同步覆盖 `DB_URL`。
 
 #### 手动安装（可选）
 
@@ -133,14 +134,17 @@ mysql -u root -p -e "FLUSH PRIVILEGES;"
 ### 5. 启动应用
 
 ```bash
-# 方式 1：使用 Maven Wrapper
-./mvnw spring-boot:run
+# 方式 1：使用 Gradle Wrapper（推荐在 Android Studio 或命令行使用）
+./gradlew bootRun
 
-# 方式 2：使用 IDE 运行 PortfolioApplication.java
+# 方式 2：使用 Maven Wrapper
+./gradlew bootRun
 
-# 方式 3：构建后运行
-./mvnw clean package -DskipTests
-java -jar target/portfolio-0.0.1-SNAPSHOT.jar
+# 方式 3：使用 Android Studio / IntelliJ IDEA 打开 ListenPortfolioBackend 直接运行 PortfolioApplication.java
+
+# 方式 4：构建产物后运行
+./gradlew bootJar # 或 ./gradlew bootWar
+java -jar build/libs/portfolio-0.0.1-SNAPSHOT.jar
 ```
 
 > Docker 场景下由 `docker-compose.yml` 注入 `SPRING_PROFILES_ACTIVE=docker`；本地直跑通常不需要显式设置该变量。
@@ -228,15 +232,15 @@ spring.data.redis.host=redis
 因此这里不再把某一份测试配置文件解释为“完整测试环境方案”，更建议直接以实际测试命令和失败日志为准：
 
 ```bash
-./mvnw test
-./mvnw clean test jacoco:report
+./gradlew test
+./gradlew test jacocoTestReport
 ```
 
 ## 🔍 调试指南
 
 ### 常用调试方式
 
-- 本地直跑：`./mvnw spring-boot:run`
+- 本地直跑：`./gradlew bootRun`
 - Docker 全栈：`docker-compose --profile local up -d --build`
 - 查看应用日志：`docker-compose logs -f app`
 - 查看健康检查：`curl http://localhost:8080/actuator/health`
@@ -290,13 +294,13 @@ tail -f /usr/local/var/log/redis.log
 
 ```bash
 # 清理 Maven 缓存
-./mvnw clean
+./gradlew clean
 
 # 重新下载依赖
-./mvnw dependency:resolve
+./gradlew dependency:resolve
 
 # 强制更新快照
-./mvnw -U clean install
+./gradlew -U clean install
 ```
 
 #### 5. IDE 识别问题
@@ -306,7 +310,7 @@ tail -f /usr/local/var/log/redis.log
 # IntelliJ / VS Code 中执行 Reimport Maven Project 即可
 
 # 命令行刷新依赖
-./mvnw -U dependency:resolve
+./gradlew -U dependency:resolve
 ```
 
 ## 📚 开发资源

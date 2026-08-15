@@ -1,9 +1,9 @@
-# 测试覆盖率与质量保障
+﻿# 测试覆盖率与质量保障
 
 **Status**: `Implemented Locally, Metrics Must Be Regenerated`
 
 > 本文档中的测试文件统计以当前 `src/test/java` 为准。
-> 覆盖率数值请以执行 `./mvnw clean test jacoco:report` 或 `check-coverage.bat` 后生成的 JaCoCo 报告为准。
+> 覆盖率数值请以执行 `./gradlew test jacocoTestReport` 或 `check-coverage.bat` 后生成的 JaCoCo 报告为准。
 > 文中的代码片段主要用于说明测试模式，未必与仓库中的实际测试类一一对应。
 
 ## 概述
@@ -25,7 +25,7 @@
 | **配置测试** | 1 个 | GlobalExceptionHandler |
 | **总计** | **27 个** | — |
 
-> 注意：覆盖率数据请以 `./mvnw clean test jacoco:report` 生成的 JaCoCo 报告为准。
+> 注意：覆盖率数据请以 `./gradlew test jacocoTestReport` 生成的 JaCoCo 报告为准。
 
 ### 测试分布
 
@@ -376,7 +376,7 @@ class AuthControllerApiTest {
 check-coverage.bat
 
 # Linux/Mac
-./mvnw clean test jacoco:report
+./gradlew test jacocoTestReport
 
 # 查看报告
 open target/site/jacoco/index.html
@@ -462,23 +462,23 @@ public class TestConfig {
 
 ```bash
 # 运行所有测试
-./mvnw test
+./gradlew test
 
 # 运行特定测试类
-./mvnw test -Dtest=JwtUtilTest
+./gradlew test -Dtest=JwtUtilTest
 
 # 运行特定测试方法
-./mvnw test -Dtest=JwtUtilTest#shouldGenerateTokenSuccessfully
+./gradlew test -Dtest=JwtUtilTest#shouldGenerateTokenSuccessfully
 
 # 跳过测试快速构建
-./mvnw clean package -DskipTests
+./gradlew bootWar
 ```
 
 ### CI/CD 测试
 
 当前仓库中已配置基于 GitHub Actions 的自动工作流 `.github/workflows/ci.yml`。
 工作流在每次 `push` 或 `pull_request` 到 `master` 分支时自动触发：
-1. **编译与单元测试**：执行 `./mvnw test` 运行全量 338+ 单元测试。
+1. **编译与单元测试**：执行 `./gradlew test` 运行全量 338+ 单元测试。
 2. **覆盖率检查**：自动通过 JaCoCo 插件进行覆盖率分析与质量门禁校验。
 3. **安全部署 (CD)**：在通过校验后，通过 SCP / SSH 安全连接部署至 AWS EC2，并配备 `ConnectTimeout 30` 与 `ConnectionAttempts 5` 防抖重试策略。
 

@@ -1,4 +1,4 @@
-# 📋 TODO 清单
+﻿# 📋 TODO 清单
 
 ## 项目现状判断
 
@@ -197,8 +197,7 @@ src/test/java/com/listen/portfolio/
 - [x] 健康检查 / 探针
 - [x] 结构化 JSON 日志
 - [x] GitHub Actions CI/CD 防抖与自动部署
-- [x] OSIV 正式关闭
-- [] 将maven编译的项目改成gradle
+- [x] 将 Maven 编译的项目扩展支持 Gradle 构建（保留 Maven 双驱动支持）
 ---
 
-📅 **最后更新**: 2026-08-04
+📅 **最后更新**: 2026-08-15

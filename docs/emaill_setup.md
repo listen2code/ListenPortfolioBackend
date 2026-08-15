@@ -1,4 +1,4 @@
-# 📧 邮件服务完整指南
+﻿# 📧 邮件服务完整指南
 
 ## 概述
 
@@ -143,7 +143,7 @@ docker-compose up -d redis
 
 ```bash
 # 启动应用
-./mvnw spring-boot:run
+./gradlew bootRun
 
 # 发送测试请求
 curl -X POST http://localhost:8080/v1/auth/forgot-password \
@@ -641,7 +641,7 @@ Content-Type: application/json
 
 1. 设置系统环境变量（见上文）
 2. 启动 Redis：`docker-compose up -d redis`
-3. 启动应用：`./mvnw spring-boot:run`
+3. 启动应用：`./gradlew bootRun`
 4. 使用 Postman 或 curl 调用接口：
 
 ```bash

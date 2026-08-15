@@ -1,4 +1,4 @@
-# docker安装redis
+﻿# docker安装redis
 docker pull redis:latest
 
 # 启动 Redis 和相关服务
