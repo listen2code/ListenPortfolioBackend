@@ -25,11 +25,14 @@ target/
 /dist/
 /nbdist/
 /.nb-gradle/
+### Gradle ###
+.gradle/
 build/
+local.properties
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+### VS Code & IDE ###
 .vscode/
 .trae/
 tool/listen.pem
