@@ -1,43 +1,60 @@
 package com.listen.portfolio.common.config;
 
+import javax.sql.DataSource;
+
+import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.exception.FlywayValidateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
-import org.springframework.context.annotation.Bean;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 /**
- * Flyway 数据库迁移策略配置。
- * 使用 Spring Boot 官方推荐的 FlywayMigrationStrategy，彻底避免与 JPA entityManagerFactory 产生循环依赖。
+ * Flyway 数据库迁移配置。
+ * 通过 ApplicationRunner 在应用启动阶段手动拉起 Flyway 迁移，
+ * 不注册 @Bean Flyway，从根本上杜绝 Spring Boot JPA 与 FlywayAutoConfiguration 的循环依赖。
  */
 @Configuration
-public class FlywayConfig {
+@Order(1)
+public class FlywayConfig implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(FlywayConfig.class);
 
-    @Bean
-    public FlywayMigrationStrategy flywayMigrationStrategy() {
-        return flyway -> {
-            logger.info("=== Starting Flyway migration via FlywayMigrationStrategy ===");
+    private final DataSource dataSource;
+
+    public FlywayConfig(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        logger.info("=== Executing Flyway migration via ApplicationRunner ===");
+        Flyway flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .baselineOnMigrate(true)
+                .baselineVersion("0")
+                .load();
+
+        try {
+            flyway.baseline();
+            int count = flyway.migrate().migrationsExecuted;
+            logger.info("Flyway migration completed. Migrations applied: {}", count);
+        } catch (FlywayValidateException e) {
+            logger.warn("Flyway validation failed, repairing and retrying", e);
             try {
-                flyway.baseline();
-                int migrationsApplied = flyway.migrate().migrationsExecuted;
-                logger.info("Flyway migration completed. Migrations applied: {}", migrationsApplied);
-            } catch (FlywayValidateException e) {
-                logger.warn("Flyway validation failed, attempting repair", e);
-                try {
-                    flyway.repair();
-                    int migrationsApplied = flyway.migrate().migrationsExecuted;
-                    logger.info("Flyway migration completed after repair. Migrations applied: {}", migrationsApplied);
-                } catch (Exception repairException) {
-                    logger.error("Flyway migration failed after repair", repairException);
-                    throw repairException;
-                }
-            } catch (Exception e) {
-                logger.error("Flyway migration failed", e);
-                throw e;
+                flyway.repair();
+                int count = flyway.migrate().migrationsExecuted;
+                logger.info("Flyway migration completed after repair. Migrations applied: {}", count);
+            } catch (Exception repairError) {
+                logger.error("Flyway migration failed after repair", repairError);
+                throw repairError;
             }
-        };
+        } catch (Exception e) {
+            logger.error("Flyway migration failed", e);
+            throw e;
+        }
     }
 }
