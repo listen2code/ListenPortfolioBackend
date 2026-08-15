@@ -209,7 +209,7 @@ jobs:
       # 步骤 3.7：使用安全传输协议（SCP）将本地生成的 WAR 包上传至云端 target/ 目录下
       - name: Upload WAR Package via SCP
         run: |
-          scp -i ~/.ssh/id_rsa target/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
+          scp -i ~/.ssh/id_rsa build/libs/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
 
       # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、docker-compose 和监控目录上传至云端工作目录
       - name: Upload Configurations via SCP
