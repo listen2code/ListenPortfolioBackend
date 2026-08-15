@@ -2,7 +2,7 @@
 # Portfolio Docker 全栈部署脚本
 # ===================================================================
 # 使用方式：.\docker_deploy.ps1
-# 功能：Maven 打包 → Docker 构建 → 启动全栈 → 健康检查
+# 功能：Gradle 打包 → Docker 构建 → 启动全栈 → 健康检查
 # 配置来源：
 #   - application.properties（基础配置 + 本地开发默认值）
 #   - application-docker.properties（Docker hostname 覆盖）
@@ -19,11 +19,11 @@ if (-not (Test-Path ".env")) {
     Write-Host "[INFO] To customize secrets, copy .env.example to .env and edit it" -ForegroundColor Yellow
 }
 
-# 1. Maven 打包
-Write-Host "[BUILD] Packaging application WAR..." -ForegroundColor Green
-& .\mvnw.cmd clean package -DskipTests
+# 1. Gradle 打包
+Write-Host "[BUILD] Packaging application WAR via Gradle..." -ForegroundColor Green
+& .\gradlew.bat bootWar
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Maven package failed, deployment aborted" -ForegroundColor Red
+    Write-Host "[ERROR] Gradle package failed, deployment aborted" -ForegroundColor Red
     exit 1
 }
 

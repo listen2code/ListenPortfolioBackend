@@ -185,7 +185,7 @@ public class PerformanceTest extends BaseIntegrationTest {
     @DisplayName("限流性能 - 多线程并发限流性能")
     void testRateLimitConcurrentPerformance() throws InterruptedException {
         // Given
-        String identifier = "concurrent:test";
+        String identifier = "concurrent:test:" + System.currentTimeMillis();
         int threadCount = 10;
         int requestsPerThread = 100;
         int maxRequests = 50;
