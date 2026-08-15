@@ -7,6 +7,8 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -18,7 +20,8 @@ import redis.embedded.RedisServer;
 /**
  * 集成测试基类
  *
- * 说明：使用嵌入式 Redis（无需本机 Docker / redis-server），便于本地与 CI 运行 {@code mvn test}。
+ * 说明：优先尝试启动嵌入式 Redis（便于本地开发与 CI 运行）。
+ * 若嵌入式 Redis 在特定的 Linux/CI 环境中启动受限，将安全回退至系统/容器默认 Redis 端口 (6379)。
  */
 @SpringBootTest(properties = {
         // 覆盖主配置中的 spring.flyway.enabled=true，避免在 H2 上执行 MySQL 迁移脚本
@@ -27,33 +30,41 @@ import redis.embedded.RedisServer;
 @ActiveProfiles("test")
 public abstract class BaseIntegrationTest {
 
-    private static final int REDIS_PORT = freePort();
+    private static final Logger log = LoggerFactory.getLogger(BaseIntegrationTest.class);
+
+    private static int redisPort = 6379;
+    private static RedisServer embeddedRedisServer;
 
     @Autowired
     private DataSource dataSource;
 
     static {
         try {
-            var builder = RedisServer.builder()
-                    .port(REDIS_PORT);
-            
-            // maxheap is a Windows-specific configuration of MSOpenTech Redis port.
-            // Applying it on Linux/macOS causes Redis startup failure.
+            int port = freePort();
+            var builder = RedisServer.builder().port(port);
+
+            // maxheap 仅用于 Windows 环境下 MSOpenTech Redis 端口的特殊内存限制设置
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
                 builder.setting("maxheap 128M");
             }
-            
+
             RedisServer server = builder.build();
             server.start();
+            embeddedRedisServer = server;
+            redisPort = port;
+            log.info("Embedded Redis started successfully on port {}", port);
+
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
-                    server.stop();
+                    if (embeddedRedisServer != null && embeddedRedisServer.isActive()) {
+                        embeddedRedisServer.stop();
+                    }
                 } catch (Exception ignored) {
-                    // ignore
                 }
             }));
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
+        } catch (Throwable t) {
+            log.warn("Embedded Redis startup failed ({}), falling back to default Redis port 6379", t.getMessage());
+            redisPort = 6379;
         }
     }
 
@@ -61,14 +72,14 @@ public abstract class BaseIntegrationTest {
         try (ServerSocket socket = new ServerSocket(0)) {
             return socket.getLocalPort();
         } catch (IOException e) {
-            throw new IllegalStateException("No free TCP port for embedded Redis", e);
+            return 6379;
         }
     }
 
     @DynamicPropertySource
     static void redisProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", () -> "127.0.0.1");
-        registry.add("spring.data.redis.port", () -> String.valueOf(REDIS_PORT));
+        registry.add("spring.data.redis.port", () -> String.valueOf(redisPort));
         registry.add("spring.data.redis.timeout", () -> "2000ms");
         registry.add("spring.data.redis.database", () -> "1");
     }
