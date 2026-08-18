@@ -3,7 +3,7 @@ package com.listen.portfolio.service;
 import com.listen.portfolio.api.v1.projects.dto.ProjectDto;
 import com.listen.portfolio.common.util.I18nUtils;
 import com.listen.portfolio.entity.ProjectEntity;
-import com.listen.portfolio.repository.ProjectRepository;
+import com.listen.portfolio.mapper.ProjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -14,29 +14,35 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+/**
+ * 项目业务服务类（MyBatis-Plus 版本）
+ */
 @Service
 public class ProjectService {
 
     private static final Logger logger = LoggerFactory.getLogger(ProjectService.class);
-    private final ProjectRepository projectRepository;
+    private final ProjectMapper projectMapper;
 
-    public ProjectService(ProjectRepository projectRepository) {
-        this.projectRepository = projectRepository;
+    public ProjectService(ProjectMapper projectMapper) {
+        this.projectMapper = projectMapper;
     }
 
     /**
      * 事务与国际化说明：
      * - 使用 @Transactional(readOnly = true) 开启只读事务
      * - 根据 LocaleContextHolder 获取当前客户端 Accept-Language 对应的 Locale
-     * - 映射 title, subtitle, desc 的多语言版本
+     * - 映射 title, subtitle, desc 的多语言版本与 techStack 技术栈列表
      */
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjects() {
         logger.info("Fetching all projects from the database with i18n support.");
         Locale locale = LocaleContextHolder.getLocale();
-        return projectRepository.findAll()
-                .stream()
-                .map(entity -> toDto(entity, locale))
+        List<ProjectEntity> list = projectMapper.selectList(null);
+        return list.stream()
+                .map(entity -> {
+                    entity.setTechStack(projectMapper.findTechStackByProjectId(entity.getId()));
+                    return toDto(entity, locale);
+                })
                 .collect(Collectors.toList());
     }
 

@@ -1,0 +1,9 @@
+package com.listen.portfolio.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.listen.portfolio.entity.EducationEntity;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface EducationMapper extends BaseMapper<EducationEntity> {
+}

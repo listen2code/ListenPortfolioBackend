@@ -150,7 +150,7 @@ public class PerformanceTest extends BaseIntegrationTest {
     @DisplayName("限流性能 - 单线程限流性能")
     void testRateLimitSingleThreadPerformance() {
         // Given
-        String identifier = "performance:test";
+        String identifier = "performance:test:" + System.currentTimeMillis();
         int requestCount = 1000;
         int maxRequests = 100;
         int timeWindowSeconds = 60;

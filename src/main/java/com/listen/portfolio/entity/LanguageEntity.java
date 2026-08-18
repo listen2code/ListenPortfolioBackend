@@ -1,37 +1,29 @@
 package com.listen.portfolio.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 
-@Entity
-@Table(name = "languages")
 /**
- * LanguageEntity（JPA Entity）。
- *
- * 说明：
- * - 对应 languages 表
- * - 归属用户通过 user_id 关联 UserEntity（多对一）
+ * LanguageEntity（MyBatis-Plus 实体类）。
+ * 
+ * 映射 languages 表。
  */
+@TableName("languages")
 public class LanguageEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @TableId(type = IdType.AUTO)
     private Long id;
+
+    private Long userId;
+
     private String name;
     private String nameZh;
     private String nameJa;
+
     private String level;
     private String levelZh;
     private String levelJa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
 
     public Long getId() {
         return id;
@@ -39,6 +31,14 @@ public class LanguageEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getName() {
@@ -55,14 +55,6 @@ public class LanguageEntity {
 
     public void setLevel(String level) {
         this.level = level;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
     }
 
     public String getNameZh() {
@@ -97,4 +89,3 @@ public class LanguageEntity {
         this.levelJa = levelJa;
     }
 }
-

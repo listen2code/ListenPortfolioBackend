@@ -1,7 +1,7 @@
 package com.listen.portfolio.service;
 
 import com.listen.portfolio.entity.UserEntity;
-import com.listen.portfolio.repository.UserRepository;
+import com.listen.portfolio.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,8 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -22,7 +20,7 @@ import static org.mockito.Mockito.*;
 class UserServiceSoftDeleteTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserMapper userMapper;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -44,18 +42,15 @@ class UserServiceSoftDeleteTest {
     @Test
     @DisplayName("deleteAccount - 成功软删除普通用户并修改用户名和邮箱以释放索引")
     void testDeleteAccount_SoftDelete_Success() {
-        // Given
-        when(userRepository.findById(2L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userMapper.selectById(2L)).thenReturn(testUser);
+        when(userMapper.updateById(any(UserEntity.class))).thenReturn(1);
 
-        // When
         boolean result = userService.deleteAccount(2L);
 
-        // Then
         assertTrue(result);
         
         ArgumentCaptor<UserEntity> captor = ArgumentCaptor.forClass(UserEntity.class);
-        verify(userRepository).save(captor.capture());
+        verify(userMapper).updateById(captor.capture());
         
         UserEntity savedUser = captor.getValue();
         assertTrue(savedUser.isDeleted());
@@ -63,33 +58,26 @@ class UserServiceSoftDeleteTest {
         assertTrue(savedUser.getName().contains("testuser"));
         assertTrue(savedUser.getEmail().startsWith("deleted_"));
         assertTrue(savedUser.getEmail().contains("testuser@example.com"));
-        
-        verify(userRepository, never()).delete(any());
     }
 
     @Test
     @DisplayName("deleteAccount - 拦截对种子用户 (userId = 1) 的删除请求")
     void testDeleteAccount_SeedUserBlocked() {
-        // When
         boolean result = userService.deleteAccount(1L);
 
-        // Then
         assertFalse(result);
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userMapper);
     }
 
     @Test
     @DisplayName("deleteAccount - 用户不存在时返回 false")
     void testDeleteAccount_UserNotFound() {
-        // Given
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        when(userMapper.selectById(999L)).thenReturn(null);
 
-        // When
         boolean result = userService.deleteAccount(999L);
 
-        // Then
         assertFalse(result);
-        verify(userRepository, never()).save(any());
-        verify(userRepository, never()).delete(any());
+        verify(userMapper, never()).updateById(any(UserEntity.class));
+        verify(userMapper, never()).deleteById(any(Long.class));
     }
 }

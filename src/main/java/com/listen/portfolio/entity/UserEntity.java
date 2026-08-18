@@ -1,52 +1,28 @@
 package com.listen.portfolio.entity;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import org.hibernate.annotations.SQLRestriction;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Entity
-@Table(name = "users")
-@SQLRestriction("deleted = false")
-@EntityListeners(AuditingEntityListener.class)
 /**
- * UserEntity（JPA Entity）。
- *
- * 说明：
- * - 该类是 users 表的持久化映射对象，属于“数据访问层/持久化层”模型
- * - 之前项目使用 UserResponse 作为 Entity，命名与职责混淆（看起来像 API Response，但实际是表映射）
- * - 这里调整为 UserEntity：API 层统一返回 DTO，避免实体透传与事务外懒加载风险
+ * UserEntity（MyBatis-Plus 实体类）。
+ * 
+ * 映射 users 表，通过 MyBatis-Plus 实现 ORM 持久化与逻辑删除。
  */
+@TableName("users")
 public class UserEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     private String name;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
-    @Column(nullable = false)
     private String password;
 
     private String location;
@@ -58,11 +34,8 @@ public class UserEntity {
     private String jobTitleZh;
     private String jobTitleJa;
 
-    @Column(columnDefinition = "TEXT")
     private String bio;
-    @Column(name = "bio_zh", columnDefinition = "TEXT")
     private String bioZh;
-    @Column(name = "bio_ja", columnDefinition = "TEXT")
     private String bioJa;
 
     private String graduationYear;
@@ -71,35 +44,31 @@ public class UserEntity {
     private String majorZh;
     private String majorJa;
 
-    @Column(name = "created_at", nullable = true, updatable = false)
-    @CreatedDate
+    @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    @LastModifiedDate
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
-    @Column(name = "deleted", nullable = false)
+    @TableLogic(value = "false", delval = "true")
     private boolean deleted = false;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "user_certifications", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "certification_name", nullable = false)
+    @TableField(exist = false)
     private List<String> certifications;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @TableField(exist = false)
     private List<StatEntity> stats;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @TableField(exist = false)
     private List<ExperienceEntity> experiences;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @TableField(exist = false)
     private List<EducationEntity> education;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @TableField(exist = false)
     private List<LanguageEntity> languages;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @TableField(exist = false)
     private List<SkillEntity> skills;
 
     public Long getId() {

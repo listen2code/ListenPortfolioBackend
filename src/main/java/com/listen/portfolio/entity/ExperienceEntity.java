@@ -1,41 +1,35 @@
 package com.listen.portfolio.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 
-@Entity
-@Table(name = "experiences")
 /**
- * ExperienceEntity（JPA Entity）。
- *
- * 说明：
- * - 对应 experiences 表
- * - 归属用户通过 user_id 关联 UserEntity（多对一）
+ * ExperienceEntity（MyBatis-Plus 实体类）。
+ * 
+ * 映射 experiences 表。
  */
+@TableName("experiences")
 public class ExperienceEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @TableId(type = IdType.AUTO)
     private Long id;
+
+    private Long userId;
+
     private String title;
     private String titleZh;
     private String titleJa;
+
     private String company;
     private String companyZh;
     private String companyJa;
+
     private String period;
+
     private String description;
     private String descriptionZh;
     private String descriptionJa;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
 
     public Long getId() {
         return id;
@@ -43,6 +37,14 @@ public class ExperienceEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getTitle() {
@@ -75,14 +77,6 @@ public class ExperienceEntity {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
     }
 
     public String getTitleZh() {
@@ -133,4 +127,3 @@ public class ExperienceEntity {
         this.descriptionJa = descriptionJa;
     }
 }
-

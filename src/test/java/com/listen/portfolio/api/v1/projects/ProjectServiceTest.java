@@ -2,7 +2,7 @@ package com.listen.portfolio.api.v1.projects;
 
 import com.listen.portfolio.api.v1.projects.dto.ProjectDto;
 import com.listen.portfolio.entity.ProjectEntity;
-import com.listen.portfolio.repository.ProjectRepository;
+import com.listen.portfolio.mapper.ProjectMapper;
 import com.listen.portfolio.service.ProjectService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 class ProjectServiceTest {
 
     @Mock
-    private ProjectRepository projectRepository;
+    private ProjectMapper projectMapper;
 
     @InjectMocks
     private ProjectService projectService;
@@ -36,7 +36,6 @@ class ProjectServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 初始化测试数据
         mockProjectEntity1 = new ProjectEntity();
         mockProjectEntity1.setId(1L);
         mockProjectEntity1.setBusinessId("proj-001");
@@ -63,17 +62,15 @@ class ProjectServiceTest {
     @Test
     @DisplayName("getProjects - 成功获取所有项目")
     void testGetProjects_Success() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(mockProjectEntities);
+        when(projectMapper.selectList(null)).thenReturn(mockProjectEntities);
+        when(projectMapper.findTechStackByProjectId(1L)).thenReturn(Arrays.asList("Java", "Spring Boot", "React", "PostgreSQL"));
+        when(projectMapper.findTechStackByProjectId(2L)).thenReturn(Arrays.asList("React Native", "Node.js", "MongoDB"));
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        // 验证第一个项目
         ProjectDto project1 = result.get(0);
         assertEquals(1L, project1.getId());
         assertEquals("proj-001", project1.getBusinessId());
@@ -84,7 +81,6 @@ class ProjectServiceTest {
         assertEquals("https://github.com/example/project1", project1.getGithubUrl());
         assertEquals(Arrays.asList("Java", "Spring Boot", "React", "PostgreSQL"), project1.getTechStack());
 
-        // 验证第二个项目
         ProjectDto project2 = result.get(1);
         assertEquals(2L, project2.getId());
         assertEquals("proj-002", project2.getBusinessId());
@@ -95,38 +91,31 @@ class ProjectServiceTest {
         assertEquals("https://github.com/example/project2", project2.getGithubUrl());
         assertEquals(Arrays.asList("React Native", "Node.js", "MongoDB"), project2.getTechStack());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - 空项目列表")
     void testGetProjects_EmptyList() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(Collections.emptyList());
+        when(projectMapper.selectList(null)).thenReturn(Collections.emptyList());
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - 单个项目")
     void testGetProjects_SingleProject() {
-        // Given
         List<ProjectEntity> singleProjectList = Arrays.asList(mockProjectEntity1);
-        when(projectRepository.findAll()).thenReturn(singleProjectList);
+        when(projectMapper.selectList(null)).thenReturn(singleProjectList);
+        when(projectMapper.findTechStackByProjectId(1L)).thenReturn(Arrays.asList("Java", "Spring Boot", "React", "PostgreSQL"));
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -136,26 +125,22 @@ class ProjectServiceTest {
         assertEquals("Project Alpha", project.getTitle());
         assertEquals(Arrays.asList("Java", "Spring Boot", "React", "PostgreSQL"), project.getTechStack());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - 项目包含null字段")
     void testGetProjects_ProjectWithNullFields() {
-        // Given
         ProjectEntity projectWithNullFields = new ProjectEntity();
         projectWithNullFields.setId(3L);
         projectWithNullFields.setTitle("Project Gamma");
-        // 其他字段保持 null
         
         List<ProjectEntity> projectList = Arrays.asList(projectWithNullFields);
-        when(projectRepository.findAll()).thenReturn(projectList);
+        when(projectMapper.selectList(null)).thenReturn(projectList);
+        when(projectMapper.findTechStackByProjectId(3L)).thenReturn(null);
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -169,26 +154,22 @@ class ProjectServiceTest {
         assertNull(project.getGithubUrl());
         assertNull(project.getTechStack());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - 项目包含空技术栈")
     void testGetProjects_ProjectWithEmptyTechStack() {
-        // Given
         ProjectEntity projectWithEmptyTechStack = new ProjectEntity();
         projectWithEmptyTechStack.setId(4L);
         projectWithEmptyTechStack.setTitle("Project Delta");
-        projectWithEmptyTechStack.setTechStack(Collections.emptyList());
         
         List<ProjectEntity> projectList = Arrays.asList(projectWithEmptyTechStack);
-        when(projectRepository.findAll()).thenReturn(projectList);
+        when(projectMapper.selectList(null)).thenReturn(projectList);
+        when(projectMapper.findTechStackByProjectId(4L)).thenReturn(Collections.emptyList());
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -197,51 +178,45 @@ class ProjectServiceTest {
         assertEquals("Project Delta", project.getTitle());
         assertTrue(project.getTechStack().isEmpty());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - 大量项目列表")
     void testGetProjects_LargeProjectList() {
-        // Given
         ProjectEntity project3 = new ProjectEntity();
         project3.setId(3L);
         project3.setTitle("Project Gamma");
         
         List<ProjectEntity> largeProjectList = Arrays.asList(mockProjectEntity1, mockProjectEntity2, project3);
-        when(projectRepository.findAll()).thenReturn(largeProjectList);
+        when(projectMapper.selectList(null)).thenReturn(largeProjectList);
+        when(projectMapper.findTechStackByProjectId(1L)).thenReturn(Arrays.asList("Java"));
+        when(projectMapper.findTechStackByProjectId(2L)).thenReturn(Arrays.asList("React"));
+        when(projectMapper.findTechStackByProjectId(3L)).thenReturn(null);
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(3, result.size());
         assertEquals("Project Alpha", result.get(0).getTitle());
         assertEquals("Project Beta", result.get(1).getTitle());
         assertEquals("Project Gamma", result.get(2).getTitle());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("toDto - 实体转换测试")
     void testToDto_EntityConversion() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(Arrays.asList(mockProjectEntity1));
+        when(projectMapper.selectList(null)).thenReturn(Arrays.asList(mockProjectEntity1));
+        when(projectMapper.findTechStackByProjectId(1L)).thenReturn(mockProjectEntity1.getTechStack());
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
         ProjectDto dto = result.get(0);
-        
-        // 验证所有字段都正确转换
         assertEquals(mockProjectEntity1.getId(), dto.getId());
         assertEquals(mockProjectEntity1.getBusinessId(), dto.getBusinessId());
         assertEquals(mockProjectEntity1.getTitle(), dto.getTitle());
@@ -251,29 +226,26 @@ class ProjectServiceTest {
         assertEquals(mockProjectEntity1.getGithubUrl(), dto.getGithubUrl());
         assertEquals(mockProjectEntity1.getTechStack(), dto.getTechStack());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("toDto - 复杂技术栈转换")
     void testToDto_ComplexTechStackConversion() {
-        // Given
         ProjectEntity projectWithComplexTechStack = new ProjectEntity();
         projectWithComplexTechStack.setId(5L);
         projectWithComplexTechStack.setTitle("Project Epsilon");
-        projectWithComplexTechStack.setTechStack(Arrays.asList(
-            "Java", "Spring Boot", "Spring Security", "Spring Data JPA",
+        List<String> complexStack = Arrays.asList(
+            "Java", "Spring Boot", "Spring Security", "MyBatis-Plus",
             "React", "TypeScript", "Redux", "Material-UI",
             "Docker", "Kubernetes", "Redis", "PostgreSQL"
-        ));
+        );
         
-        when(projectRepository.findAll()).thenReturn(Arrays.asList(projectWithComplexTechStack));
+        when(projectMapper.selectList(null)).thenReturn(Arrays.asList(projectWithComplexTechStack));
+        when(projectMapper.findTechStackByProjectId(5L)).thenReturn(complexStack);
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(1, result.size());
 
@@ -287,44 +259,37 @@ class ProjectServiceTest {
         assertTrue(project.getTechStack().contains("Docker"));
         assertTrue(project.getTechStack().contains("PostgreSQL"));
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("getProjects - Repository返回null处理")
     void testGetProjects_RepositoryReturnsNull() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(null);
+        when(projectMapper.selectList(null)).thenReturn(null);
 
-        // When & Then
         assertThrows(NullPointerException.class, () -> {
             projectService.getProjects();
         });
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("构造函数注入验证")
     void testConstructorInjection() {
-        // 验证通过 @InjectMocks 创建的实例不为 null
         assertNotNull(projectService);
-        assertNotNull(projectRepository);
+        assertNotNull(projectMapper);
     }
 
     @Test
     @DisplayName("服务注解验证")
     void testServiceAnnotations() {
-        // 验证服务相关的注解
         assertTrue(projectService.getClass().isAnnotationPresent(org.springframework.stereotype.Service.class));
     }
 
     @Test
     @DisplayName("事务注解验证")
     void testTransactionalAnnotations() {
-        // 验证方法级别的事务注解
         try {
             java.lang.reflect.Method method = ProjectService.class.getMethod("getProjects");
             assertTrue(method.isAnnotationPresent(org.springframework.transaction.annotation.Transactional.class));
@@ -340,70 +305,48 @@ class ProjectServiceTest {
     @Test
     @DisplayName("数据隔离验证 - DTO不包含Entity引用")
     void testDataIsolation_DtoNotContainEntityReferences() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(mockProjectEntities);
+        when(projectMapper.selectList(null)).thenReturn(mockProjectEntities);
+        when(projectMapper.findTechStackByProjectId(1L)).thenReturn(Arrays.asList("Java"));
+        when(projectMapper.findTechStackByProjectId(2L)).thenReturn(Arrays.asList("React Native"));
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        // 验证返回的是DTO对象，不是Entity对象
         for (ProjectDto dto : result) {
             assertTrue(dto instanceof ProjectDto);
-            // 由于类型不兼容，我们只需要验证它是ProjectDto即可
-            // ProjectDto不可能是ProjectEntity的实例，因为它们是不同的类层次结构
-        }
-
-        // 验证DTO字段完整性
-        for (ProjectDto dto : result) {
             assertNotNull(dto.getId());
             assertNotNull(dto.getTitle());
-            // 其他字段可能为null，这是正常的
         }
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("日志记录验证")
     void testLoggingVerification() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(mockProjectEntities);
+        when(projectMapper.selectList(null)).thenReturn(mockProjectEntities);
+        when(projectMapper.findTechStackByProjectId(anyLong())).thenReturn(Collections.emptyList());
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
-        // 日志记录验证通常需要使用日志测试框架，这里我们只验证业务逻辑正确性
-        // 实际项目中可以使用 LogCaptor 或类似工具来验证日志输出
-
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 
     @Test
     @DisplayName("性能考虑 - Stream处理验证")
     void testPerformance_StreamProcessing() {
-        // Given
-        when(projectRepository.findAll()).thenReturn(mockProjectEntities);
+        when(projectMapper.selectList(null)).thenReturn(mockProjectEntities);
+        when(projectMapper.findTechStackByProjectId(anyLong())).thenReturn(Collections.emptyList());
 
-        // When
         List<ProjectDto> result = projectService.getProjects();
 
-        // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-
-        // 验证使用了Stream处理（通过验证转换逻辑）
-        // 这里我们验证所有实体都被正确转换
         assertEquals(mockProjectEntities.size(), result.size());
 
-        // 验证Repository调用
-        verify(projectRepository, times(1)).findAll();
+        verify(projectMapper, times(1)).selectList(null);
     }
 }

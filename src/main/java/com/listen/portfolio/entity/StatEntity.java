@@ -1,47 +1,33 @@
 package com.listen.portfolio.entity;
 
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 
 import java.util.List;
 
-@Entity
-@Table(name = "stats")
 /**
- * StatEntity（JPA Entity）。
- *
- * 说明：
- * - 对应 stats 表
- * - tags 为值类型集合，存储在 stat_tags 表
+ * StatEntity（MyBatis-Plus 实体类）。
+ * 
+ * 映射 stats 表。
  */
+@TableName("stats")
 public class StatEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @TableId(type = IdType.AUTO)
     private Long id;
 
-    @Column(name = "business_id", nullable = false)
+    private Long userId;
+
     private String businessId;
 
     private String year;
+
     private String label;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "stat_tags", joinColumns = @JoinColumn(name = "stat_id"))
-    @Column(name = "tag_name", nullable = false)
+    @TableField(exist = false)
     private List<String> tags;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
 
     public Long getId() {
         return id;
@@ -49,6 +35,14 @@ public class StatEntity {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getBusinessId() {
@@ -82,13 +76,4 @@ public class StatEntity {
     public void setTags(List<String> tags) {
         this.tags = tags;
     }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
 }
-

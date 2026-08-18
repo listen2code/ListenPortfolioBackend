@@ -1,4 +1,4 @@
-﻿# 📋 TODO 清单
+# 📋 TODO 清单
 
 ## 项目现状判断
 
@@ -122,6 +122,15 @@ src/test/java/com/listen/portfolio/
 - 服务端文案 i18n
 - `DataMaskingUtil`
 - `SecurityMetrics`
+
+### 3. ORM 架构升级（已完成：将 JPA/Hibernate 改造为 MyBatis-Plus）
+
+**现状**：已完成。全工程全面舍弃 Hibernate/JPA，无缝重构为 **MyBatis-Plus (v3.5.7)**。
+- 依赖升级：移除 `spring-boot-starter-data-jpa`，引入 `mybatis-plus-spring-boot3-starter:3.5.7` + `spring-boot-starter-jdbc` + `spring-boot-starter-aop`。
+- 实体改造：7 个实体类全部迁移至 `@TableName`、`@TableId(type = IdType.AUTO)`、`@TableLogic`、`@TableField`。
+- Mapper 替换：使用 7 个 `BaseMapper<T>` 配合自定义 SQL 注解方法管理子表关联（`user_certifications`, `project_tech_stack`, `skill_items`, `stat_tags`）。
+- 业务层重构：Service 层全面使用强类型 `LambdaQueryWrapper`，彻底根除 JPA N+1 与 Open-Session-In-View 性能陷阱。
+- 测试保障：338 个单元与集成测试全部 100% 绿色通过，自动生成 `schema-h2.sql` 支持单测纯内存 H2 隔离运行。
 
 ### 3. security_features.md 设计落地
 

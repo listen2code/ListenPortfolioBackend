@@ -4,7 +4,7 @@ import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.api.v1.auth.dto.ForgotPasswordRequest;
 import com.listen.portfolio.api.v1.auth.dto.SignUpRequest;
-import com.listen.portfolio.repository.UserRepository;
+import com.listen.portfolio.mapper.UserMapper;
 import com.listen.portfolio.service.AuthService;
 import com.listen.portfolio.service.EmailService;
 import com.listen.portfolio.service.PasswordResetTokenService;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.*;
 class AuthServiceTest {
 
     @Mock
-    private UserRepository userRepository;
+    private UserMapper userMapper;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -60,7 +61,6 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 初始化测试数据
         mockUserEntity = new UserEntity();
         mockUserEntity.setId(1L);
         mockUserEntity.setName("testuser");
@@ -84,191 +84,155 @@ class AuthServiceTest {
     @Test
     @DisplayName("loadUserByUsername - 成功加载用户")
     void testLoadUserByUsername_Success() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser"))
+                .thenReturn(mockUserEntity);
 
-        // When
         UserDetails result = authService.loadUserByUsername("testuser");
 
-        // Then
         assertNotNull(result);
         assertEquals("testuser", result.getUsername());
         assertEquals("encodedPassword", result.getPassword());
         assertTrue(result.getAuthorities().isEmpty());
         
-        verify(userRepository).findByNameCaseSensitive("testuser");
+        verify(userMapper).findByNameCaseSensitive("testuser");
     }
 
     @Test
     @DisplayName("loadUserByUsername - 用户不存在抛出异常")
     void testLoadUserByUsername_UserNotFound() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("nonexistent"))
-                .thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("nonexistent"))
+                .thenReturn(null);
 
-        // When & Then
         UsernameNotFoundException exception = assertThrows(
                 UsernameNotFoundException.class,
                 () -> authService.loadUserByUsername("nonexistent")
         );
         
         assertEquals("User not found with username: nonexistent", exception.getMessage());
-        verify(userRepository).findByNameCaseSensitive("nonexistent");
+        verify(userMapper).findByNameCaseSensitive("nonexistent");
     }
 
     @Test
     @DisplayName("getUserByName - 成功获取用户")
     void testGetUserByName_Success() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser"))
+                .thenReturn(mockUserEntity);
 
-        // When
         Optional<UserEntity> result = authService.getUserByName("testuser");
 
-        // Then
         assertTrue(result.isPresent());
         assertEquals("testuser", result.get().getName());
         assertEquals("test@example.com", result.get().getEmail());
         
-        verify(userRepository).findByNameCaseSensitive("testuser");
+        verify(userMapper).findByNameCaseSensitive("testuser");
     }
 
     @Test
     @DisplayName("getUserByName - 用户不存在返回空Optional")
     void testGetUserByName_UserNotFound() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("nonexistent"))
-                .thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("nonexistent"))
+                .thenReturn(null);
 
-        // When
         Optional<UserEntity> result = authService.getUserByName("nonexistent");
 
-        // Then
         assertFalse(result.isPresent());
-        verify(userRepository).findByNameCaseSensitive("nonexistent");
+        verify(userMapper).findByNameCaseSensitive("nonexistent");
     }
 
     @Test
     @DisplayName("signUp - 成功注册新用户")
     void testSignUp_Success() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("testuser"))
+                .thenReturn(null);
         when(passwordEncoder.encode("password123"))
                 .thenReturn("encodedPassword");
-        when(userRepository.save(any(UserEntity.class)))
-                .thenReturn(mockUserEntity);
+        when(userMapper.insert(any(UserEntity.class)))
+                .thenReturn(1);
 
-        // When
         boolean result = authService.signUp(mockSignUpRequest);
 
-        // Then
         assertTrue(result);
         
-        verify(userRepository).findByNameCaseSensitive("testuser");
+        verify(userMapper).findByNameCaseSensitive("testuser");
         verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userMapper).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("signUp - 用户名已存在注册失败")
     void testSignUp_UsernameAlreadyExists() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser"))
+                .thenReturn(mockUserEntity);
 
-        // When
         boolean result = authService.signUp(mockSignUpRequest);
 
-        // Then
         assertFalse(result);
         
-        verify(userRepository).findByNameCaseSensitive("testuser");
+        verify(userMapper).findByNameCaseSensitive("testuser");
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("signUp - 邮箱已存在注册失败")
     void testSignUp_EmailAlreadyExists() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser"))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByEmail("test@example.com"))
-                .thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser"))
+                .thenReturn(null);
+        when(userMapper.selectOne(any()))
+                .thenReturn(mockUserEntity);
 
-        // When
         AuthService.SignUpResult result = authService.signUpResult(mockSignUpRequest);
 
-        // Then
         assertEquals(AuthService.SignUpResult.EMAIL_EXISTS, result);
         
-        verify(userRepository).findByNameCaseSensitive("testuser");
-        verify(userRepository).findByEmail("test@example.com");
+        verify(userMapper).findByNameCaseSensitive("testuser");
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("forgotPassword - 成功发送密码重置邮件")
     void testForgotPassword_Success() {
-        // Given
-        when(userRepository.findByEmail("test@example.com"))
-                .thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.selectOne(any()))
+                .thenReturn(mockUserEntity);
         when(passwordResetTokenService.generateToken("test@example.com"))
                 .thenReturn("test-token");
 
-        // When
         boolean result = authService.forgotPassword(mockForgotPasswordRequest);
 
-        // Then
-        assertTrue(result); // 始终返回 true，防止邮箱枚举攻击
+        assertTrue(result);
         
-        verify(userRepository).findByEmail("test@example.com");
         verify(passwordResetTokenService).generateToken("test@example.com");
-        // 使用 ArgumentCaptor 来验证 emailService 调用
-        // emailService 调用已经通过日志输出验证，不需要 verify
-        verify(passwordEncoder, never()).encode(anyString()); // 新实现不直接编码密码
-        verify(userRepository, never()).save(any(UserEntity.class)); // 新实现不直接保存用户
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("forgotPassword - 邮箱不存在也返回成功（防止邮箱枚举攻击）")
     void testForgotPassword_EmailNotFound() {
-        // Given
-        when(userRepository.findByEmail("nonexistent@example.com"))
-                .thenReturn(Optional.empty());
+        when(userMapper.selectOne(any()))
+                .thenReturn(null);
 
         mockForgotPasswordRequest.setEmail("nonexistent@example.com");
 
-        // When
         boolean result = authService.forgotPassword(mockForgotPasswordRequest);
 
-        // Then
-        assertTrue(result); // 即使邮箱不存在也返回 true，防止邮箱枚举攻击
+        assertTrue(result);
         
-        verify(userRepository).findByEmail("nonexistent@example.com");
         verify(passwordResetTokenService, never()).generateToken(anyString());
-        // emailService 不应该被调用，通过 never() 验证
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("继承测试 - AuthService实现UserDetailsService接口")
     void testAuthServiceImplementsUserDetailsService() {
-        // 验证AuthService确实实现了UserDetailsService接口
         assertTrue(authService instanceof org.springframework.security.core.userdetails.UserDetailsService);
     }
 
     @Test
     @DisplayName("边界测试 - null参数处理")
     void testEdgeCases_NullParameters() {
-        // Given - 不需要设置 null 的 stubbing，因为这些方法在测试中不会被调用
-
-        // When & Then - null参数应该抛出异常或返回空结果
         assertThrows(UsernameNotFoundException.class, () -> authService.loadUserByUsername(null));
         assertDoesNotThrow(() -> authService.getUserByName(null));
         assertThrows(NullPointerException.class, () -> authService.signUp(null));
@@ -278,29 +242,24 @@ class AuthServiceTest {
     @Test
     @DisplayName("边界测试 - 空字符串参数处理")
     void testEdgeCases_EmptyStringParameters() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("")).thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("")).thenReturn(null);
 
-        // When & Then
         assertThrows(UsernameNotFoundException.class, () -> authService.loadUserByUsername(""));
         assertEquals(Optional.empty(), authService.getUserByName(""));
         
-        // 测试空字符串注册 - 用户名为空应该失败
         SignUpRequest emptyRequest = new SignUpRequest();
         emptyRequest.setUserName("");
         emptyRequest.setPassword("password");
-        when(userRepository.findByNameCaseSensitive("")).thenReturn(Optional.empty());
-        assertTrue(authService.signUp(emptyRequest)); // 空用户名实际上会成功，因为数据库中没有冲突
+        when(userMapper.findByNameCaseSensitive("")).thenReturn(null);
+        assertTrue(authService.signUp(emptyRequest));
     }
 
     @Test
     @DisplayName("边界测试 - 用户名大小写敏感性")
     void testEdgeCases_CaseSensitivity() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("TestUser")).thenReturn(Optional.of(mockUserEntity));
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("TestUser")).thenReturn(mockUserEntity);
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(null);
 
-        // When & Then
         assertDoesNotThrow(() -> authService.loadUserByUsername("TestUser"));
         assertThrows(UsernameNotFoundException.class, () -> authService.loadUserByUsername("testuser"));
         
@@ -311,10 +270,8 @@ class AuthServiceTest {
     @Test
     @DisplayName("异常处理测试 - Repository异常")
     void testExceptionHandling_RepositoryException() {
-        // Given
-        when(userRepository.findByNameCaseSensitive(anyString())).thenThrow(new RuntimeException("Database connection failed"));
+        when(userMapper.findByNameCaseSensitive(anyString())).thenThrow(new RuntimeException("Database connection failed"));
 
-        // When & Then
         assertThrows(RuntimeException.class, () -> authService.loadUserByUsername("testuser"));
         assertThrows(RuntimeException.class, () -> authService.getUserByName("testuser"));
     }
@@ -322,135 +279,109 @@ class AuthServiceTest {
     @Test
     @DisplayName("异常处理测试 - PasswordEncoder异常")
     void testExceptionHandling_PasswordEncoderException() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.empty());
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(null);
         when(passwordEncoder.encode("password123")).thenThrow(new RuntimeException("Encoding failed"));
 
-        // When & Then
         assertThrows(RuntimeException.class, () -> authService.signUp(mockSignUpRequest));
         
-        // 重置 mock 并测试 forgotPassword
         reset(passwordEncoder);
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.selectOne(any())).thenReturn(mockUserEntity);
         when(passwordResetTokenService.generateToken("test@example.com")).thenReturn("test-token");
-        // 新的 forgotPassword 实现不会抛出异常，即使 emailService 失败
-        // 它会捕获异常并记录日志，然后返回 true
         boolean result = authService.forgotPassword(mockForgotPasswordRequest);
-        assertTrue(result); // 即使发生异常也返回 true
+        assertTrue(result);
     }
 
     @Test
     @DisplayName("事务边界测试 - readOnly事务")
     void testTransactionBoundary_ReadOnlyTransaction() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(mockUserEntity);
 
-        // When
         UserDetails userDetails = authService.loadUserByUsername("testuser");
         Optional<UserEntity> user = authService.getUserByName("testuser");
 
-        // Then - 验证只读事务方法正常工作
         assertNotNull(userDetails);
         assertNotNull(user);
-        verify(userRepository, times(2)).findByNameCaseSensitive("testuser");
+        verify(userMapper, times(2)).findByNameCaseSensitive("testuser");
         verifyNoMoreInteractions(passwordEncoder);
     }
 
     @Test
     @DisplayName("事务边界测试 - 写操作事务")
     void testTransactionBoundary_WriteTransaction() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.empty());
-        when(userRepository.save(any(UserEntity.class))).thenReturn(mockUserEntity);
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(null);
+        when(userMapper.insert(any(UserEntity.class))).thenReturn(1);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
 
-        // When
         boolean signUpResult = authService.signUp(mockSignUpRequest);
 
-        // Then - 验证写操作事务正常工作
         assertTrue(signUpResult);
         verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(any(UserEntity.class));
+        verify(userMapper).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("密码安全测试 - 密码编码验证")
     void testPasswordSecurity_EncodingVerification() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.empty());
-        when(userRepository.save(any(UserEntity.class))).thenReturn(mockUserEntity);
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(null);
+        when(userMapper.insert(any(UserEntity.class))).thenReturn(1);
         when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-        // When
         authService.signUp(mockSignUpRequest);
 
-        // Then - 验证密码被正确编码
         verify(passwordEncoder).encode("password123");
-        verify(userRepository).save(argThat(user -> "encodedPassword".equals(user.getPassword())));
+        verify(userMapper).insert(argThat((ArgumentMatcher<UserEntity>) user -> "encodedPassword".equals(user.getPassword())));
     }
 
     @Test
     @DisplayName("密码安全测试 - 密码重置安全")
     void testPasswordSecurity_ResetPasswordSecurity() {
-        // Given
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.selectOne(any())).thenReturn(mockUserEntity);
         when(passwordResetTokenService.generateToken("test@example.com")).thenReturn("test-token");
 
-        // When
         boolean result = authService.forgotPassword(mockForgotPasswordRequest);
 
-        // Then - 新实现不直接重置密码，而是发送邮件
         assertTrue(result);
         verify(passwordResetTokenService).generateToken("test@example.com");
-        // 新实现不直接编码密码或保存用户
         verify(passwordEncoder, never()).encode(anyString());
-        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(userMapper, never()).insert(any(UserEntity.class));
     }
 
     @Test
     @DisplayName("性能测试 - 大量用户查询")
     void testPerformance_BulkUserQueries() {
-        // Given
         String[] usernames = new String[100];
         for (int i = 0; i < 100; i++) {
             usernames[i] = "user" + i;
         }
-        when(userRepository.findByNameCaseSensitive(anyString())).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive(anyString())).thenReturn(mockUserEntity);
 
-        // When
         long startTime = System.currentTimeMillis();
         for (String username : usernames) {
             assertDoesNotThrow(() -> authService.getUserByName(username));
         }
         long endTime = System.currentTimeMillis();
 
-        // Then - 操作应该在合理时间内完成
         assertTrue(endTime - startTime < 1000, "Bulk queries should complete within 1 second");
     }
 
     @Test
     @DisplayName("集成测试 - 完整的用户注册流程")
     void testIntegration_CompleteUserRegistrationFlow() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.empty());
-        when(userRepository.save(any(UserEntity.class))).thenReturn(mockUserEntity);
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(null);
+        when(userMapper.insert(any(UserEntity.class))).thenReturn(1);
         when(passwordEncoder.encode("password123")).thenReturn("encodedPassword");
 
-        // When - 注册新用户
         boolean signUpResult = authService.signUp(mockSignUpRequest);
 
-        // Then - 验证注册成功
         assertTrue(signUpResult);
-        verify(userRepository).save(argThat(user -> 
+        verify(userMapper).insert(argThat((ArgumentMatcher<UserEntity>) user -> 
             "testuser".equals(user.getName()) && 
             "encodedPassword".equals(user.getPassword())
         ));
 
-        // When - 查询用户
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(mockUserEntity);
         Optional<UserEntity> foundUser = authService.getUserByName("testuser");
 
-        // Then - 验证用户可以找到
         assertTrue(foundUser.isPresent());
         assertEquals("testuser", foundUser.get().getName());
     }
@@ -458,36 +389,29 @@ class AuthServiceTest {
     @Test
     @DisplayName("日志记录验证 - 安全日志")
     void testLogging_SecurityLogs() {
-        // Given
-        when(userRepository.findByNameCaseSensitive("testuser")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(mockUserEntity);
 
-        // When
         authService.loadUserByUsername("testuser");
         authService.getUserByName("testuser");
 
-        // Then - 验证日志记录（通过验证方法调用间接验证）
-        verify(userRepository, times(2)).findByNameCaseSensitive("testuser");
+        verify(userMapper, times(2)).findByNameCaseSensitive("testuser");
     }
 
     @Test
     @DisplayName("resetPassword - 密码重置成功并吊销所有 Refresh Token")
     void testResetPassword_Success() {
-        // Given
         String token = "valid-reset-token";
         String newPassword = "newSecurePassword123";
         when(passwordResetTokenService.getEmailByToken(token)).thenReturn("test@example.com");
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(mockUserEntity));
+        when(userMapper.selectOne(any())).thenReturn(mockUserEntity);
         when(passwordEncoder.encode(newPassword)).thenReturn("newEncodedPassword");
 
-        // When
         boolean result = authService.resetPassword(token, newPassword);
 
-        // Then
         assertTrue(result);
         verify(passwordResetTokenService).getEmailByToken(token);
-        verify(userRepository).findByEmail("test@example.com");
         verify(passwordEncoder).encode(newPassword);
-        verify(userRepository).save(mockUserEntity);
+        verify(userMapper).updateById(mockUserEntity);
         verify(passwordResetTokenService).deleteToken(token);
         verify(refreshTokenService).revokeAllRefreshTokens("testuser");
     }

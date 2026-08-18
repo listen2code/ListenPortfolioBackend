@@ -201,7 +201,7 @@ class TokenBlacklistServiceTest {
         // Given
         long expiration = System.currentTimeMillis() + 3600000;
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(BLACKLIST_KEY)).thenReturn("blacklisted", null);
+        when(valueOperations.get(BLACKLIST_KEY)).thenReturn("blacklisted", (String) null);
 
         // When - 添加到黑名单
         tokenBlacklistService.addToBlacklist(TEST_TOKEN, expiration);
