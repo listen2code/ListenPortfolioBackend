@@ -41,6 +41,11 @@ services:
     networks:
       - portfolio-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
     profiles:
       - local
 
@@ -67,6 +72,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
     profiles:
       - local
 
@@ -99,6 +109,11 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
     profiles:
       - local
 
@@ -127,6 +142,11 @@ services:
     networks:
       - portfolio-network
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
     profiles:
       - local
 
@@ -160,6 +180,11 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "2"
     profiles:
       - local
 
