@@ -201,35 +201,7 @@ jobs:
             ServerAliveCountMax 3
           EOF
 
-      # 步骤 3.6：连入 EC2 预创建应用部署目录和 target 子目录
-      - name: Prepare Remote Target Directory
-        run: |
-          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "mkdir -p ~/portfolio/target"
-
-      # 步骤 3.7：使用安全传输协议（SCP）将本地生成的 WAR 包上传至云端 target/ 目录下
-      - name: Upload WAR Package via SCP
-        run: |
-          scp -i ~/.ssh/id_rsa build/libs/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
-
-      # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、.dockerignore、docker-compose 和监控目录上传至云端工作目录
-      - name: Upload Configurations via SCP
-        run: |
-          scp -i ~/.ssh/id_rsa Dockerfile .dockerignore docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
-          scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
-
-      # 步骤 3.8.5：在 EC2 服务器上动态生成 .env 配置文件，注入数据库及邮件等环境变量
-      - name: Generate .env File on EC2
-        run: |
-          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cat > ~/portfolio/.env <<'EOF'
-          DB_USERNAME=${{ secrets.DB_USERNAME || 'root' }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD || 'Ls-88888888' }}
-          JWT_SECRET=${{ secrets.JWT_SECRET || 'your-super-strong-secret-key-that-is-at-least-256-bits-long' }}
-          MAIL_USERNAME=${{ secrets.MAIL_USERNAME || 'listen2code@gmail.com' }}
-          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD || 'xqvfldvtlgbjvdnn' }}
-          FRONTEND_URL=${{ secrets.FRONTEND_URL || format('http://{0}:8080', secrets.AWS_HOST) }}
-          EOF"
-
-      # 步骤 3.8.8：深度清理 EC2 磁盘空间（容器日志截断、系统日志清理、废弃镜像与构建缓存清理），彻底防止 No space left on device
+      # 步骤 3.6：深度清理 EC2 磁盘空间（容器日志截断、系统日志清理、废弃镜像与构建缓存清理），彻底防止 No space left on device
       - name: Deep Clean EC2 Disk Space and Docker Cache
         run: |
           echo "执行 EC2 磁盘深度清理..."
@@ -239,8 +211,36 @@ jobs:
             sudo sh -c 'truncate -s 0 /var/lib/docker/containers/*/*-json.log' 2>/dev/null || true
             sudo journalctl --vacuum-size=50M 2>/dev/null || true
             sudo rm -rf /tmp/* 2>/dev/null || true
+            mkdir -p ~/portfolio/target
             df -h
           "
+
+      # 步骤 3.7：使用安全传输协议（SCP）将本地生成的 WAR 包上传至云端 target/ 目录下
+      - name: Upload WAR Package via SCP
+        run: |
+          scp -i ~/.ssh/id_rsa build/libs/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
+
+      # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、docker-compose 和监控目录上传至云端工作目录
+      - name: Upload Configurations via SCP
+        run: |
+          scp -i ~/.ssh/id_rsa Dockerfile docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
+          scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
+
+      # 步骤 3.8.5：在 EC2 服务器上动态生成 .env 与 .dockerignore 配置文件
+      - name: Generate Config Files on EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cat > ~/portfolio/.dockerignore <<'EOF'
+          *
+          !target/portfolio-0.0.1-SNAPSHOT.war
+          EOF
+          cat > ~/portfolio/.env <<'EOF'
+          DB_USERNAME=${{ secrets.DB_USERNAME || 'root' }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD || 'Ls-88888888' }}
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'your-super-strong-secret-key-that-is-at-least-256-bits-long' }}
+          MAIL_USERNAME=${{ secrets.MAIL_USERNAME || 'listen2code@gmail.com' }}
+          MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD || 'xqvfldvtlgbjvdnn' }}
+          FRONTEND_URL=${{ secrets.FRONTEND_URL || format('http://{0}:8080', secrets.AWS_HOST) }}
+          EOF"
 
       # 步骤 3.9：连入云端 EC2 目录，根据 commit 消息决定是增量部署还是清库重构部署
       - name: Launch Containers via Docker Compose on EC2
