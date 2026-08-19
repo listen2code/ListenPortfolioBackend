@@ -51,6 +51,7 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 | `POST` | `/v1/auth/refresh` | 刷新 Token |
 | `POST` | `/v1/auth/forgot-password` | 发送密码重置邮件 |
 | `POST` | `/v1/auth/reset-password` | 重置密码 |
+| `POST` | `/v1/auth/logout` | 公开登出（吊销 Refresh Token，无需 Access Token） |
 
 ### 用户接口
 
