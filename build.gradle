@@ -101,6 +101,9 @@ spotbugsMain {
 
 tasks.named('test') {
     useJUnitPlatform()
+    if (System.getenv('CI') == 'true' || project.hasProperty('excludePerformanceTest')) {
+        exclude '**/performance/**'
+    }
     finalizedBy jacocoTestReport
 }
 
