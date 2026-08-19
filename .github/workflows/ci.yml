@@ -201,16 +201,19 @@ jobs:
             ServerAliveCountMax 3
           EOF
 
-      # 步骤 3.6：深度清理 EC2 磁盘空间（容器日志截断、系统日志清理、废弃镜像与构建缓存清理），彻底防止 No space left on device
+      # 步骤 3.6：深度清理 EC2 磁盘空间（先停机释放占用，然后清理废弃镜像、构建缓存、日志与临时文件）
       - name: Deep Clean EC2 Disk Space and Docker Cache
         run: |
           echo "执行 EC2 磁盘深度清理..."
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "
+            cd ~/portfolio && docker compose --profile local down 2>/dev/null || true
+            docker container prune -f || true
+            docker image prune -a -f || true
             docker builder prune -a -f || true
-            docker system prune -a -f || true
             sudo sh -c 'truncate -s 0 /var/lib/docker/containers/*/*-json.log' 2>/dev/null || true
-            sudo rm -rf /var/lib/docker/buildkit/content/ingest/* 2>/dev/null || true
-            sudo journalctl --vacuum-size=20M 2>/dev/null || true
+            sudo rm -rf /var/lib/docker/buildkit/* 2>/dev/null || true
+            sudo journalctl --vacuum-size=10M 2>/dev/null || true
+            sudo yum clean all 2>/dev/null || sudo dnf clean all 2>/dev/null || true
             sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
             rm -rf ~/portfolio/target/*.war 2>/dev/null || true
             mkdir -p ~/portfolio/target
