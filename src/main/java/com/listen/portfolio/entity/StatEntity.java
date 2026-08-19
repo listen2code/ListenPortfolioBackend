@@ -22,6 +22,7 @@ public class StatEntity {
 
     private String businessId;
 
+    @TableField("`year`")
     private String year;
 
     private String label;

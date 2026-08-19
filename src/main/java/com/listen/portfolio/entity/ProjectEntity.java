@@ -11,6 +11,7 @@ import java.util.List;
  * ProjectEntity（MyBatis-Plus 实体类）。
  * 
  * 映射 projects 表。
+ * 注意：字段命名为 projectDesc 避免 MyBatis-Plus 生成 SQL 别名时使用 MySQL 保留字 'desc'。
  */
 @TableName("projects")
 public class ProjectEntity {
@@ -29,13 +30,13 @@ public class ProjectEntity {
     private String subtitleJa;
 
     @TableField("project_desc")
-    private String desc;
+    private String projectDesc;
 
     @TableField("project_desc_zh")
-    private String descZh;
+    private String projectDescZh;
 
     @TableField("project_desc_ja")
-    private String descJa;
+    private String projectDescJa;
 
     private String imageUrl;
     private String githubUrl;
@@ -75,12 +76,52 @@ public class ProjectEntity {
         this.subtitle = subtitle;
     }
 
+    public String getProjectDesc() {
+        return projectDesc;
+    }
+
+    public void setProjectDesc(String projectDesc) {
+        this.projectDesc = projectDesc;
+    }
+
     public String getDesc() {
-        return desc;
+        return projectDesc;
     }
 
     public void setDesc(String desc) {
-        this.desc = desc;
+        this.projectDesc = desc;
+    }
+
+    public String getProjectDescZh() {
+        return projectDescZh;
+    }
+
+    public void setProjectDescZh(String projectDescZh) {
+        this.projectDescZh = projectDescZh;
+    }
+
+    public String getDescZh() {
+        return projectDescZh;
+    }
+
+    public void setDescZh(String descZh) {
+        this.projectDescZh = descZh;
+    }
+
+    public String getProjectDescJa() {
+        return projectDescJa;
+    }
+
+    public void setProjectDescJa(String projectDescJa) {
+        this.projectDescJa = projectDescJa;
+    }
+
+    public String getDescJa() {
+        return projectDescJa;
+    }
+
+    public void setDescJa(String descJa) {
+        this.projectDescJa = descJa;
     }
 
     public String getImageUrl() {
@@ -137,21 +178,5 @@ public class ProjectEntity {
 
     public void setSubtitleJa(String subtitleJa) {
         this.subtitleJa = subtitleJa;
-    }
-
-    public String getDescZh() {
-        return descZh;
-    }
-
-    public void setDescZh(String descZh) {
-        this.descZh = descZh;
-    }
-
-    public String getDescJa() {
-        return descJa;
-    }
-
-    public void setDescJa(String descJa) {
-        this.descJa = descJa;
     }
 }
