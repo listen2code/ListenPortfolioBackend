@@ -201,22 +201,31 @@ jobs:
             ServerAliveCountMax 3
           EOF
 
-      # 步骤 3.6：深度清理 EC2 磁盘空间（先停机释放占用，然后清理废弃镜像、构建缓存、日志与临时文件）
+      # 步骤 3.6：深度清理 EC2 磁盘空间（强制停止所有容器、彻底清除所有旧镜像、构建缓存与系统日志）
       - name: Deep Clean EC2 Disk Space and Docker Cache
         run: |
-          echo "执行 EC2 磁盘深度清理..."
+          echo "执行 EC2 磁盘强力深度清理..."
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "
-            cd ~/portfolio && docker compose --profile local down 2>/dev/null || true
-            docker container prune -f || true
-            docker image prune -a -f || true
-            docker builder prune -a -f || true
-            sudo sh -c 'truncate -s 0 /var/lib/docker/containers/*/*-json.log' 2>/dev/null || true
+            echo '=== 1. 停止并移除所有容器 ==='
+            sudo docker stop \$(sudo docker ps -aq) 2>/dev/null || true
+            sudo docker rm -f \$(sudo docker ps -aq) 2>/dev/null || true
+
+            echo '=== 2. 清理全部无用镜像、构建缓存与未命名卷 ==='
+            sudo docker system prune -a -f --volumes || true
+            sudo docker builder prune -a -f || true
+
+            echo '=== 3. 清理 Docker 与系统日志、临时文件、包管理器缓存 ==='
             sudo rm -rf /var/lib/docker/buildkit/* 2>/dev/null || true
+            sudo rm -rf /var/lib/docker/tmp/* 2>/dev/null || true
             sudo journalctl --vacuum-size=10M 2>/dev/null || true
+            sudo rm -rf /var/log/journal/* 2>/dev/null || true
             sudo yum clean all 2>/dev/null || sudo dnf clean all 2>/dev/null || true
+            sudo rm -rf /var/cache/yum /var/cache/dnf 2>/dev/null || true
             sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
             rm -rf ~/portfolio/target/*.war 2>/dev/null || true
             mkdir -p ~/portfolio/target
+
+            echo '=== 4. 清理后磁盘剩余空间 ==='
             df -h
           "
 
@@ -259,7 +268,7 @@ jobs:
             ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d --build && docker image prune -f"
           else
             echo "=========================================================="
-            echo "执行常规增量部署（保留数据卷，保证数据持久化）..."
+            echo "执行启动部署..."
             echo "=========================================================="
             ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local up -d --build && docker image prune -f"
           fi
