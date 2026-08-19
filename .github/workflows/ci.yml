@@ -206,11 +206,12 @@ jobs:
         run: |
           echo "执行 EC2 磁盘强力深度清理..."
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "
-            echo '=== 1. 停止并移除所有容器 ==='
+            echo '=== 1. 停止并移除所有容器与历史数据卷 ==='
             sudo docker stop \$(sudo docker ps -aq) 2>/dev/null || true
             sudo docker rm -f \$(sudo docker ps -aq) 2>/dev/null || true
+            sudo docker volume rm -f \$(sudo docker volume ls -q) 2>/dev/null || true
 
-            echo '=== 2. 清理全部无用镜像、构建缓存与未命名卷 ==='
+            echo '=== 2. 清理全部无用镜像、构建缓存 ==='
             sudo docker system prune -a -f --volumes || true
             sudo docker builder prune -a -f || true
 
