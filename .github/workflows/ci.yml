@@ -209,8 +209,10 @@ jobs:
             docker builder prune -a -f || true
             docker system prune -a -f || true
             sudo sh -c 'truncate -s 0 /var/lib/docker/containers/*/*-json.log' 2>/dev/null || true
-            sudo journalctl --vacuum-size=50M 2>/dev/null || true
-            sudo rm -rf /tmp/* 2>/dev/null || true
+            sudo rm -rf /var/lib/docker/buildkit/content/ingest/* 2>/dev/null || true
+            sudo journalctl --vacuum-size=20M 2>/dev/null || true
+            sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
+            rm -rf ~/portfolio/target/*.war 2>/dev/null || true
             mkdir -p ~/portfolio/target
             df -h
           "
