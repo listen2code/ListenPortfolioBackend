@@ -1,0 +1,3 @@
+# Docker build context ignore rules
+*
+!target/portfolio-0.0.1-SNAPSHOT.war
