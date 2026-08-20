@@ -138,4 +138,35 @@ class GlobalExceptionHandlerTest {
         assertEquals("参数不合法", response.getBody().getMessage());
     }
 
+    @Test
+    @DisplayName("handleHttpMessageNotReadable - 处理请求体解析异常")
+    void testHandleHttpMessageNotReadable() {
+        org.springframework.http.converter.HttpMessageNotReadableException exception = 
+                mock(org.springframework.http.converter.HttpMessageNotReadableException.class);
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRequestURI()).thenReturn("/v1/auth/login");
+
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleHttpMessageNotReadable(exception, request);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Malformed request body", response.getBody().getMessage());
+    }
+
+    @Test
+    @DisplayName("handleAuthenticationException - 处理未授权异常")
+    void testHandleAuthenticationException() {
+        org.springframework.security.core.AuthenticationException exception = 
+                new org.springframework.security.authentication.BadCredentialsException("Bad credentials");
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getRequestURI()).thenReturn("/v1/aboutMe");
+
+        ResponseEntity<ApiResponse<Object>> response = globalExceptionHandler.handleAuthenticationException(exception, request);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("Unauthorized", response.getBody().getMessage());
+    }
 }
