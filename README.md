@@ -2,7 +2,7 @@
 
 [![Backend CI](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml/badge.svg)](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml)
 
-ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 Spring Boot 4.0.1 构建。它的首要目标不是做成一个“泛企业平台样板”，而是为 Flutter 作品集 App 提供可信、可维护、可联调的 REST API，同时保留一定工程深度用于展示架构判断。
+ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 Spring Boot 3.2.1 构建。它的首要目标不是做成一个“泛企业平台样板”，而是为 Flutter 作品集 App 提供可信、可维护、可联调的 REST API，同时保留一定工程深度用于展示架构判断。
 
 当前文档遵循两条规则：
 
@@ -12,7 +12,7 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 ## 🎯 项目定位
 
 - **主定位**：Flutter Portfolio 的支撑型后端
-- **次定位**：展示 Spring Boot、JWT、Redis、监控、测试等工程实践
+- **次定位**：展示 Spring Boot、MyBatis-Plus、JWT、Redis、监控、测试等工程实践
 - **非主定位**：把所有企业级能力都塞进首页叙事
 
 ## ✅ 当前已实现
@@ -21,23 +21,24 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 
 - **认证流程**：注册、登录、刷新 Token、忘记密码、修改密码、退出登录、账号注销
 - **作品集 API**：`/v1/projects`、`/v1/aboutMe`、`/v1/user`
+- **动态国际化支持**：根据 `Accept-Language` 请求头动态分发中/英/日多语言数据
 - **统一响应结构**：`result`、`messageId`、`message`、`body`
 - **密码重置邮件**：SMTP + 邮件模板发送
 
 ### 工程能力
 
 - **JWT + Spring Security**：无状态鉴权
+- **MyBatis-Plus 3.5.7 ORM**：全量替换 Hibernate/JPA，强类型 `LambdaQueryWrapper`，无 OSIV 与懒加载陷阱
 - **Redis Token 黑名单**：退出登录、修改密码后立即失效当前 Token
 - **Refresh Token 持久化与吊销**：Redis 存储，支持单个/全部吊销（修改密码、注销时自动清除）
 - **AOP 限流**：按 IP / EMAIL / TOKEN / USER / CUSTOM 维度限流
-- **Flyway 迁移**：应用启动时执行数据库迁移
-- **OSIV 已关闭**：`spring.jpa.open-in-view=false`，懒加载收敛到 Service 层
+- **Flyway 迁移**：应用启动时执行数据库迁移（V1 建表 + V2 种子数据）
 - **Prometheus / Grafana / Actuator**：基础监控与健康检查
 - **结构化 JSON 日志**：便于后续接入 ELK / Loki
 - **GitHub Actions CI/CD**：Push/PR 自动编译、测试、JaCoCo 报告、SSH 部署到 AWS EC2
-- **Maven + Gradle 双构建支持**：提供标准 Gradle (v8.5) 脚本与 Wrapper，支持在 Android Studio 中一键导入、调试、开发与运行单元测试
+- **标准 Gradle 8.5 构建支持**：提供标准 Gradle 脚本与 Wrapper，支持在 Android Studio / IDEA 中一键导入、调试与运行单元测试
 - **JaCoCo + SpotBugs**：覆盖率与静态分析工具链已接入
-- **Docker 全栈部署**：App + MySQL + Redis + Prometheus + Grafana
+- **Docker 全栈部署**：App (Alpine JRE) + MySQL + Redis + Prometheus + Grafana
 - **账号软删除**：`delete-account` 标记删除并释放唯一索引，种子用户受保护
 
 ## 📡 当前 API 概览
@@ -67,8 +68,8 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
-| `GET` | `/v1/projects` | 公开 | 获取项目列表 |
-| `GET` | `/v1/aboutMe` | 需要 | 获取关于我信息 |
+| `GET` | `/v1/projects` | 公开 | 获取项目列表（支持 Accept-Language 国际化） |
+| `GET` | `/v1/aboutMe` | 需要 | 获取关于我信息（支持 Accept-Language 国际化） |
 
 ### 统一响应格式
 
@@ -97,19 +98,19 @@ ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 
 
 ```text
 src/main/java/com/listen/portfolio/
-├── api/v1/          # Controller + DTO
-├── service/         # 业务编排、事务边界、DTO 装配
-├── repository/      # Spring Data JPA
-├── entity/          # JPA Entity
-└── common/          # 配置、JWT、异常、响应模型、切面、日志等横切能力
+├── api/v1/          # Controller + DTO (projects, about, auth, user)
+├── service/         # 业务编排、事务边界、DTO 装配与多语言转换
+├── mapper/          # MyBatis-Plus Mapper 接口与 SQL 映射
+├── entity/          # MyBatis-Plus Entity 实体类
+└── common/          # 配置、JWT、异常、响应模型、切面、工具类等横切能力
 ```
 
 ### 当前分层原则
 
 - **Controller**：参数校验、调用 Service、返回 `ApiResponse`
-- **Service**：业务规则、事务边界、Entity -> DTO 装配
-- **Repository**：数据访问
-- **Entity**：只用于持久化映射，不直接作为 API 响应
+- **Service**：业务规则、事务边界、Entity -> DTO 装配与国际化
+- **Mapper**：MyBatis-Plus 数据访问
+- **Entity**：持久化映射模型，不直接作为 API 响应
 
 ## 🚀 本地启动
 

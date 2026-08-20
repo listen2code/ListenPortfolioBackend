@@ -38,12 +38,14 @@
 **目标**：改为软删除，并避免种子用户数据被误删。  
 **验收标准**：userId=1 不会被硬删除，已删除用户默认不再出现在查询结果中。
 
-### 4. OSIV 关闭验证与落地
+### 4. ORM 架构升级（从 JPA 迁移至 MyBatis-Plus 3.5.7）
 
-**现状**：已完成。`spring.jpa.open-in-view=false` 已在主配置 `application.properties` 与测试配置 `application-test.properties` 中全面生效，消除了 Spring Boot 启动警告。  
-**目标**：正式关闭 OSIV，把懒加载问题收敛到 Service 层解决。  
-**为什么现在做**：这直接关系到分层纪律是否真实成立。  
-**验收标准**：应用正常启动，全量 338+ 单元测试 100% 绿色通过（BUILD SUCCESS），无任何 `LazyInitializationException`。
+**现状**：已完成。全工程全面舍弃 Hibernate/JPA，无缝重构为 **MyBatis-Plus (v3.5.7)**。
+- 依赖替换：完全移除 `spring-boot-starter-data-jpa`，接入 `mybatis-plus-spring-boot3-starter:3.5.7`、`spring-boot-starter-jdbc` 与 `spring-boot-starter-aop`。
+- 实体改造：7 个实体类全部迁移为 MyBatis-Plus 规范注解（`@TableName`、`@TableId(type = IdType.AUTO)`、`@TableLogic`、`@TableField`）。
+- Mapper 数据访问层：创建 7 个 `BaseMapper<T>` 接口，管理子表关联（`user_certifications`、`project_tech_stack`、`skill_items`、`stat_tags`）。
+- 业务逻辑层：`UserService`、`AuthService`、`ProjectService`、`AboutMeService` 全面使用强类型 `LambdaQueryWrapper`，彻底根除 JPA N+1 与 Open-Session-In-View 性能陷阱。
+- 测试保障：338 个单元与集成测试全部 100% 绿色通过，自动生成 `schema-h2.sql` 支持纯内存 H2 隔离运行。
 
 ### 5. GitHub Actions CI
 
@@ -182,7 +184,7 @@ src/test/java/com/listen/portfolio/
 - [x] BCrypt 密码哈希
 - [x] Token 黑名单（Redis）
 - [x] 敏感配置环境变量化
-- [ ] Refresh Token 持久化与吊销
+- [x] Refresh Token 持久化与吊销
 - [x] 认证接口限流
 - [ ] 生产环境 HTTPS
 
@@ -206,7 +208,8 @@ src/test/java/com/listen/portfolio/
 - [x] 健康检查 / 探针
 - [x] 结构化 JSON 日志
 - [x] GitHub Actions CI/CD 防抖与自动部署
-- [x] 将 Maven 编译的项目扩展支持 Gradle 构建（保留 Maven 双驱动支持）
+- [x] 全工程全面迁移至标准 Gradle 8.5 构建与 Wrapper
+- [x] 全面升级为 MyBatis-Plus 3.5.7 ORM 架构
 ---
 
-📅 **最后更新**: 2026-08-15
+📅 **最后更新**: 2026-08-20

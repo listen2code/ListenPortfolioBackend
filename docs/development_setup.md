@@ -1,4 +1,4 @@
-﻿# 开发环境设置指南
+# 开发环境设置指南
 
 **Status**: `Implemented with Current-Setup Scope`
 
@@ -17,8 +17,7 @@
 | Component | Minimum Version | Recommended Version | Description |
 |------|----------|----------|------|
 | **Java** | 17 | 17 LTS | Must use Java 17 |
-| **Gradle** | 8.5 | 8.5+ (Wrapper Included) | Recommended build tool for Android Studio |
-| **Maven** | 3.8.0 | 3.9.0+ | Maven build tool |
+| **Gradle** | 8.5 | 8.5+ (Wrapper Included) | Standard build tool (Wrapper Included) |
 | **MySQL** | 8.0 | 8.0.33+ | Database |
 | **Redis** | 7.0 | 7.2+ | Cache and Blacklist |
 | **Git** | 2.30 | 2.40+ | Version Control |
