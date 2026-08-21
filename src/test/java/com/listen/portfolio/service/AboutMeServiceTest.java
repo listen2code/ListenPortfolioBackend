@@ -109,8 +109,15 @@ class AboutMeServiceTest {
         when(educationMapper.selectList(any())).thenReturn(mockEducation);
         when(languageMapper.selectList(any())).thenReturn(mockLanguages);
         when(skillMapper.selectList(any())).thenReturn(mockSkills);
-        when(skillMapper.findSkillItemsBySkillId(1L)).thenReturn(Arrays.asList("Java", "Python", "JavaScript"));
-        when(skillMapper.findSkillItemsBySkillId(2L)).thenReturn(Arrays.asList("MySQL", "PostgreSQL"));
+        when(skillMapper.findSkillItemEntitiesBySkillId(1L)).thenReturn(Arrays.asList(
+            createSkillItemEntity(1L, 1L, "Java"),
+            createSkillItemEntity(2L, 1L, "Python"),
+            createSkillItemEntity(3L, 1L, "JavaScript")
+        ));
+        when(skillMapper.findSkillItemEntitiesBySkillId(2L)).thenReturn(Arrays.asList(
+            createSkillItemEntity(4L, 2L, "MySQL"),
+            createSkillItemEntity(5L, 2L, "PostgreSQL")
+        ));
 
         Optional<AboutMeDto> result = aboutMeService.getAboutMeDto(1L);
 
@@ -417,11 +424,11 @@ class AboutMeServiceTest {
     @Test
     @DisplayName("toSkillDtos - null输入返回空列表")
     void testToSkillDtos_NullInput() throws Exception {
-        Method method = AboutMeService.class.getDeclaredMethod("toSkillDtos", List.class);
+        Method method = AboutMeService.class.getDeclaredMethod("toSkillDtos", List.class, Locale.class);
         method.setAccessible(true);
 
         @SuppressWarnings("unchecked")
-        List<SkillDto> result = (List<SkillDto>) method.invoke(aboutMeService, (List<SkillEntity>) null);
+        List<SkillDto> result = (List<SkillDto>) method.invoke(aboutMeService, (List<SkillEntity>) null, Locale.ENGLISH);
 
         assertTrue(result.isEmpty());
     }
@@ -429,11 +436,11 @@ class AboutMeServiceTest {
     @Test
     @DisplayName("toSkillDtos - 有效输入正确转换")
     void testToSkillDtos_ValidInput() throws Exception {
-        Method method = AboutMeService.class.getDeclaredMethod("toSkillDtos", List.class);
+        Method method = AboutMeService.class.getDeclaredMethod("toSkillDtos", List.class, Locale.class);
         method.setAccessible(true);
 
         @SuppressWarnings("unchecked")
-        List<SkillDto> result = (List<SkillDto>) method.invoke(aboutMeService, mockSkills);
+        List<SkillDto> result = (List<SkillDto>) method.invoke(aboutMeService, mockSkills, Locale.ENGLISH);
 
         assertEquals(2, result.size());
         assertEquals("Programming", result.get(0).getCategory());
@@ -444,11 +451,11 @@ class AboutMeServiceTest {
     @Test
     @DisplayName("toSkillDto - 实体正确转换为DTO")
     void testToSkillDto_ValidEntity() throws Exception {
-        Method method = AboutMeService.class.getDeclaredMethod("toSkillDto", SkillEntity.class);
+        Method method = AboutMeService.class.getDeclaredMethod("toSkillDto", SkillEntity.class, Locale.class);
         method.setAccessible(true);
         SkillEntity entity = createSkillEntity(1L, "Test Category", Arrays.asList("item1", "item2"));
 
-        SkillDto result = (SkillDto) method.invoke(aboutMeService, entity);
+        SkillDto result = (SkillDto) method.invoke(aboutMeService, entity, Locale.ENGLISH);
 
         assertEquals(1L, result.getId());
         assertEquals("Test Category", result.getCategory());
@@ -550,6 +557,14 @@ class AboutMeServiceTest {
         entity.setId(id);
         entity.setCategory(category);
         entity.setItems(items);
+        return entity;
+    }
+
+    private SkillItemEntity createSkillItemEntity(Long id, Long skillId, String itemName) {
+        SkillItemEntity entity = new SkillItemEntity();
+        entity.setId(id);
+        entity.setSkillId(skillId);
+        entity.setItemName(itemName);
         return entity;
     }
 }

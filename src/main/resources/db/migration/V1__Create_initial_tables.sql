@@ -132,11 +132,13 @@ CREATE TABLE IF NOT EXISTS education (
 -- ===================================================================
 -- 技能表 (skills)
 -- ===================================================================
--- 说明: 用户技能分类
+-- 说明: 用户技能分类，扩展多语言字段
 CREATE TABLE IF NOT EXISTS skills (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '技能ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
-    category VARCHAR(255) NOT NULL COMMENT '技能分类',
+    category VARCHAR(255) NOT NULL COMMENT '技能分类 (默认/英文)',
+    category_zh VARCHAR(255) COMMENT '技能分类 (中文)',
+    category_ja VARCHAR(255) COMMENT '技能分类 (日语)',
     score INT DEFAULT 85 COMMENT '技能评分 (0-100)',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     
@@ -147,12 +149,16 @@ CREATE TABLE IF NOT EXISTS skills (
 -- ===================================================================
 -- 技能项目表 (skill_items)
 -- ===================================================================
--- 说明: 技能具体项目
+-- 说明: 技能具体项目，扩展多语言字段
 CREATE TABLE IF NOT EXISTS skill_items (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '技能项目ID，主键自增',
     skill_id BIGINT NOT NULL COMMENT '技能ID',
-    item_name VARCHAR(255) NOT NULL COMMENT '技能项目名称',
-    PRIMARY KEY (skill_id, item_name),
-    FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
+    item_name VARCHAR(255) NOT NULL COMMENT '技能项目名称 (默认/英文)',
+    item_name_zh VARCHAR(255) COMMENT '技能项目名称 (中文)',
+    item_name_ja VARCHAR(255) COMMENT '技能项目名称 (日语)',
+    FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+    
+    INDEX idx_skill_items_skill_id (skill_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='技能项目表';
 
 -- ===================================================================

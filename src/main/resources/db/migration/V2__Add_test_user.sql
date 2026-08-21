@@ -123,23 +123,52 @@ INSERT IGNORE INTO education (id, user_id, degree, degree_zh, degree_ja, school,
  '福建省省级“三好生”、校级优秀毕业生、一/二等奖学金、优秀团干部标兵',
  '福建省級優秀学生、大学優秀卒業生、一等・二等奨学金、優秀学生幹部');
 
--- 6. 插入技能数据 (包含 6 大维度与真实评分)
-INSERT IGNORE INTO skills (id, user_id, category, score) VALUES
-(1, 1, 'Android Native', 97),
-(2, 1, 'Flutter', 93),
-(3, 1, 'Performance & APM', 96),
-(4, 1, 'Architecture', 94),
-(5, 1, 'Java & Backend', 84),
-(6, 1, 'DevOps & CI/CD', 89);
+-- 6. 插入技能数据 (包含英文默认、中文 _zh、日语 _ja 与真实评分)
+INSERT IGNORE INTO skills (id, user_id, category, category_zh, category_ja, score) VALUES
+(1, 1, 'Android Native', 'Android 原生', 'Android ネイティブ', 97),
+(2, 1, 'Flutter', 'Flutter 跨端', 'Flutter 開発', 93),
+(3, 1, 'Performance & APM', '性能调优 & APM', '性能改善・APM', 96),
+(4, 1, 'Architecture', '系统架构', 'アーキテクチャ', 94),
+(5, 1, 'Java & Backend', 'Java 后端', 'Java バックエンド', 84),
+(6, 1, 'DevOps & CI/CD', '工程与 DevOps', 'DevOps・CI/CD', 89);
 
--- 7. 插入技能项目数据
-INSERT IGNORE INTO skill_items (skill_id, item_name) VALUES
-(1, 'Kotlin & Java Advanced'), (1, 'Android SDK & Framework'), (1, 'JNI / C++ & NDK'), (1, 'Componentization Architecture'), (1, 'Plugin (Shadow) & Hotfix'),
-(2, 'Dart Core & Async'), (2, 'Clean Architecture + MVI'), (2, 'Riverpod State Management'), (2, 'Canvas & CustomPainter'), (2, 'Platform Channel & FIDO2'),
-(3, 'Vsync Frame & Jank Monitor'), (3, 'ANR & Stutter Detection SDK'), (3, 'Feed Lag 40% Reduction'), (3, 'Memory & GC Profiling'), (3, 'Systrace & Perfetto Tracing'),
-(4, 'Clean Architecture'), (4, 'MVI Unidirectional Flow'), (4, 'Zone Distributed Tracing'), (4, '401 Concurrent Retry Queue'), (4, 'Crash Safe Mode Circuit Breaker'),
-(5, '1-Yr Java Server Experience'), (5, 'Spring Boot Microservices'), (5, 'RESTful API & Contract'), (5, 'MySQL & Index Tuning'), (5, 'Redis Cache & Docker'),
-(6, 'CI/CD (Jenkins / GitHub Actions)'), (6, 'Gradle 30%+ Build Tuning'), (6, 'Custom Lint Rule Sets'), (6, 'Automated Testing (540+ Suites)'), (6, 'Shorebird OTA Code Push');
+-- 7. 插入技能项目数据 (包含英文默认、中文 _zh、日语 _ja)
+INSERT IGNORE INTO skill_items (skill_id, item_name, item_name_zh, item_name_ja) VALUES
+(1, 'Kotlin & Java Advanced', 'Kotlin & Java 深度开发', 'Kotlin & Java 開発'),
+(1, 'Android SDK & Framework', 'Android SDK & Framework 源码', 'Android SDK & Framework'),
+(1, 'JNI / C++ & NDK', 'JNI / C++ & NDK 底层开发', 'JNI / C++ & NDK 連携'),
+(1, 'Componentization Architecture', '组件化与模块化架构设计', 'コンポーネント化アーキテクチャ'),
+(1, 'Plugin (Shadow) & Hotfix', 'Shadow 插件化与热修复治理', 'Shadow プラグイン・熱修正'),
+
+(2, 'Dart Core & Async Mechanism', 'Dart 语言精通与异步机制', 'Dart 言語・非同期機構'),
+(2, 'Clean Architecture + MVI', 'Clean Architecture + MVI 架构', 'Clean Architecture + MVI 設計'),
+(2, 'Riverpod State Management', 'Riverpod 响应式状态管理', 'Riverpod 状態管理'),
+(2, 'Canvas & CustomPainter Engine', 'Canvas 底层自绘引擎', 'Canvas・CustomPainter 自作描画'),
+(2, 'Platform Channel & FIDO2', 'Platform Channel 与 FIDO2 免密', 'Platform Channel & FIDO2 生体認証'),
+
+(3, 'Vsync Frame & Jank Monitor', 'Vsync 物理帧率与卡顿监测', 'Vsync フレーム・Jank計測'),
+(3, 'ANR & Stutter Detection SDK', '主线程卡顿与 ANR 监控 SDK', 'ANR・UIカクつき検知SDK'),
+(3, 'Feed Lag 40% Reduction', 'Feed 流时延治理 (耗时降低40%)', 'Feed レスポンス改善 (遅延40%減)'),
+(3, 'Memory & GC Profiling', '内存泄漏拦截与 GC 深度剖析', 'メモリリーク・GCプロファイリング'),
+(3, 'Systrace & Perfetto Tracing', 'Systrace & Perfetto 链路分析', 'Systrace & Perfetto 分析'),
+
+(4, 'Clean Architecture', 'Clean Architecture 分层架构', 'Clean Architecture クリーン設計'),
+(4, 'MVI Unidirectional Flow', 'MVI 单向响应式数据流', 'MVI 単方向数据フロー'),
+(4, 'Zone Distributed Tracing', 'Zone 分布式链路追踪 (traceId)', 'Zone 分散トレーシング (traceId)'),
+(4, '401 Concurrent Retry Queue', '401 并发静默重试队列', '401 並行リトライキュー'),
+(4, 'Crash Safe Mode Circuit Breaker', 'Crash Safe Mode 熔断自愈', 'Crash Safe Mode 自動復旧'),
+
+(5, '1-Yr Java Server Experience', '1年 Java 服务端专职开发经验', 'Java サーバー開発実務経験（1年）'),
+(5, 'Spring Boot Microservices', 'Spring Boot 生产级微服务搭建', 'Spring Boot マイクロサービス'),
+(5, 'RESTful API & Contract', 'RESTful API 契约规范与治理', 'RESTful API 規約・契約管理'),
+(5, 'MySQL & Index Tuning', 'MySQL 数据库设计与索引调优', 'MySQL 設計・インデックス最適化'),
+(5, 'Redis Cache & Docker', 'Redis 缓存策略与 Docker 容器化', 'Redis キャッシュ & Docker 運用'),
+
+(6, 'CI/CD (Jenkins / GitHub Actions)', 'CI/CD 自动化流水线构建', 'CI/CD 自動化パイプライン'),
+(6, 'Gradle 30%+ Build Tuning', 'Gradle 编译提速 (耗时降低30%+)', 'Gradle ビルド高速化 (30%+短縮)'),
+(6, 'Custom Lint Rule Sets', 'Custom Lint 自定义静态分析规则', 'Custom Lint 静的解析ルール'),
+(6, 'Automated Testing (540+ Suites)', '全量自动化测试 (540+ 套件)', '自動テスト (540+ 件全緑)'),
+(6, 'Shorebird OTA Code Push', 'Shorebird OTA 热更新集成', 'Shorebird OTA コードプッシュ');
 
 -- 8. 插入语言能力数据 (包含英文默认、中文 _zh、日语 _ja)
 INSERT IGNORE INTO languages (id, user_id, name, name_zh, name_ja, level, level_zh, level_ja) VALUES

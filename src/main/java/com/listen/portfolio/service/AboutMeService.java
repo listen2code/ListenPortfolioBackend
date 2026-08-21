@@ -12,6 +12,7 @@ import com.listen.portfolio.entity.EducationEntity;
 import com.listen.portfolio.entity.ExperienceEntity;
 import com.listen.portfolio.entity.LanguageEntity;
 import com.listen.portfolio.entity.SkillEntity;
+import com.listen.portfolio.entity.SkillItemEntity;
 import com.listen.portfolio.entity.StatEntity;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.mapper.EducationMapper;
@@ -112,7 +113,12 @@ public class AboutMeService {
         );
         if (skills != null) {
             for (SkillEntity sk : skills) {
-                sk.setItems(skillMapper.findSkillItemsBySkillId(sk.getId()));
+                List<SkillItemEntity> itemEntities = skillMapper.findSkillItemEntitiesBySkillId(sk.getId());
+                if (itemEntities != null) {
+                    sk.setItems(itemEntities.stream()
+                            .map(item -> I18nUtils.getLocalizedText(item.getItemName(), item.getItemNameZh(), item.getItemNameJa(), locale))
+                            .collect(Collectors.toList()));
+                }
             }
         }
         userInfo.setSkills(skills);
@@ -132,7 +138,7 @@ public class AboutMeService {
         dto.setExperiences(toExperienceDtos(userInfo.getExperiences(), locale));
         dto.setEducation(toEducationDtos(userInfo.getEducation(), locale));
         dto.setLanguages(toLanguageDtos(userInfo.getLanguages(), locale));
-        dto.setSkills(toSkillDtos(userInfo.getSkills()));
+        dto.setSkills(toSkillDtos(userInfo.getSkills(), locale));
         return Optional.of(dto);
     }
 
@@ -214,19 +220,19 @@ public class AboutMeService {
         return dto;
     }
 
-    private List<SkillDto> toSkillDtos(List<SkillEntity> skills) {
+    private List<SkillDto> toSkillDtos(List<SkillEntity> skills, Locale locale) {
         if (skills == null) {
             return Collections.emptyList();
         }
         return skills.stream()
-                .map(this::toSkillDto)
+                .map(entity -> toSkillDto(entity, locale))
                 .collect(Collectors.toList());
     }
 
-    private SkillDto toSkillDto(SkillEntity entity) {
+    private SkillDto toSkillDto(SkillEntity entity, Locale locale) {
         SkillDto dto = new SkillDto();
         dto.setId(entity.getId());
-        dto.setCategory(entity.getCategory());
+        dto.setCategory(I18nUtils.getLocalizedText(entity.getCategory(), entity.getCategoryZh(), entity.getCategoryJa(), locale));
         dto.setScore(entity.getScore() != null ? entity.getScore() : 85);
         dto.setItems(nullToEmpty(entity.getItems()));
         return dto;
