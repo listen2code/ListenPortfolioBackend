@@ -123,19 +123,23 @@ INSERT IGNORE INTO education (id, user_id, degree, degree_zh, degree_ja, school,
  '福建省省级“三好生”、校级优秀毕业生、一/二等奖学金、优秀团干部标兵',
  '福建省級優秀学生、大学優秀卒業生、一等・二等奨学金、優秀学生幹部');
 
--- 6. 插入技能数据
-INSERT IGNORE INTO skills (id, user_id, category) VALUES
-(1, 1, 'Mobile'),
-(2, 1, 'Architecture'),
-(3, 1, 'Performance & APM'),
-(4, 1, 'Backend & DevOps');
+-- 6. 插入技能数据 (包含 6 大维度与真实评分)
+INSERT IGNORE INTO skills (id, user_id, category, score) VALUES
+(1, 1, 'Android Native', 97),
+(2, 1, 'Flutter', 93),
+(3, 1, 'Performance & APM', 96),
+(4, 1, 'Architecture', 94),
+(5, 1, 'Java & Backend', 84),
+(6, 1, 'DevOps & CI/CD', 89);
 
 -- 7. 插入技能项目数据
 INSERT IGNORE INTO skill_items (skill_id, item_name) VALUES
-(1, 'Flutter'), (1, 'Android Native'), (1, 'Dart'), (1, 'Kotlin'), (1, 'Java'),
-(2, 'Clean Architecture'), (2, 'Componentization'), (2, 'Plugin Architecture'), (2, 'MVI'), (2, 'MVVM'), (2, 'SOLID'),
-(3, 'Profiling'), (3, 'Memory Optimization'), (3, 'Feed Monitoring'), (3, 'Systrace'), (3, 'LeakCanary'),
-(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'), (4, 'CI/CD');
+(1, 'Kotlin & Java Advanced'), (1, 'Android SDK & Framework'), (1, 'JNI / C++ & NDK'), (1, 'Componentization Architecture'), (1, 'Plugin (Shadow) & Hotfix'),
+(2, 'Dart Core & Async'), (2, 'Clean Architecture + MVI'), (2, 'Riverpod State Management'), (2, 'Canvas & CustomPainter'), (2, 'Platform Channel & FIDO2'),
+(3, 'Vsync Frame & Jank Monitor'), (3, 'ANR & Stutter Detection SDK'), (3, 'Feed Lag 40% Reduction'), (3, 'Memory & GC Profiling'), (3, 'Systrace & Perfetto Tracing'),
+(4, 'Clean Architecture'), (4, 'MVI Unidirectional Flow'), (4, 'Zone Distributed Tracing'), (4, '401 Concurrent Retry Queue'), (4, 'Crash Safe Mode Circuit Breaker'),
+(5, '1-Yr Java Server Experience'), (5, 'Spring Boot Microservices'), (5, 'RESTful API & Contract'), (5, 'MySQL & Index Tuning'), (5, 'Redis Cache & Docker'),
+(6, 'CI/CD (Jenkins / GitHub Actions)'), (6, 'Gradle 30%+ Build Tuning'), (6, 'Custom Lint Rule Sets'), (6, 'Automated Testing (540+ Suites)'), (6, 'Shorebird OTA Code Push');
 
 -- 8. 插入语言能力数据 (包含英文默认、中文 _zh、日语 _ja)
 INSERT IGNORE INTO languages (id, user_id, name, name_zh, name_ja, level, level_zh, level_ja) VALUES

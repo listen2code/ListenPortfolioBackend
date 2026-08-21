@@ -15,5 +15,6 @@ import java.util.List;
 public class SkillDto {
     private Long id;
     private String category;
+    private Integer score;
     private List<String> items;
 }

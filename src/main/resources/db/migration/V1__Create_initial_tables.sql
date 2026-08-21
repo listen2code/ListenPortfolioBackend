@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS skills (
     id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '技能ID，主键自增',
     user_id BIGINT NOT NULL COMMENT '用户ID',
     category VARCHAR(255) NOT NULL COMMENT '技能分类',
+    score INT DEFAULT 85 COMMENT '技能评分 (0-100)',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     
     INDEX idx_skills_user_id (user_id),

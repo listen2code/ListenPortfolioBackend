@@ -227,6 +227,7 @@ public class AboutMeService {
         SkillDto dto = new SkillDto();
         dto.setId(entity.getId());
         dto.setCategory(entity.getCategory());
+        dto.setScore(entity.getScore() != null ? entity.getScore() : 85);
         dto.setItems(nullToEmpty(entity.getItems()));
         return dto;
     }

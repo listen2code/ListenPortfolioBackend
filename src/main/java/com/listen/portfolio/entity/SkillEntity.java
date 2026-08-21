@@ -21,6 +21,7 @@ public class SkillEntity {
     private Long userId;
 
     private String category;
+    private Integer score;
 
     @TableField(exist = false)
     private List<String> items;
@@ -47,6 +48,14 @@ public class SkillEntity {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
     }
 
     public List<String> getItems() {
