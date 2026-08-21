@@ -98,6 +98,7 @@ src/test/java/com/listen/portfolio/
 - [x] Service 业务层引入 Locale 动态解析（利用 `LocaleContextHolder` 与 `I18nUtils`），实现 DTO 的对应语言文本自动转换装配
 - [x] 注册 `AcceptHeaderLocaleResolver` 与拦截器处理客户端 Dio 传入的 `Accept-Language` 请求头
 - [x] ListenCore 升级 `0.0.49`，解耦 `onInjectCommonHeaders` 拦截器，确保公开/访客接口（如 `/v1/projects`）也注入 `Accept-Language`
+- [x] 核心技能 6 大维度多语言支持落地：扩展 `skills`（`category_zh`, `category_ja`, `score`）与 `skill_items`（`item_name_zh`, `item_name_ja`）多语言表结构，创建 `SkillItemEntity` 并通过 `I18nUtils` 动态解析 Locale，单测 100% 跑通并发布上线
 
 ### 5. Nginx 反向代理与 Let's Encrypt HTTPS 部署
 
@@ -199,7 +200,7 @@ src/test/java/com/listen/portfolio/
 - [x] Flutter 端适配 `ProjectDto.businessId`
 - [x] Flutter 端适配 `StatDto.id` vs `businessId` 映射
 - [x] Flutter dev 环境配置指向后端 API URL
-- [x] V2 迁移脚本
+- [x] V2 迁移脚本与 6 大技能维度中/英/日多语言数据
 
 ### 工程化
 
@@ -212,4 +213,4 @@ src/test/java/com/listen/portfolio/
 - [x] 全面升级为 MyBatis-Plus 3.5.7 ORM 架构
 ---
 
-📅 **最后更新**: 2026-08-20
+📅 **最后更新**: 2026-08-21
