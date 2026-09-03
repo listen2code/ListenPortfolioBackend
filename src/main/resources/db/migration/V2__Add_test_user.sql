@@ -37,15 +37,28 @@ INSERT IGNORE INTO projects (id, business_id, title, title_zh, title_ja, subtitl
 
 (2, 'listen-core-flutter', 'Listen Core Flutter', 'Listen Core 核心框架', 'Listen Core 核心フレームワーク',
  'Framework', '核心基础库', 'コアライブラリ',
- 'A foundational framework for Flutter projects providing base classes for MVI, standardized network wrappers, and lifecycle management.',
- '为 Flutter 项目打造的底座框架，提供 MVI 基类、标准化网络请求封装及生命周期管理机制。',
- 'Flutterプロジェクト向けの基盤フレームワーク。MVI基底クラス、標準化ネットワークラッパー、ライフサイクル管理を提供。',
- 'localhost/images/project2.jpg', 'https://github.com/listen2code/ListenCoreFlutter'),
+ 'A foundational framework for Flutter projects providing base classes for MVI, standardized network(5, 'tech-knowledge-base', 'Tech Knowledge Base', '技术知识库文章', '技術ナレッジベース',
+ 'Articles & Docs', '技术文章与文档', '技術記事・ドキュメント',
+ 'A curated collection of my technical articles, architecture notes, and development experiences over the past 10 years.',
+ '近 10 年移动端与全栈开发的精选技术文章、架构设计笔记及实践经验总结。',
+ '過去10年間にわたる技術記事、アーキテクチャノート、開発ノウハウの厳選コレクション。',
+ 'localhost/images/project5.jpg', 'https://github.com/listen2code/article'),
 
-(3, 'listen-ui-kit', 'Listen UI Kit', 'Listen UI 组件库', 'Listen UI コンポーネント集',
- 'Common Library', '公共 UI 库', '共通UIライブラリ',
- 'A comprehensive UI component library for consistent branding and rapid development across multiple Flutter applications.',
- '高复用的通用 UI 组件库，用于保持多款 Flutter 应用间视觉规范一致与快速迭代开发。',
+(6, 'listen-expense-tracker', 'Listen Expense Tracker', 'Listen Expense Tracker 原生记账', 'Listen Expense Tracker 家計簿アプリ',
+ 'Android App', '原生移动应用', 'ネイティブAndroidアプリ',
+ 'A modern native Android personal finance app built with Kotlin 2.x, Jetpack Compose, MVI, Room Local-First architecture, Google Credential Manager, and Google Drive cloud backup.',
+ '基于 Kotlin 2.x + Jetpack Compose + MVI + Room 离线优先架构打造的原生 Android 极简记账应用。支持 Google Credential Manager 原生账户认证、Google Drive 云端备份恢复、多维 Canvas 统计图表及桌面小组件。',
+ 'Kotlin 2.x、Jetpack Compose、MVIパターン、Roomローカルファースト設計で構築されたネイティブAndroid家計簿アプリ。Google Credential Manager認証、Google Driveクラウドバックアップ、Canvasグラフ分析、AppWidgetを搭載。',
+ 'localhost/images/project6.jpg', 'https://github.com/listen2code/ListenExpenseTracker');
+
+-- 3. 插入项目技术栈数据
+INSERT IGNORE INTO project_tech_stack (project_id, tech_name) VALUES
+(1, 'Flutter'), (1, 'Riverpod'), (1, 'Clean Architecture'), (1, 'MVI'),
+(2, 'Dart'), (2, 'Riverpod'), (2, 'Dio'), (2, 'Architecture'),
+(3, 'Flutter'), (3, 'Design System'), (3, 'CustomPainter'),
+(4, 'Spring Boot'), (4, 'MySQL'), (4, 'Redis'), (4, 'Docker'),
+(5, 'Markdown'), (5, 'Documentation'), (5, 'Knowledge Sharing'),
+(6, 'Kotlin'), (6, 'Jetpack Compose'), (6, 'MVI'), (6, 'Room'), (6, 'Google Drive API');��',
  '複数のFlutterアプリで一貫したブランディングと迅速な開発を実現する包括的なUIコンポーネントライブラリ。',
  'localhost/images/project3.jpg', 'https://github.com/listen2code/ListenUikitFlutter'),
 

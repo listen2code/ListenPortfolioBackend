@@ -1,4 +1,4 @@
-﻿# AWS 部署与云原生运维指南
+# AWS 部署与云原生运维指南
 
 本指南介绍如何将 Web 应用部署到 AWS 平台。主要包括两部分内容：
 1. **轻量级单实例方案 (EC2 + Docker Compose)**：适合开发联调、演示及低成本轻量级环境运行，已针对 `t2.micro` 等低内存实例进行了性能加固。
@@ -191,7 +191,7 @@ docker compose --profile local up -d --build
 * **连接命令**：
   ```powershell
   # 如果您的密钥在 Windows 默认下载路径，请运行（注意路径包含空格需要加双引号）：
-  ssh -i "C:\Users\liste\Downloads\listen (1).pem" ec2-user@13.218.192.181
+  ssh -i "tool/listen.pem" ec2-user@13.218.192.181
   ```
 * **说明**：将上面的路径和 IP 替换为您的实际私钥路径和最新的 EC2 公网 IP 即可。
 
@@ -210,7 +210,7 @@ docker compose --profile local up -d --build
    - **SSH 端口**: `22`
    - **用户名**: `ec2-user`
    - **认证方法**: `公钥 (Public Key)`
-   - **私钥文件 (Private Key)**: 选择您本地的 `C:\Users\liste\Downloads\listen (1).pem` 文件。
+   - **私钥文件 (Private Key)**: 选择您本地的 `tool/listen.pem` 文件。
 
 #### 10.3 外部浏览器访问监控及服务端口
 如果您的安全组放行了对应端口，您可以在本地浏览器中直接访问以下面板：
