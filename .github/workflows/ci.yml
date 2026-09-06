@@ -201,33 +201,28 @@ jobs:
             ServerAliveCountMax 3
           EOF
 
-      # 步骤 3.6：深度清理 EC2 磁盘空间（强制停止所有容器、彻底清除所有旧镜像、构建缓存与系统日志）
+      # 步骤 3.6：深度清理 EC2 磁盘空间与孤儿构建层
       - name: Deep Clean EC2 Disk Space and Docker Cache
         run: |
-          echo "执行 EC2 磁盘强力深度清理..."
+          echo "执行 EC2 磁盘空间与 Docker 缓存自动清理..."
           ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "
-            echo '=== 1. 停止并移除所有容器与历史数据卷 ==='
-            sudo docker stop \$(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker rm -f \$(sudo docker ps -aq) 2>/dev/null || true
-            sudo docker volume rm -f \$(sudo docker volume ls -q) 2>/dev/null || true
+            # 1. 若存在专用清理脚本，优先执行自动孤儿层检测与深度清理
+            if [ -f ~/portfolio/tools/clean_docker_orphans.py ]; then
+              python3 ~/portfolio/tools/clean_docker_orphans.py || true
+            else
+              sudo docker image prune -f || true
+              sudo docker builder prune -a -f --keep-storage 0 || true
+            fi
 
-            echo '=== 2. 清理全部无用镜像、构建缓存 ==='
-            sudo docker system prune -a -f --volumes || true
-            sudo docker builder prune -a -f || true
-
-            echo '=== 3. 清理 Docker 与系统日志、临时文件、包管理器缓存 ==='
-            sudo rm -rf /var/lib/docker/buildkit/* 2>/dev/null || true
-            sudo rm -rf /var/lib/docker/tmp/* 2>/dev/null || true
-            sudo journalctl --vacuum-size=10M 2>/dev/null || true
-            sudo rm -rf /var/log/journal/* 2>/dev/null || true
+            # 2. 清理历史系统日志与临时缓存
+            sudo journalctl --vacuum-time=1d 2>/dev/null || true
             sudo yum clean all 2>/dev/null || sudo dnf clean all 2>/dev/null || true
             sudo rm -rf /var/cache/yum /var/cache/dnf 2>/dev/null || true
-            sudo rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
             rm -rf ~/portfolio/target/*.war 2>/dev/null || true
-            mkdir -p ~/portfolio/target
+            mkdir -p ~/portfolio/target ~/portfolio/tools
 
-            echo '=== 4. 清理后磁盘剩余空间 ==='
-            df -h
+            echo '=== 清理后磁盘空间 ==='
+            df -h /
           "
 
       # 步骤 3.7：使用安全传输协议（SCP）将本地生成的 WAR 包上传至云端 target/ 目录下
@@ -235,11 +230,12 @@ jobs:
         run: |
           scp -i ~/.ssh/id_rsa build/libs/portfolio-0.0.1-SNAPSHOT.war ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/target/
 
-      # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、docker-compose 和监控目录上传至云端工作目录
+      # 步骤 3.8：使用 SCP 将运行时的 Dockerfile、docker-compose、监控与工具目录上传至云端工作目录
       - name: Upload Configurations via SCP
         run: |
           scp -i ~/.ssh/id_rsa Dockerfile docker-compose.yml ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
           scp -i ~/.ssh/id_rsa -r monitoring ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
+          scp -i ~/.ssh/id_rsa -r tools ec2-user@${{ secrets.AWS_HOST }}:~/portfolio/
 
       # 步骤 3.8.5：在 EC2 服务器上动态生成 .env 与 .dockerignore 配置文件
       - name: Generate Config Files on EC2
@@ -257,7 +253,7 @@ jobs:
           FRONTEND_URL=${{ secrets.FRONTEND_URL || format('http://{0}:8080', secrets.AWS_HOST) }}
           EOF"
 
-      # 步骤 3.9：连入云端 EC2 目录，根据 commit 消息决定是增量部署还是清库重构部署
+      # 步骤 3.9：连入云端 EC2 目录，根据 commit 消息决定是增量部署还是清库重构部署，并在部署完成后自动清理孤儿构建层
       - name: Launch Containers via Docker Compose on EC2
         env:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
@@ -266,10 +262,10 @@ jobs:
             echo "=========================================================="
             echo "检测到包含 'clean deploy'，执行清库部署（删除数据卷）..."
             echo "=========================================================="
-            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local up -d --build && docker image prune -f"
+            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local build --no-cache app && docker compose --profile local up -d && python3 ~/portfolio/tools/clean_docker_orphans.py"
           else
             echo "=========================================================="
-            echo "执行启动部署..."
+            echo "执行常规增量部署（保留数据库与缓存数据卷）..."
             echo "=========================================================="
-            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local up -d --build && docker image prune -f"
+            ssh -i ~/.ssh/id_rsa ec2-user@${{ secrets.AWS_HOST }} "cd ~/portfolio && docker compose --profile local build --no-cache app && docker compose --profile local up -d && python3 ~/portfolio/tools/clean_docker_orphans.py"
           fi

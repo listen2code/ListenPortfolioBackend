@@ -36,6 +36,8 @@ local.properties
 .vscode/
 .trae/
 tool/listen.pem
+tools/*.pem
+*.pem
 
 ### Environment secrets ###
 .env

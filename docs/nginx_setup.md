@@ -1,4 +1,4 @@
-﻿# 🌐 Nginx 架构配置与静态资源/API 代理运维指南
+# 🌐 Nginx 架构配置与静态资源/API 代理运维指南
 
 本文档详细记录了在 AWS EC2 (`13.218.192.181`) 上配置 Nginx 的完整架构设计、配置文件实录、运作原理及运维调试命令。
 
@@ -34,6 +34,8 @@ graph TD
 server {
     listen 80;
     server_name _;
+    # 允许最大 10MB 请求体（用于头像 Base64 上传与大文件请求）
+    client_max_body_size 10m;
 
     # 1. 托管 Flutter Web 单页应用静态文件
     location / {
@@ -79,6 +81,7 @@ server {
 
 | 配置段 / 指令 | 作用描述 | 技术细节 |
 | :--- | :--- | :--- |
+| `client_max_body_size 10m;` | 客户端请求体大小上限 | Nginx 默认限制为 1MB。上传 Base64 编码头像时，请求体易超过 1MB 导致 Nginx 直接返回 `413 Request Entity Too Large`。配置 10MB 支持大型图片与上传需求。 |
 | `location ^~ /api/` | 优先匹配与正则屏蔽修饰符 | **核心修正**：使用 `^~` 前缀匹配修饰符。当请求为 `/api/images/project1.jpg` 时，Nginx 优先匹配 `/api/` 并**跳过后续的 `.jpg` 正则规则**，确保图片请求正确透传至 Spring Boot 后端。 |
 | `proxy_pass http://127.0.0.1:8080/;` | 接口与图片透传剥离 | 当前端访问 `/api/images/project1.jpg` 时，Nginx 自动剥离 `/api` 前缀，透传给后端 `http://127.0.0.1:8080/images/project1.jpg`。 |
 | `try_files $uri $uri/ /index.html` | SPA 单页应用路由支持 | 当用户刷新非首页 URL 时，Nginx 返回 `index.html` 交由 Flutter 内部路由解析。 |

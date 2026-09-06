@@ -155,12 +155,26 @@ docker compose --profile local up -d --build
 流水线默认采用安全的**增量热部署**，仅在特定指令下才执行**清库重置部署**：
 * **常规增量部署（默认，保留数据）**：
   - **触发条件**：常规 Git Push，或者 Commit 消息中不包含清库指令。
-  - **云端指令**：`docker compose up -d --build`
+  - **云端指令**：`docker compose build --no-cache app && docker compose up -d`
   - **表现**：**保留数据库和缓存中的全部数据卷**。以增量方式热替换后端应用包，停机时间控制在 3-5 秒，数据 100% 安全。
 * **清库重置部署（特定指令）**：
   - **触发条件**：Git Commit 消息中包含 **`clean deploy`** 或 **`deploy-clean`**。
-  - **云端指令**：`docker compose down -v && docker compose up -d --build`
+  - **云端指令**：`docker compose down -v && docker compose build --no-cache app && docker compose up -d`
   - **表现**：**清除包括 MySQL 数据库数据在内的所有 Docker 挂载数据卷**，并在容器重启时执行 Flyway 重新生成全新的空表及初始测试账号。适用于需要将环境数据进行大版本重构或彻底清洗的场景。
+
+#### 8.4 自动化 Docker 孤儿层清理与磁盘垃圾自愈保障
+对于 8GB 规格的低配 EC2 云服务器，Docker BuildKit 在多次发布后容易因数据库索引失步产生累积数 GB 的孤儿层（Orphaned overlay2 layers）。
+本项目落地了双重自动化清理机制：
+1. **发布即清理 (Deployment Hook)**：
+   - 在 CI/CD 流水线构建应用时增加 `--no-cache` 参数，防止 `app.war` 被 BuildKit 多次缓存；
+   - 部署脚本内置 [`tools/clean_docker_orphans.py`](../tools/clean_docker_orphans.py)，每次部署完成后自动运行。该工具通过 `docker inspect` 全局反查活跃容器与镜像的 `GraphDriver` 引用树，精准识别并物理清除未引用的孤儿层、悬空镜像及 systemd 过期日志，确保每次部署后磁盘使用率始终维持在安全水位。
+2. **定时防溢出哨兵 (Weekly Systemd Timer)**：
+   - 服务器配置了 `docker-cleanup.timer` 定时服务，每周日凌晨 03:00 自动执行一次孤儿层与日志深度清扫，即使长期无新部署也不会发生磁盘悄然占满。
+3. **手动清理命令**：
+   ```bash
+   # 随时在 EC2 终端执行即刻清扫并显示当前磁盘用量
+   python3 ~/portfolio/tools/clean_docker_orphans.py
+   ```
 
 ---
 
