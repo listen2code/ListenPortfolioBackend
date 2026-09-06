@@ -304,6 +304,12 @@ public class UserController {
         
         logger.info("Received upload-avatar request for current user: {}", username);
 
+        if (!userService.isValidAvatarData(uploadAvatarRequest.getAvatar())) {
+            logger.warn("Invalid avatar data provided for user: {}", username);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(Constants.ERR_INVALID_IMAGE, "Invalid avatar image format or size"));
+        }
+
         Optional<UserSummaryDto> updatedUser = userService.updateAvatar(username, uploadAvatarRequest.getAvatar());
         if (updatedUser.isPresent()) {
             logger.info("Avatar uploaded successfully for user: {}", username);

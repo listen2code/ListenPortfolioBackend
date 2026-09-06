@@ -413,4 +413,105 @@ class UserServiceTest {
         verify(userMapper).findByNameCaseSensitive("testuser");
         verify(userMapper).selectById(1L);
     }
+
+    @Test
+    @DisplayName("isValidAvatarData - 合法 URL 测试")
+    void testIsValidAvatarData_ValidUrl() {
+        assertTrue(userService.isValidAvatarData("https://api.dicebear.com/10.x/bottts/svg?seed=Listen"));
+        assertTrue(userService.isValidAvatarData("http://example.com/avatar.png"));
+    }
+
+    @Test
+    @DisplayName("isValidAvatarData - 非法参数及空值测试")
+    void testIsValidAvatarData_NullAndBlank() {
+        assertFalse(userService.isValidAvatarData(null));
+        assertFalse(userService.isValidAvatarData(""));
+        assertFalse(userService.isValidAvatarData("   "));
+        assertFalse(userService.isValidAvatarData("http://example.com/avatar\n.png"));
+    }
+
+    @Test
+    @DisplayName("isValidAvatarData - 合法 PNG Base64 测试")
+    void testIsValidAvatarData_ValidPngBase64() {
+        String validPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        assertTrue(userService.isValidAvatarData(validPng));
+    }
+
+    @Test
+    @DisplayName("isValidAvatarData - 合法 SVG Base64 测试")
+    void testIsValidAvatarData_ValidSvgBase64() {
+        String svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"></svg>";
+        String validSvg = "data:image/svg+xml;base64," + java.util.Base64.getEncoder().encodeToString(svg.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        assertTrue(userService.isValidAvatarData(validSvg));
+    }
+
+    @Test
+    @DisplayName("isValidAvatarData - 非法魔数或损坏数据测试 (如纯 A 字符)")
+    void testIsValidAvatarData_CorruptedDummyData() {
+        // 模拟先前导致生产环境崩溃的损坏数据（1000个A字符，base64解码后全为0x00）
+        String corruptData = "data:image/png;base64," + "A".repeat(1000);
+        assertFalse(userService.isValidAvatarData(corruptData));
+
+        // 格式不符合 data:image/...;base64,
+        assertFalse(userService.isValidAvatarData("not-a-valid-data-uri"));
+        assertFalse(userService.isValidAvatarData("data:text/plain;base64,SGVsbG8="));
+    }
+
+    @Test
+    @DisplayName("isValidAvatarData - 超长数据拦截测试")
+    void testIsValidAvatarData_ExceedsMaxLength() {
+        String oversized = "data:image/png;base64," + "A".repeat(3 * 1024 * 1024 + 10);
+        assertFalse(userService.isValidAvatarData(oversized));
+    }
+
+    @Test
+    @DisplayName("updateAvatar - 成功为用户1更新头像")
+    void testUpdateAvatar_Success() {
+        mockUserEntity.setId(1L);
+        when(userMapper.findByNameCaseSensitive("testuser")).thenReturn(mockUserEntity);
+        when(userMapper.updateById(any(UserEntity.class))).thenReturn(1);
+
+        String validPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        Optional<UserSummaryDto> result = userService.updateAvatar("testuser", validPng);
+
+        assertTrue(result.isPresent());
+        assertEquals(validPng, result.get().getAvatarUrl());
+        verify(userMapper).updateById(mockUserEntity);
+    }
+
+    @Test
+    @DisplayName("updateAvatar - 用户不存在返回 empty")
+    void testUpdateAvatar_UserNotFound() {
+        when(userMapper.findByNameCaseSensitive("unknown")).thenReturn(null);
+
+        String validPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        Optional<UserSummaryDto> result = userService.updateAvatar("unknown", validPng);
+
+        assertTrue(result.isEmpty());
+        verify(userMapper, never()).updateById(any(UserEntity.class));
+    }
+
+    @Test
+    @DisplayName("updateAvatar - 非用户1修改抛出 IllegalArgumentException")
+    void testUpdateAvatar_ForbiddenForOtherUser() {
+        mockUserEntity.setId(2L);
+        when(userMapper.findByNameCaseSensitive("otheruser")).thenReturn(mockUserEntity);
+
+        String validPng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                userService.updateAvatar("otheruser", validPng)
+        );
+        assertEquals("Only user with id 1 is permitted to change avatar", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("updateAvatar - 无效图片数据抛出 IllegalArgumentException")
+    void testUpdateAvatar_InvalidDataThrows() {
+        String invalidData = "invalid-data";
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                userService.updateAvatar("testuser", invalidData)
+        );
+        assertEquals("Invalid avatar image format or size", ex.getMessage());
+    }
 }
+

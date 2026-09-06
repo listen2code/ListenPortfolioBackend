@@ -20,6 +20,7 @@ public class Constants {
     public static final String ERR_LOGOUT_FAILED = "BIZ_0504";
     public static final String ERR_ABOUT_ME_NOT_FOUND = "BIZ_0505";
     public static final String ERR_PROJECTS_NOT_FOUND = "BIZ_0506";
+    public static final String ERR_INVALID_IMAGE = "BIZ_0507";
     
     private Constants() {
         // Private constructor to prevent instantiation

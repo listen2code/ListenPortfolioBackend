@@ -4,6 +4,7 @@ import com.listen.portfolio.api.v1.user.dto.ChangePasswordRequest;
 import com.listen.portfolio.api.v1.user.dto.UserSummaryDto;
 import com.listen.portfolio.api.v1.user.dto.UploadAvatarRequest;
 import com.listen.portfolio.common.ApiResponse;
+import com.listen.portfolio.common.Constants;
 import com.listen.portfolio.common.jwt.JwtUtil;
 import com.listen.portfolio.entity.UserEntity;
 import com.listen.portfolio.service.UserService;
@@ -822,6 +823,7 @@ class UserControllerTest {
             updatedUser.setName("testuser");
             updatedUser.setAvatarUrl("data:image/png;base64,mockbase64data");
 
+            when(userService.isValidAvatarData("data:image/png;base64,mockbase64data")).thenReturn(true);
             when(userService.updateAvatar("testuser", "data:image/png;base64,mockbase64data"))
                     .thenReturn(Optional.of(updatedUser));
 
@@ -839,6 +841,34 @@ class UserControllerTest {
     }
 
     @Test
+    @DisplayName("uploadAvatar - 头像数据非法返回400")
+    void testUploadAvatar_InvalidAvatar_Returns400() {
+        // Given
+        try (MockedStatic<SecurityContextHolder> securityContextHolderMock = mockStatic(SecurityContextHolder.class)) {
+            securityContextHolderMock.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+            when(securityContext.getAuthentication()).thenReturn(authentication);
+            when(authentication.getName()).thenReturn("testuser");
+
+            UploadAvatarRequest request = new UploadAvatarRequest();
+            request.setAvatar("corrupt-dummy-data");
+
+            when(userService.isValidAvatarData("corrupt-dummy-data")).thenReturn(false);
+
+            // When
+            ResponseEntity<ApiResponse<UserSummaryDto>> response = userController.uploadAvatar(request);
+
+            // Then
+            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals("1", response.getBody().getResult());
+            assertEquals(Constants.ERR_INVALID_IMAGE, response.getBody().getMessageId());
+            assertEquals("Invalid avatar image format or size", response.getBody().getMessage());
+
+            verify(userService, never()).updateAvatar(anyString(), anyString());
+        }
+    }
+
+    @Test
     @DisplayName("uploadAvatar - 用户不存在返回404")
     void testUploadAvatar_UserNotFound() {
         // Given
@@ -850,6 +880,7 @@ class UserControllerTest {
             UploadAvatarRequest request = new UploadAvatarRequest();
             request.setAvatar("data:image/png;base64,mockbase64data");
 
+            when(userService.isValidAvatarData("data:image/png;base64,mockbase64data")).thenReturn(true);
             when(userService.updateAvatar("testuser", "data:image/png;base64,mockbase64data"))
                     .thenReturn(Optional.empty());
 
