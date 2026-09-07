@@ -56,6 +56,25 @@
 - [x] Push / PR 自动触发校验；README 挂载状态。
 - [x] 增加 SSH `ConnectTimeout` 与 `ConnectionAttempts` 避免 EC2 瞬态握手超时。
 
+### 6. 头像数据安全防腐与图片魔数深度校验 (Avatar Payload Security)
+
+**现状**：已完成。已在 Controller 与 Service 层建立多级防护，彻底解决异常/恶意 Base64 Payload 导致客户端 UI 假死问题。  
+**目标**：对上传的头像数据进行体积限制、Base64 格式校验与底层魔数深度检测，拒绝伪造损坏数据入库。  
+**验收标准**：
+- [x] `Constants.java` 增加标准错误码 `ERR_INVALID_IMAGE = "BIZ_0507"`。
+- [x] `UserService.isValidAvatarData` 校验 Base64 长度（<= 3MB）、Data URI 前缀、Base64 解码有效性、二进制体积（<= 2MB）及图片魔数白名单（PNG/JPEG/GIF/WebP/SVG）。
+- [x] `UserController.uploadAvatar` 预拦截并返回 HTTP 400 及 `BIZ_0507`，种子管理员账户（userId=1）鉴权保护。
+- [x] 补充 `UserServiceTest` 与 `UserControllerTest` 全量单元测试，生产环境验证通过。
+
+### 7. 云端 Docker 孤儿构建层自动深度清理引擎 (Automated Docker GraphDriver Cleanup)
+
+**现状**：已完成。针对 AWS EC2 `t2.micro` 8GB 磁盘在多次 CI/CD 构建后 `overlay2` 孤儿层堆积问题，开发并部署了拓扑反查清理引擎。  
+**目标**：在不停止当前服务容器的前提下，精准识别并清除无引用的中间构建层。  
+**验收标准**：
+- [x] 编写 `tools/clean_docker_orphans.py`，通过 `docker inspect` 反查所有活跃容器/镜像依赖的 GraphDriver 目录树，安全物理清除未引用孤儿层。
+- [x] 配置 `systemd/docker-cleanup.service` 与 `docker-cleanup.timer`，实现每日凌晨自动执行系统垃圾回收与日志轮转。
+- [x] 在 CI/CD 流水线（`.github/workflows/ci.yml`）与本地部署脚本（`docker_deploy.ps1`）中完成挂接。
+
 ## Next
 
 ### 1. 测试补强

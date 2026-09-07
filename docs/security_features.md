@@ -1,4 +1,4 @@
-﻿# 安全功能完整指南
+# 安全功能完整指南
 
 **Status**: `Partially Implemented`
 
@@ -471,6 +471,41 @@ public class AutomatedSecurityResponse {
     }
 }
 ```
+
+## 🖼️ 头像与大 Payload 安全防护机制 ✅
+
+### 1. 风险背景
+在图片上传或个人资料更新场景中，攻击者或异常测试脚本可能向接口发送体积巨大（如数十兆）或内容伪造（如全由字符 `'A'` 填充）的 Base64 字符串：
+- **服务端风险**：导致应用 JVM 内存剧增（OOM）、数据库表空间急剧膨胀，占用无谓的磁盘 I/O。
+- **客户端风险**：客户端在登录或拉取资料时全量下载多兆垃圾字节，直接将 UI 渲染线程塞满导致客户端界面假死（ANR / Event Loop Starvation）。
+
+### 2. 深度防御与魔数校验链路
+
+```mermaid
+graph TD
+    Request[客户端发起 /v1/user/upload-avatar] --> Nginx[1. Nginx 接入层<br/>client_max_body_size 10M]
+    Nginx --> RateLimit[2. Controller 注解限流<br/>User 10次/分钟]
+    RateLimit --> LengthCheck[3. Base64 字符串长度校验<br/>最大限制 3MB]
+    LengthCheck --> FormatCheck[4. Data URI 与 Base64 格式校验<br/>data:image/ 及 ;base64, 前缀]
+    FormatCheck --> DecodeCheck[5. Base64 安全解码<br/>二进制体积 <= 2MB]
+    DecodeCheck --> MagicBytesCheck[6. 底层图片魔数严格检测<br/>PNG / JPEG / GIF / WebP / SVG 白名单]
+    MagicBytesCheck --> AuthCheck[7. 账户写权限防护<br/>仅限 userId = 1 种子用户修改]
+    AuthCheck --> DB[(8. 持久化入库 MySQL)]
+```
+
+### 3. 支持的图片魔数签名 (Magic Bytes)
+
+| 格式 | 头字节特征 (Hex / ASCII) | 校验逻辑 |
+| :--- | :--- | :--- |
+| **PNG** | `89 50 4E 47 0D 0A 1A 0A` | 前 8 字节严格匹配标准 PNG 文件头 |
+| **JPEG** | `FF D8 FF` | 前 3 字节匹配 SOI 标记 |
+| **GIF** | `GIF87a` / `GIF89a` | 前 6 字节匹配 GIF 协议版本 |
+| **WebP** | `RIFF` .... `WEBP` | 0-3 字节为 `RIFF`，8-11 字节为 `WEBP` |
+| **SVG** | `<svg` / `<?xml` | 校验 UTF-8 解码内容以 SVG 或 XML 标签开头 |
+
+任何未能通过魔数检测的伪造图片（例如 Base64 解码后全部是 `0x00` 的坏数据）或超出限制的请求，立即在 Controller 层拦截并返回 HTTP 400，错误码 `BIZ_0507`，确保恶意 Payload 永远无法触达数据库。
+
+---
 
 ## 🎯 安全最佳实践
 

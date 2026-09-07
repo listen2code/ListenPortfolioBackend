@@ -1,4 +1,4 @@
-﻿# Docker 常用命令参考
+# Docker 常用命令参考
 
 ## 📋 目录
 - [容器管理](#容器管理)
@@ -272,6 +272,31 @@ docker image prune
 
 # 清理未使用的数据卷
 docker volume prune
+```
+
+### 自动化孤儿层与磁盘深度清理引擎 (Portfolio 专用)
+
+在 CI/CD 流水线频繁全量发布时，常规的 `docker image prune` 无法清除由于多阶段构建遗留在 `/var/lib/docker/overlay2` 中的中间孤儿构建层（Orphan Layers）。项目内置了智能清理引擎 [`tools/clean_docker_orphans.py`](../tools/clean_docker_orphans.py)：
+
+#### 1. 工作原理
+1. **Dangling 镜像与构建缓存清除**：调用 `docker image prune -f` 与 `docker builder prune -a -f --keep-storage 0`。
+2. **GraphDriver 依赖拓扑反查**：通过 `docker inspect` 递归枚举所有运行中/停止的容器与已命名镜像引用的 `LowerDir`、`UpperDir`、`MergedDir` 与 `WorkDir`。
+3. **物理孤儿层清除**：比对物理磁盘 `/var/lib/docker/overlay2/` 下的目录，对未被任何对象引用的孤儿层安全执行删除。
+4. **系统级垃圾回收**：执行 `journalctl --vacuum-time=1d` 与 `dnf clean all` 回收系统临时日志与包管理器缓存。
+
+#### 2. 手动执行
+```bash
+# 执行深度清理（需 sudo / 具备 docker 权限）
+python3 tools/clean_docker_orphans.py
+```
+
+#### 3. Systemd 定时服务常驻（每日凌晨 03:00 自动执行）
+```bash
+# 查看定时器激活状态
+systemctl status docker-cleanup.timer
+
+# 查看上次清理日志
+sudo journalctl -u docker-cleanup.service -n 50 --no-pager
 ```
 
 ---

@@ -1,4 +1,4 @@
-﻿# API Reference（接口文档）
+# API Reference（接口文档）
 
 > 基于真实简历数据设计，所有数据字段与数据库种子数据保持一致。
 >
@@ -25,6 +25,7 @@
 | `FORBIDDEN` | 403 | 无权限 |
 | `INTERNAL_ERROR` | 500 | 服务器内部错误 |
 | `RATE_LIMIT_EXCEEDED` | 429 | 请求过于频繁 |
+| `BIZ_0507` | 400 | 头像格式或大小无效（未通过魔数或体积校验） |
 
 ---
 
@@ -201,13 +202,66 @@ POST /v1/auth/refresh?refreshToken=eyJhbGciOiJIUzI1NiJ9...
 
 ### POST `/v1/user/change-password` — 修改密码
 
-修改成功后所有 Token 失效（当前 Token 加入黑名单 + 清除上下文）。
+修改成功后所有 Token 失效（当前 Token 加入黑名单 + 清除上下文并吊销所有 Refresh Token）。
 
 **Request Body**:
 ```json
 {
-  "currentPassword": "old-password",
+  "userId": "1",
+  "oldPassword": "old-password",
   "newPassword": "new-password"
+}
+```
+
+---
+
+### POST `/v1/user/upload-avatar` — 上传更新头像
+
+**Rate Limit**: User 10次/分钟  
+**认证**: 必需 (`Authorization: Bearer <token>`)  
+**权限**: 仅种子管理员用户（`userId = 1`）具备头像更新权限。
+
+**安全与格式校验规则**:
+- 支持合法 HTTP/HTTPS 图片 URL（最大 2048 字符，无换行）。
+- Base64 字符串长度最大限制 3MB（折合解码后二进制图片不超过 2MB）。
+- Base64 必须携带标准 `data:image/` 及 `;base64,` 前缀。
+- 必须通过底层图片魔数（Magic Bytes）白名单检测：
+  - PNG (`89 50 4E 47`)
+  - JPEG (`FF D8 FF`)
+  - GIF (`GIF87a` / `GIF89a`)
+  - WebP (`RIFF...WEBP`)
+  - SVG (`<svg` / `<?xml`)
+
+**Request Body**:
+```json
+{
+  "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+}
+```
+
+**Response** (200):
+```json
+{
+  "result": "0",
+  "messageId": "",
+  "message": "success",
+  "body": {
+    "id": "1",
+    "name": "Listen",
+    "location": "Japan / Tokyo",
+    "email": "listen2code@gmail.com",
+    "avatarUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+  }
+}
+```
+
+**Response** (400 - 图片无效或大小超限):
+```json
+{
+  "result": "1",
+  "messageId": "BIZ_0507",
+  "message": "Invalid avatar image format or size",
+  "body": null
 }
 ```
 
@@ -215,7 +269,7 @@ POST /v1/auth/refresh?refreshToken=eyJhbGciOiJIUzI1NiJ9...
 
 ### DELETE `/v1/user/delete-account` — 注销账号
 
-软删除（`deleted = true`），同时失效所有 Token。
+软删除（`deleted = true`），同时失效所有 Token。注意：种子用户（userId = 1）受保护禁止删除。
 
 ---
 
