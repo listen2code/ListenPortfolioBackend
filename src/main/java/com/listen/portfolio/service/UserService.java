@@ -107,7 +107,15 @@ public class UserService {
     }
 
     /**
-     * 更新用户头像 (Base64 或 URL)
+     * Updates the user's avatar URL or Base64 payload.
+     *
+     * <p>Enforces authorization rules (restricting mutation to candidate user id=1)
+     * and validates avatar data integrity through {@link #isValidAvatarData(String)}.
+     *
+     * @param username The authenticated user's unique username.
+     * @param base64Data The avatar payload (either remote URL or Base64 data URI).
+     * @return Optional containing updated user summary if successful.
+     * @throws IllegalArgumentException If avatar data violates format/size constraints or user is unauthorized.
      */
     @Transactional
     public Optional<UserSummaryDto> updateAvatar(String username, String base64Data) {
@@ -131,14 +139,29 @@ public class UserService {
     }
 
     /**
-     * 验证头像数据是否合法（HTTP/HTTPS URL 或 Base64 图片数据）
+     * Validates whether the given avatar payload represents a safe, valid image resource.
+     *
+     * <h3>Defense-in-Depth Validation Pipeline:</h3>
+     * <ol>
+     *   <li><b>Null & Blank Guard</b>: Rejects empty inputs.</li>
+     *   <li><b>URL Route</b>: Validates HTTP/HTTPS URLs (maximum 2048 chars, CR/LF injection defense).</li>
+     *   <li><b>Base64 Length Guard</b>: Caps string length at 3 MB (~2 MB decoded binary).</li>
+     *   <li><b>MIME Protocol Guard</b>: Requires {@code data:image/...;base64,} data URL structure.</li>
+     *   <li><b>Decoder Resiliency</b>: Guarantees safe Base64 decoding without unhandled runtime exceptions.</li>
+     *   <li><b>Binary Size Guard</b>: Bounds binary size strictly within 2 MB.</li>
+     *   <li><b>Magic Byte Signature Verification</b>: Dispatches to {@link #isValidImageBytes(byte[], String)}
+     *       to inspect binary magic headers (PNG, JPEG, GIF, WebP, SVG).</li>
+     * </ol>
+     *
+     * @param avatarData The raw avatar string to validate.
+     * @return {@code true} if the payload passes all safety checks; otherwise {@code false}.
      */
     public boolean isValidAvatarData(String avatarData) {
         if (avatarData == null || avatarData.isBlank()) {
             return false;
         }
 
-        // 允许 HTTP/HTTPS 图片 URL (最大 2048 字符，不能包含换行符)
+        // Allow legitimate HTTP/HTTPS URLs (max 2048 chars, no CRLF injection)
         if (avatarData.startsWith("http://") || avatarData.startsWith("https://")) {
             return avatarData.length() <= 2048 && !avatarData.contains("\n") && !avatarData.contains("\r");
         }
@@ -183,10 +206,26 @@ public class UserService {
             return false;
         }
 
-        // 校验图片魔数 (Magic Bytes) 或 SVG 格式
+        // Validate binary magic bytes or SVG text structure
         return isValidImageBytes(decodedBytes, metadata);
     }
 
+    /**
+     * Inspects binary magic byte headers or SVG XML markup to verify legitimate image structures.
+     *
+     * <h3>Supported Formats & Signatures:</h3>
+     * <ul>
+     *   <li><b>PNG</b>: 8-byte header {@code 89 50 4E 47 0D 0A 1A 0A}</li>
+     *   <li><b>JPEG</b>: 3-byte header {@code FF D8 FF}</li>
+     *   <li><b>GIF</b>: ASCII header {@code GIF87a} or {@code GIF89a}</li>
+     *   <li><b>WebP</b>: RIFF chunk with {@code WEBP} four-byte format marker</li>
+     *   <li><b>SVG</b>: UTF-8 XML document matching {@code <svg} or {@code <?xml} tags</li>
+     * </ul>
+     *
+     * @param bytes Decoded binary payload.
+     * @param metadata Lowercase MIME metadata from data URI header.
+     * @return {@code true} if bytes match a known valid image signature; otherwise {@code false}.
+     */
     private boolean isValidImageBytes(byte[] bytes, String metadata) {
         // PNG: 89 50 4E 47 0D 0A 1A 0A
         if (bytes.length >= 8 &&

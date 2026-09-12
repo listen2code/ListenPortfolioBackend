@@ -289,6 +289,16 @@ public class UserController {
         }
     }
 
+    /**
+     * Uploads or updates the current user's profile avatar.
+     *
+     * <p>Enforces strict per-user rate limits (10 requests/minute), pre-validates image
+     * payload structures via {@link UserService#isValidAvatarData(String)}, and returns
+     * HTTP 400 with {@code BIZ_0507} if verification fails.
+     *
+     * @param uploadAvatarRequest The payload containing Base64 image data or URL.
+     * @return Standardized API response containing the updated {@link UserSummaryDto}.
+     */
     @PostMapping("/upload-avatar")
     @Operation(summary = "Upload avatar", description = "Upload/update avatar with base64 data",
               security = @SecurityRequirement(name = "bearerAuth"))
@@ -298,7 +308,7 @@ public class UserController {
         timeWindowSeconds = 60
     )
     public ResponseEntity<ApiResponse<UserSummaryDto>> uploadAvatar(@Valid @RequestBody UploadAvatarRequest uploadAvatarRequest) {
-        // 获取当前认证用户的用户名
+        // Retrieve username of the currently authenticated principal
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         
