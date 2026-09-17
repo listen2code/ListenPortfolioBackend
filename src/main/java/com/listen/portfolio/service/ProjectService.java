@@ -15,7 +15,17 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
- * 项目业务服务类（MyBatis-Plus 版本）
+ * Project Business Service (MyBatis-Plus Implementation).
+ *
+ * <p>Architectural Responsibilities:
+ * <ul>
+ *   <li><b>Read-Only Transactions</b>: Annotates query methods with {@code @Transactional(readOnly = true)}
+ *       to optimize database connection lifecycle and prevent accidental DML mutations.</li>
+ *   <li><b>Dynamic Localization</b>: Inspects the thread-bound {@link Locale} via {@link LocaleContextHolder}
+ *       to map entity titles, subtitles, and descriptions to the client's language preference.</li>
+ *   <li><b>DTO Decoupling</b>: Transforms persistent {@link ProjectEntity} models into client-facing
+ *       {@link ProjectDto} objects, strictly separating database schemas from API contracts.</li>
+ * </ul>
  */
 @Service
 public class ProjectService {
@@ -28,10 +38,10 @@ public class ProjectService {
     }
 
     /**
-     * 事务与国际化说明：
-     * - 使用 @Transactional(readOnly = true) 开启只读事务
-     * - 根据 LocaleContextHolder 获取当前客户端 Accept-Language 对应的 Locale
-     * - 映射 title, subtitle, desc 的多语言版本与 techStack 技术栈列表
+     * Retrieves all projects from the database, populated with their associated tech stacks
+     * and dynamic localization applied.
+     *
+     * @return List of fully populated {@link ProjectDto} instances.
      */
     @Transactional(readOnly = true)
     public List<ProjectDto> getProjects() {

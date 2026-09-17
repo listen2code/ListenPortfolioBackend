@@ -260,6 +260,22 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
     
+    /**
+     * 申请忘记密码与发送密码重置邮件接口。
+     *
+     * <h3>安全治理与限流防护：</h3>
+     * <ul>
+     *   <li><b>双维度联合滑动窗口限流：</b>
+     *       配置 {@code types = {IP, EMAIL}}，窗口为 60 秒内最多 10 次请求。
+     *       既防止恶意脚本通过单一公网 IP 批量发起邮件轰炸，也防止不同代理 IP 针对同一受害者邮箱频繁触发垃圾邮件骚扰。</li>
+     *   <li><b>防枚举攻击契约 (Anti-Enumeration Contract)：</b>
+     *       无论输入的邮箱在数据库中是否存在，HTTP 状态码均固定返回 200 OK，
+     *       返回文案统一为 {@code "If the email exists, a password reset link has been sent"}。</li>
+     * </ul>
+     *
+     * @param forgotPasswordRequest 包含目标邮箱的请求体 DTO（经 @Valid 校验邮箱格式）
+     * @return 统一格式成功的 API 响应体
+     */
     @PostMapping("/forgot-password")
     @Operation(summary = "Forgot password", description = "Send password reset email to user")
     @com.listen.portfolio.common.aspect.RateLimit(
@@ -271,16 +287,30 @@ public class AuthController {
             @Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
         
         String email = forgotPasswordRequest.getEmail();
-        logger.info("Received forgot-password request, email: {}", email);
+        logger.info(">>> [AuthController] 收到忘记密码请求, 邮箱: {}", email);
 
-        // 发送密码重置邮件
+        // 调用业务层生成凭证并投递邮件
         authService.forgotPassword(forgotPasswordRequest);
 
-        // 始终返回成功，防止邮箱枚举攻击
-        logger.info("Password reset request processed for email: {}", email);
+        // 统一响应，彻底封死邮箱探测攻击路径
+        logger.info(">>> [AuthController] 忘记密码请求已安全处理, 目标: {}", email);
         return ResponseEntity.ok(ApiResponse.success(null, "If the email exists, a password reset link has been sent"));
     }
 
+    /**
+     * 执行密码最终重置接口。
+     *
+     * <h3>安全机制与凭证校验：</h3>
+     * <ul>
+     *   <li><b>IP 与 Token 双重限流：</b>
+     *       限制同一客户端 IP 及同一 Token 在 60 秒内尝试重置的频率，防范对新密码字典的撞库与并发重放。</li>
+     *   <li><b>原子性消费凭据：</b>
+     *       在验证成功更新密码后，Redis 中的重置 Token 会被立即销毁，并吊销全端会话。</li>
+     * </ul>
+     *
+     * @param resetPasswordRequest 包含一次性 Token 与新密码的请求体 DTO
+     * @return 成功返回 200；Token 无效或过期返回 400 Bad Request
+     */
     @PostMapping("/reset-password")
     @Operation(summary = "Reset password", description = "Reset password using token from email")
     @com.listen.portfolio.common.aspect.RateLimit(
@@ -290,7 +320,7 @@ public class AuthController {
     )
     public ResponseEntity<ApiResponse<Object>> resetPassword(
             @Valid @RequestBody com.listen.portfolio.api.v1.auth.dto.ResetPasswordRequest resetPasswordRequest) {
-        logger.info("Received reset-password request");
+        logger.info(">>> [AuthController] 收到密码最终重置请求");
 
         boolean success = authService.resetPassword(
             resetPasswordRequest.getToken(),
@@ -298,11 +328,11 @@ public class AuthController {
         );
 
         if (success) {
-            logger.info("Password reset successfully");
+            logger.info(">>> [AuthController] 密码重置成功");
             return ResponseEntity.ok(ApiResponse.success(null));
         }
 
-        logger.warn("Password reset failed - invalid or expired token");
+        logger.warn(">>> [AuthController] 密码重置失败: Token 无效或已过期");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("INVALID_TOKEN", "The reset link is invalid or has expired"));
     }

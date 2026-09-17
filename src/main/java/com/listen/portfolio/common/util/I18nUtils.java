@@ -3,7 +3,22 @@ package com.listen.portfolio.common.util;
 import java.util.Locale;
 
 /**
- * 数据库多语言字段动态解析工具类
+ * Dynamic Multi-Language Localization and Graceful Fallback Utility.
+ *
+ * <p>Design Rationale:
+ * <ul>
+ *   <li><b>Context-Driven Resolution</b>: Inspects the resolved {@link Locale} (originating from HTTP
+ *       {@code Accept-Language} header and maintained in Spring's {@code LocaleContextHolder}).</li>
+ *   <li><b>Priority & Fallback Hierarchy</b>:
+ *       <ol>
+ *         <li>If {@code locale} matches Chinese ({@code "zh"}), returns {@code zhVal} if present.</li>
+ *         <li>If {@code locale} matches Japanese ({@code "ja"}), returns {@code jaVal} if present.</li>
+ *         <li>Otherwise, or if the localized version is blank/null, gracefully falls back to {@code defaultVal} (English).</li>
+ *       </ol>
+ *   </li>
+ *   <li><b>Zero JOIN Overhead</b>: Operates on flat entity columns (e.g. {@code title_zh}, {@code title_ja})
+ *       instead of complex relational joins, maximizing database read performance.</li>
+ * </ul>
  */
 public class I18nUtils {
 
@@ -11,13 +26,14 @@ public class I18nUtils {
     }
 
     /**
-     * 根据当前 Context 中的 Locale 选取对应语言版本的字段，优先返回目标语言，若为空则回退到默认（英文）版本。
+     * Resolves the localized representation of a given field, returning the target language version
+     * if available, or gracefully falling back to the default (English) representation.
      *
-     * @param defaultVal 默认版本（英文）
-     * @param zhVal      中文版本
-     * @param jaVal      日语版本
-     * @param locale     客户端请求传入的 Locale
-     * @return 解析后的对应语言字符串
+     * @param defaultVal Default baseline text (English).
+     * @param zhVal Chinese translation text (nullable or blank).
+     * @param jaVal Japanese translation text (nullable or blank).
+     * @param locale Target locale resolved from the client's request context.
+     * @return The best-matching localized string.
      */
     public static String getLocalizedText(String defaultVal, String zhVal, String jaVal, Locale locale) {
         if (locale == null) {

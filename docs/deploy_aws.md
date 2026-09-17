@@ -1,339 +1,391 @@
-# AWS 部署与云原生运维指南
+# AWS 生产部署与云原生运维实战指南 (AWS Architecture & GitOps Manual)
 
-本指南介绍如何将 Web 应用部署到 AWS 平台。主要包括两部分内容：
-1. **轻量级单实例方案 (EC2 + Docker Compose)**：适合开发联调、演示及低成本轻量级环境运行，已针对 `t2.micro` 等低内存实例进行了性能加固。
-2. **进阶云原生方案 (ECS Fargate / EKS / 基础设施即代码)**：适合生产环境、高可用自动弹性伸缩架构的选型与最佳实践。
+## 📋 目录
+- [一、AWS 生产环境整体拓扑与设计思路](#一aws-生产环境整体拓扑与设计思路)
+  - [1.1 宿主机与容器全栈架构拓扑](#11-宿主机与容器全栈架构拓扑)
+  - [1.2 AWS t2.micro 极低资源约束下的架构设计哲学](#12-aws-t2micro-极低资源约束下的架构设计哲学)
+  - [1.3 安全组网络边界与最小暴露原则](#13-安全组网络边界与最小暴露原则)
+- [二、EC2 基础设施实战加固与核心实现](#二ec2-基础设施实战加固与核心实现)
+  - [2.1 2GB Swap 虚拟内存激活与 OOM 彻底防御](#21-2gb-swap-虚拟内存激活与-oom-彻底防御)
+  - [2.2 Amazon Linux 2023 Docker 与 Compose v2 现代化安装](#22-amazon-linux-2023-docker-与-compose-v2-现代化安装)
+  - [2.3 宿主机 Nginx 生产配置 (动静路由、CORS、Wasm 缓存)](#23-宿主机-nginx-生产配置-动静路由corswasm-缓存)
+  - [2.4 本地预编译 WAR 与 SCP 增量分发策略](#24-本地预编译-war-与-scp-增量分发策略)
+- [三、GitHub Actions 自动化 CI/CD 流水线深度剖析](#三github-actions-自动化-cicd-流水线深度剖析)
+  - [3.1 流水线三阶段架构设计 (Check -> Build/Test -> Deploy)](#31-流水线三阶段架构设计-check---buildtest---deploy)
+  - [3.2 4 小时防抖与自动部署决策算法](#32-4-小时防抖与自动部署决策算法)
+  - [3.3 增量部署 vs 清库部署 (clean deploy) 智能路由](#33-增量部署-vs-清库部署-clean-deploy-智能路由)
+  - [3.4 免除 ssh-keyscan 与 Shell 多行证书解密保障](#34-免除-ssh-keyscan-与-shell-多行证书解密保障)
+  - [3.5 孤儿层清洗引擎双保险 (CI Hook + Systemd 定时器)](#35-孤儿层清洗引擎双保险-ci-hook--systemd-定时器)
+- [四、日常运维、排错与灾难恢复 SOP](#四日常运维排错与灾难恢复-sop)
+  - [4.1 终端 SSH 与图形化数据库隧道 (SSH Tunnel) 连接](#41-终端-ssh-与图形化数据库隧道-ssh-tunnel-连接)
+  - [4.2 容器与日志实时追踪命令](#42-容器与日志实时追踪命令)
+  - [4.3 经典生产故障排查与应急修复 (Troubleshooting)](#43-经典生产故障排查与应急修复-troubleshooting)
+- [五、进阶云原生托管方案演进 (ECS Fargate / EKS)](#五进阶云原生托管方案演进-ecs-fargate--eks)
+- [六、已知不足与演进方向 (记录于 todo.md)](#六已知不足与演进方向-记录于-todomd)
 
 ---
 
-## 第一部分：AWS EC2 容器化部署方案 (本地构建与低内存实例)
+## 一、AWS 生产环境整体拓扑与设计思路
 
-### 1. 准备 AWS EC2 实例与安全组
+### 1.1 宿主机与容器全栈架构拓扑
 
-1. **选择实例与系统**：
-   * **AMI**: 推荐使用 *Amazon Linux 2023*。
-   * **实例类型**: `t2.micro` (1GB 内存，免费套餐适用) 或 `t3.small`。
-2. **配置安全组 (Security Group) 入站规则**：
-   确保放行以下端口以允许外部及自动化流水线访问：
-   * `22` (SSH) — **必须放行 `0.0.0.0/0` (Anywhere)**，否则 GitHub Actions 的动态 IP 虚拟执行环境将无法连入部署。因为已禁用密码并强制密钥验证，所以这是绝对安全的。
-   * `8080` — 用于外部设备访问 Web 应用 API（如果是真机调试，建议将源设置为 `0.0.0.0/0`）。
-   * `3000` — （可选）用于访问 Grafana 监控大盘。
+在当前的 AWS 生产环境中，系统运行于单一 AWS EC2 实例（IP: `13.218.192.181`），采用**宿主机高性能 Nginx 反向代理 + Docker Compose 多容器微服务编排**的混合架构。
 
-### 2. 低内存实例加固：配置 2GB Swap 虚拟内存 (关键)
+```mermaid
+flowchart TD
+    InternetUser["公网用户 / 移动端 / 浏览器"] -->|":80 / :443"| SG["AWS EC2 安全组入站规则"]
+    
+    subgraph EC2Host["AWS EC2 宿主机 (Amazon Linux 2023 / 1GB RAM + 2GB Swap)"]
+        SG --> HostNginx["宿主机 Nginx 网关 (:80)"]
+        
+        HostNginx -->|"location /"| WebStatic["Flutter Web 静态文件目录
+/var/www/listen_portfolio_web"]
+        HostNginx -->|"location ^~ /api/"| HostProxy["反向代理 http://127.0.0.1:8080
+(含 CORS 预检 204 拦截)"]
+        
+        SystemdTimer["Systemd 定时器
+(docker-cleanup.timer)"] -.->|每周日 03:00| CleanScript["clean_docker_orphans.py
+深度回收 overlay2"]
+        
+        subgraph DockerNet["Docker 内部桥接网络 (portfolio-network)"]
+            HostProxy --> AppContainer["Spring Boot 容器 (app:8080)
+- 堆内存限制: 128m~256m G1GC
+- Flyway 启动自愈迁移"]
+            AppContainer -->|"服务名 db:3306"| MySQLContainer["MySQL 8.0 容器 (db)
+- 持久卷: db_data
+- 映射宿主机 :3307"]
+            AppContainer -->|"服务名 redis:6379"| RedisContainer["Redis 7.2 容器 (redis)
+- 持久卷: redis_data
+- 映射宿主机 :6379"]
+            
+            Prometheus["Prometheus 容器 (:9090)"] --> AppContainer
+            Grafana["Grafana 容器 (:3000)"] --> Prometheus
+        end
+    end
+```
 
-对于 `t2.micro` (1GB 内存) 实例，同时跑起 MySQL + Spring Boot + 监控组件会因内存不足引起系统死锁挂起。开机后必须首先分配 Swap 虚拟内存（**本操作完全免费，仅占用已有磁盘空间**）：
+---
 
-通过 SSH 连接到 EC2 实例，并执行以下命令：
+### 1.2 AWS t2.micro 极低资源约束下的架构设计哲学
+
+AWS 免费套餐（Free Tier）提供的 `t2.micro` 实例仅配备 **1 vCPU 与 1GB 内存**、8GB EBS 磁盘。
+在如此严苛的物理环境下同时运行 Spring Boot 3 + MySQL 8.0 + Redis 7.2 + Prometheus + Grafana + Nginx，任何常规的默认参数都会在 10 分钟内引发系统彻底死机。
+
+本项目采取了系统级的极致降本增效架构：
+1. **JVM 物理内存锁死**：通过 `JAVA_OPTS: -Xms128m -Xmx256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200` 将 Java 进程堆内存牢牢限定在 256MB 以内。
+2. **虚拟内存缓冲 (Swap)**：划分 2GB 高性能交换分区，承载 MySQL 和系统突发瞬时负载，彻底免疫 Linux 内核 OOM Killer 强杀。
+3. **本地预编译分发 (Out-of-Container Build)**：构建 JAR/WAR 产物在 GitHub Actions CI 虚拟机上完成，EC2 云服务器仅执行极简镜像组装，完全不消耗服务器的 CPU 与内存去跑 Gradle 编译。
+4. **日志轮转硬限制**：所有容器一律配置 `max-size: 20m, max-file: 2`，保证系统日志永远不会撑爆 8GB EBS 磁盘。
+
+---
+
+### 1.3 安全组网络边界与最小暴露原则
+
+生产环境 EC2 实例绑定的 AWS 安全组入站规则遵循最小特权原则：
+
+| 端口号 | 协议 | 来源 (Source) | 业务用途说明 | 安全控制手段 |
+| :---: | :---: | :---: | :--- | :--- |
+| **80** | TCP | `0.0.0.0/0` | HTTP Web 访问与 REST API 统一网关 | 由 Nginx 接收，处理动静分流与限流 |
+| **443** | TCP | `0.0.0.0/0` | HTTPS 加密传输通道 (规划中) | SSL/TLS 证书终止于 Nginx |
+| **22** | TCP | `0.0.0.0/0` | SSH 远程维护与 GitHub Actions CI 部署 | **禁用密码登录**，仅限 `listen.pem` 私钥握手 |
+| **8080** | TCP | 安全组内 / 本地 | Spring Boot 容器暴露端口 | 外部请求统一走 80 端口 Nginx 反向代理 |
+| **3307** | TCP | 本地回环 `127.0.0.1` | MySQL 宿主机映射端口 | **严禁公网直连**，必须通过 SSH 隧道 (Tunnel) 访问 |
+| **6379** | TCP | 本地回环 `127.0.0.1` | Redis 缓存宿主机映射端口 | 仅允许内网与本地调试，外网完全隐匿 |
+| **3000** | TCP | 指定白名单 / 管理员 | Grafana 监控可视化大盘 | 生产环境建议通过内网端口转发访问 |
+
+---
+
+## 二、EC2 基础设施实战加固与核心实现
+
+### 2.1 2GB Swap 虚拟内存激活与 OOM 彻底防御
+
+当 1GB 内存用尽时，若无 Swap 分区，Linux 内核会启动 OOM Killer 随机杀死 `mysqld` 或 `java` 进程，甚至导致 SSH 守护进程挂起。
+
+在 EC2 首次开机时必须执行以下标准加固脚本：
 ```bash
-# 1. 写入一个 2GB 的虚拟内存占位文件
+# 1. 在根磁盘创建 2GB 连续物理块空间
 sudo dd if=/dev/zero of=/swapfile bs=128M count=16
 
-# 2. 设置安全权限
+# 2. 收敛安全权限（仅 root 可读写，防止内存敏感凭证被非特权用户嗅探）
 sudo chmod 600 /swapfile
 
-# 3. 建立并激活交换分区
+# 3. 格式化并激活交换空间
 sudo mkswap /swapfile
 sudo swapon /swapfile
 
-# 4. 设置开机自动挂载
+# 4. 配置开机持久化挂载
 echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
 
-# 5. 验证是否配置成功 (会看到 Swap 一行显示有 2.0G 空间)
-free -h
+# 5. 调整 Linux 内核交换积极度 (swappiness=10，优先物理内存，避免频繁 I/O)
+echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
 ```
 
-### 3. 在 Amazon Linux 2023 上安装 Docker 与 Docker Compose v2
+---
 
-在 EC2 终端依次执行以下命令：
+### 2.2 Amazon Linux 2023 Docker 与 Compose v2 现代化安装
 
-#### 3.1 安装并开启 Docker 运行时
+Amazon Linux 2023 使用现代的 `dnf` 包管理器，并全面拥抱 Docker Compose CLI Plugin（`docker compose` 不带连字符模式）：
+
 ```bash
-# 安装 Docker 引擎
+# 1. 安装最新 Docker 引擎并设置开机自启
 sudo dnf update -y
 sudo dnf install -y docker
-
-# 启动并设置开机自启
 sudo systemctl enable --now docker
-
-# 将当前登录用户加入 docker 组以获取免 sudo 权限
 sudo usermod -aG docker ec2-user
-```
-*注：执行完 `usermod` 后，建议断开当前 SSH 并重新连接以使组更改生效。*
 
-#### 3.2 手动安装最新的 Docker Compose v2 (CLI 插件模式)
-```bash
-# 创建 CLI 插件目录
+# 2. 安装 Docker Compose v2 官方 CLI 插件
 sudo mkdir -p /usr/libexec/docker/cli-plugins
-
-# 下载最新 x86_64 架构的 Docker Compose 二进制包 (以 v2.29.1 为例)
-sudo curl -SL "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-x86_64" -o /usr/libexec/docker/cli-plugins/docker-compose
-
-# 授权执行权限
+sudo curl -SL "https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-x86_64"      -o /usr/libexec/docker/cli-plugins/docker-compose
 sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
 
-# 建立软链接使 docker-compose (带连字符) 命令同样可用
+# 3. 建立兼容软链接（使传统 docker-compose 脚本无缝兼容）
 sudo ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
-
-# 验证版本
-docker compose version
-docker-compose --version
 ```
 
-### 4. 本地打包 Web 工程 (WAR)
+---
 
-在您的本地开发机（Windows / Mac）的后端项目根路径下，通过 Maven 快速打包：
+### 2.3 宿主机 Nginx 生产配置 (动静路由、CORS、Wasm 缓存)
+
+宿主机 Nginx 作为流量总入口，配置文件位于 `/etc/nginx/conf.d/listen_portfolio.conf`：
+
+```nginx
+server {
+    listen 80;
+    server_name _;
+
+    # 1. 静态资源路由：托管 Flutter Web 编译产物
+    location / {
+        root /var/www/listen_portfolio_web;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 2. 静态资源深度缓存 (JS, CSS, Wasm, 字体)
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|wasm|otf|ttf|woff|woff2)$ {
+        root /var/www/listen_portfolio_web;
+        expires 30d;
+        add_header Cache-Control "public, no-transform";
+        access_log off;
+    }
+
+    # 3. 动态 API 反向代理：路由至 Docker Spring Boot 容器
+    location ^~ /api/ {
+        # 跨域 CORS 预检请求 (OPTIONS) 极速响应 204
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization,Accept-Language' always;
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+```
+
+---
+
+### 2.4 本地预编译 WAR 与 SCP 增量分发策略
+
+避免在云端 EC2 运行 `gradlew build`，在本地或 CI 环境先执行：
 ```powershell
+# 1. 本地/CI 生成 WAR 包
 ./gradlew bootWar
-```
-构建成功后，在本地的 `target/` 目录下生成 `portfolio-0.0.1-SNAPSHOT.war` 文件。
 
-### 5. 通过 SCP 将部署文件上传至 EC2
-
-我们只需上传运行时必要的文件，在本地终端中执行：
-
-```powershell
-# 1. 登录 EC2 创建目标目录结构
-ssh -i tool/listen.pem ec2-user@<EC2_PUBLIC_IP> "mkdir -p ~/portfolio/target"
-
-# 2. 上传编译好的本地 WAR 包至 target 目录下（以适配 Dockerfile 的 COPY 指令）
-scp -i tool/listen.pem target/portfolio-0.0.1-SNAPSHOT.war ec2-user@<EC2_PUBLIC_IP>:~/portfolio/target/
-
-# 3. 递归上传 Dockerfile、docker-compose.yml 以及整个监控配置目录
-scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@<EC2_PUBLIC_IP>:~/portfolio/
-scp -i tool/listen.pem -r monitoring ec2-user@<EC2_PUBLIC_IP>:~/portfolio/
+# 2. SCP 传输核心产物至 EC2
+scp -i tool/listen.pem build/libs/portfolio-0.0.1-SNAPSHOT.war ec2-user@13.218.192.181:~/portfolio/target/
+scp -i tool/listen.pem Dockerfile docker-compose.yml ec2-user@13.218.192.181:~/portfolio/
+scp -i tool/listen.pem -r monitoring tools ec2-user@13.218.192.181:~/portfolio/
 ```
 
-### 6. EC2 容器构建与一键式启动
+---
 
-通过 SSH 重新登录到 EC2 实例：
+## 三、GitHub Actions 自动化 CI/CD 流水线深度剖析
+
+### 3.1 流水线三阶段架构设计 (Check -> Build/Test -> Deploy)
+
+配置文件位于 [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)：
+
+```mermaid
+flowchart TD
+    GitPush["开发者 git push 到 master/main"] --> Job1["Job 1: check-conditions
+(发布条件与防抖判定)"]
+    
+    GitPush --> Job2["Job 2: build-and-test
+(编译、单测、代码规范质量扫描)"]
+    
+    Job2 --> StepTest["./gradlew test jacocoTestReport
+(运行测试并生成覆盖率)"]
+    Job2 --> StepSpot["./gradlew spotbugsMain
+(字节码静态漏洞分析)"]
+    Job2 --> StepArtifact["上传构建产物至 Actions Artifacts"]
+    
+    Job1 --> GateCheck{"判定 should_deploy == 'true'
+且非 Pull Request?"}
+    Job2 --> GateCheck
+    
+    GateCheck -->|通过| Job3["Job 3: deploy (AWS EC2 发布)"]
+    GateCheck -->|拒绝| SkipDeploy["跳过发布 (省去无效部署开销)"]
+    
+    Job3 --> PreClean["1. 磁盘与 Docker 孤儿层前置清洗"]
+    PreClean --> SCPTransfer["2. SCP 安全传输 WAR 与配置文件"]
+    SCPTransfer --> GenEnv["3. EC2 动态生成 .env 与 .dockerignore"]
+    GenEnv --> SmartDeploy["4. 智能容器拉起 (增量 vs 清库)"]
+    SmartDeploy --> PostClean["5. 部署后孤儿层二次自愈清洗"]
+```
+
+---
+
+### 3.2 4 小时防抖与自动部署决策算法
+
+为了防止多人高频提交触发频繁无效部署造成云服务器抖动，流水线实现了**防抖（Debounce）决策引擎**：
+
+1. **强制发布开关**：Commit 消息中包含 `[deploy]`, `deploy`, `release`, 或 `clean deploy` 时，**无条件立即触发发布**。
+2. **纯文档修改过滤**：若本次提交仅修改了 `*.md`、`docs/` 或 `LICENSE` 等非代码文件，**自动跳过发布**。
+3. **4 小时冷却周期**：常规提交若距离上次成功发布不足 4 小时，跳过部署；若超过 4 小时，自动触发定时发布。
+
+---
+
+### 3.3 增量部署 vs 清库部署 (clean deploy) 智能路由
+
+在 CI 部署步骤中：
 ```bash
-# 进入部署目录
+if [[ "$COMMIT_MESSAGE" == *"clean deploy"* || "$COMMIT_MESSAGE" == *"deploy-clean"* ]]; then
+    # 模式 A：清库重置部署 (清除包括 MySQL 数据卷在内的全部旧数据，从 Flyway V1 重新跑起)
+    ssh -i ~/.ssh/id_rsa ec2-user@$AWS_HOST       "cd ~/portfolio && docker compose --profile local down -v && docker compose --profile local build --no-cache app && docker compose --profile local up -d && python3 ~/portfolio/tools/clean_docker_orphans.py"
+else
+    # 模式 B：常规增量热部署 (数据卷保留，秒级无缝重启应用容器)
+    ssh -i ~/.ssh/id_rsa ec2-user@$AWS_HOST       "cd ~/portfolio && docker compose --profile local build --no-cache app && docker compose --profile local up -d && python3 ~/portfolio/tools/clean_docker_orphans.py"
+fi
+```
+
+---
+
+### 3.4 免除 ssh-keyscan 与 Shell 多行证书解密保障
+
+CI 流水线针对自动化 SSH 握手进行了高可用加固：
+1. **彻底规避 `ssh-keyscan` 偶发性网络中断**：
+   在 CI 虚拟机全局 `~/.ssh/config` 写入：
+   ```
+   Host *
+     StrictHostKeyChecking no
+     UserKnownHostsFile /dev/null
+     ConnectTimeout 30
+     ConnectionAttempts 5
+   ```
+   免去了对动态 IP 指纹嗅探的依赖，即使 AWS 防火墙有防护也不会挂起。
+2. **多行 PEM 证书防破坏转义**：
+   将 `secrets.AWS_SSH_KEY` 绑定在 Shell `env` 变量中，通过 `echo "$SSH_KEY" > ~/.ssh/id_rsa` 单向输出，避免 YAML 语法引擎对换行符破坏导致密钥失效。
+
+---
+
+### 3.5 孤儿层清洗引擎双保险 (CI Hook + Systemd 定时器)
+
+针对 8GB 磁盘枯竭痛点，部署链路配置了双保险：
+1. **发布钩子 (Deploy Hook)**：每次 `docker compose up -d` 之后立即执行 `python3 ~/portfolio/tools/clean_docker_orphans.py`。
+2. **每周定时自愈 (Weekly Systemd Timer)**：在 EC2 上启用了 `docker-cleanup.timer`，每周日凌晨 03:00 自动执行一次深度拓扑清扫，即使长期无发布也不会发生磁盘溢出。
+
+---
+
+## 四、日常运维、排错与灾难恢复 SOP
+
+### 4.1 终端 SSH 与图形化数据库隧道 (SSH Tunnel) 连接
+
+```bash
+# 1. 本地终端通过私钥登录云服务器
+ssh -i "tool/listen.pem" ec2-user@13.218.192.181
+
+# 2. 查看系统当前物理内存与 Swap 占用
+free -h
+
+# 3. 查看根磁盘剩余空间
+df -h /
+```
+
+#### Navicat / DBeaver 数据库安全连接 (SSH 隧道方式)：
+- **常规连接**：主机 `localhost`，端口 `3307`，用户 `root`，密码 `Ls-88888888`。
+- **SSH 隧道**：主机 `13.218.192.181`，端口 `22`，用户 `ec2-user`，认证方式选择私钥 `tool/listen.pem`。
+
+---
+
+### 4.2 容器与日志实时追踪命令
+
+```bash
+# 进入项目部署工作目录
 cd ~/portfolio
 
-# 1. 彻底清理旧的无效卷或残留容器
-docker compose --profile local down -v
+# 查看所有容器健康状态与端口映射
+docker compose --profile local ps
 
-# 2. 拉起 local 规格的微服务及监控集群并后台运行
-docker compose --profile local up -d --build
-```
-> [!IMPORTANT]
-> **参数说明**：
-> - `--profile local`：必须指定，用于激活 `docker-compose.yml` 中的应用及 Prometheus、Grafana 等所有包含在该 profile 下的服务。
-> - `-d`：后台静默运行。
-> - `--build`：重新在云端打包并部署。
+# 实时追踪 Spring Boot 后端主应用日志
+docker compose --profile local logs -f app
 
-### 7. 部署健康监测与验证
-* **访问接口**：`http://<EC2_PUBLIC_IP>:8080/v1/projects`（成功返回格式化的项目 JSON 数据）。
-* **查看容器**：`docker compose --profile local ps`
-* **查看日志**：`docker compose --profile local logs -f app`
+# 实时追踪数据库日志
+docker compose --profile local logs -f db
 
----
-
-### 8. GitHub Actions 自动化 CI/CD 部署配置
-
-后端项目已集成 GitHub Actions 自动化流水线。在您向分支推送代码时，流水线可自动执行编译、单测、代码规范扫描以及向 AWS EC2 的一键式热发布。
-
-#### 8.1 GitHub 仓库机密变量 (Secrets) 配置
-要使 GitHub Actions 拥有向 AWS 实例部署的权限，必须在您的 GitHub 仓库的 **Settings -> Secrets and variables -> Actions** 中配置以下两个核心密钥：
-* **`AWS_HOST`**：您的 EC2 实例的最新弹性公网 IP 或者是静态 IP（如 `13.218.192.181`），**切勿包含 `http://` 或端口号**。
-* **`AWS_SSH_KEY`**：登录 EC2 的密钥对私钥文件的**完整文本内容**（即 `listen.pem` 文件内容，包含首尾的 `-----BEGIN...` 标识符）。
-
-此外，为了保护云端部署的邮件验证等敏感环境变量，您可以在 GitHub Secrets 中配置以下**可选/推荐机密变量**：
-* **`MAIL_USERNAME`**：发信邮箱账号（例如 `listen2code@gmail.com`，如果不配置，默认使用默认邮箱）。
-* **`MAIL_PASSWORD`**：发信邮箱应用授权码密码（例如 `xqvfldvtlgbjvdnn`，如果不配置，默认使用当前最新验证的应用密码）。
-* **`DB_PASSWORD`**：云端 MySQL 数据库的 root 密码（如不配置，自动使用默认密码 `Ls-88888888`）。
-* **`JWT_SECRET`**：JWT 签名强密钥（在 CI 自动化部署时，流水线会读取 GitHub Actions Secrets 中的同名变量动态写入云端 `.env`；如不配置，自动使用系统默认的安全密钥）。
-
-*如果未在 GitHub Secrets 中配置这些可选变量，CI 流程将默认使用项目当前已配置且通过验证的默认测试账号和最新发信密码进行安全部署，实现开箱即用。*
-
-#### 8.2 GitHub Actions 部署稳定性架构设计
-在 `.github/workflows/ci.yml` 中，针对常见的 CI 部署环境进行了如下稳定性保障：
-* **免除 ssh-keyscan 报错依赖**：CI 虚拟环境直接在全局 `~/.ssh/config` 下配置了 `StrictHostKeyChecking no` 和 `UserKnownHostsFile /dev/null`，免去了对 `ssh-keyscan` 命令的调用，彻底避免因服务器防火墙暂时阻断该命令或者 IP 格式兼容引起的 CI 构建崩溃。
-* **基于环境变量解密多行私钥**：在 Step 级别通过 `env` 将 GitHub Secret 注入，使用 Shell 自带的环境变量解密，避免了多行 PEM 证书直接在 YAML 执行区转义导致的格式破损或意外的 EOF。
-
-#### 8.3 智能部署模式（增量 vs. 清库）
-流水线默认采用安全的**增量热部署**，仅在特定指令下才执行**清库重置部署**：
-* **常规增量部署（默认，保留数据）**：
-  - **触发条件**：常规 Git Push，或者 Commit 消息中不包含清库指令。
-  - **云端指令**：`docker compose build --no-cache app && docker compose up -d`
-  - **表现**：**保留数据库和缓存中的全部数据卷**。以增量方式热替换后端应用包，停机时间控制在 3-5 秒，数据 100% 安全。
-* **清库重置部署（特定指令）**：
-  - **触发条件**：Git Commit 消息中包含 **`clean deploy`** 或 **`deploy-clean`**。
-  - **云端指令**：`docker compose down -v && docker compose build --no-cache app && docker compose up -d`
-  - **表现**：**清除包括 MySQL 数据库数据在内的所有 Docker 挂载数据卷**，并在容器重启时执行 Flyway 重新生成全新的空表及初始测试账号。适用于需要将环境数据进行大版本重构或彻底清洗的场景。
-
-#### 8.4 自动化 Docker 孤儿层清理与磁盘垃圾自愈保障
-对于 8GB 规格的低配 EC2 云服务器，Docker BuildKit 在多次发布后容易因数据库索引失步产生累积数 GB 的孤儿层（Orphaned overlay2 layers）。
-本项目落地了双重自动化清理机制：
-1. **发布即清理 (Deployment Hook)**：
-   - 在 CI/CD 流水线构建应用时增加 `--no-cache` 参数，防止 `app.war` 被 BuildKit 多次缓存；
-   - 部署脚本内置 [`tools/clean_docker_orphans.py`](../tools/clean_docker_orphans.py)，每次部署完成后自动运行。该工具通过 `docker inspect` 全局反查活跃容器与镜像的 `GraphDriver` 引用树，精准识别并物理清除未引用的孤儿层、悬空镜像及 systemd 过期日志，确保每次部署后磁盘使用率始终维持在安全水位。
-2. **定时防溢出哨兵 (Weekly Systemd Timer)**：
-   - 服务器配置了 `docker-cleanup.timer` 定时服务，每周日凌晨 03:00 自动执行一次孤儿层与日志深度清扫，即使长期无新部署也不会发生磁盘悄然占满。
-3. **手动清理命令**：
-   ```bash
-   # 随时在 EC2 终端执行即刻清扫并显示当前磁盘用量
-   python3 ~/portfolio/tools/clean_docker_orphans.py
-   ```
-
----
-
-### 9. 常见部署故障诊断与 FAQ (Troubleshooting)
-
-#### ❓ 故障一：SSH 连接在握手阶段提示 `Connection timed out during banner exchange` 或直接死锁挂起
-* **原因**：EC2 实例物理内存（1GB）已被 MySQL、Spring Boot 和监控服务完全榨干。Linux 内核陷入内存页频繁换出的“内存抖动”（Thrashing）死锁中，导致系统包含 SSH 守护进程在内的所有服务处于死机状态。
-* **解决方法**：
-  1. 在 AWS 网页端控制台找到该实例，选择 **“实例状态 (Instance State)” -> “停止实例 (Stop instance)”**（如果常规停止超时，请勾选 **“强制停止 (Force stop)”**）。
-  2. 待实例完全变为 Stopped 状态后，点击 **“启动实例 (Start instance)”**。
-  3. 重新连入后，**立即按照本指南第 2 步配置 2GB Swap 虚拟交换分区**。
-
-#### ❓ 故障二：GitHub Actions 运行部署步骤时，报错 `ssh: connect to host *** port 22: Connection timed out`
-* **原因**：AWS 安全组的 SSH `22` 端口没有对 GitHub Actions 虚拟执行环境开放。因为 GitHub 的流水线服务器 IP 范围是动态的，如果只限制了您本人的公网 IP 访问 22 端口，流水线流量将会被 AWS 防火墙直接静默丢弃。
-* **解决方法**：
-  1. 登录 AWS EC2 控制台，找到应用绑定的安全组（Security Group）。
-  2. 编辑入站规则，将端口 `22` (SSH) 的允许源修改为 **`0.0.0.0/0`** (允许所有人)。
-  3. *安全性备注*：由于该 EC2 实例已在 `sshd_config` 中关闭了传统的密码认证，仅支持私钥证书登录，所以即使端口全开黑客也绝无可能暴力破解，符合安全标准。
-
----
-
-### 10. 常用连接与运维管理指南 (How to Connect)
-
-为了方便您在本地对 AWS 云端环境进行日常运维管理，以下整理了最常用的几种连接方式：
-
-#### 10.1 SSH 终端连接（远程登录服务器）
-在您的本地开发机终端（Windows PowerShell / CMD / Git Bash）中，使用您的 PEM 私钥进行远程连接。
-* **连接命令**：
-  ```powershell
-  # 如果您的密钥在 Windows 默认下载路径，请运行（注意路径包含空格需要加双引号）：
-  ssh -i "tool/listen.pem" ec2-user@13.218.192.181
-  ```
-* **说明**：将上面的路径和 IP 替换为您的实际私钥路径和最新的 EC2 公网 IP 即可。
-
-#### 10.2 Navicat / DBeaver 数据库连接（图形化连接 MySQL）
-生产环境中，出于安全考虑，强烈**不建议**直接将数据库的端口（容器内的 `3306` 映射到宿主机 `3307`）暴露给公网。
-推荐使用更安全的 **SSH 隧道 (SSH Tunnel)** 方式进行图形化工具连接：
-1. **新建连接**：选择 MySQL 数据库连接类型；
-2. **常规设置 (General)**：
-   - **主机 (Host)**: `localhost`（注意：必须填 `localhost`，因为是通过 SSH 隧道从服务器内部转发）
-   - **端口 (Port)**: `3307` (即宿主机映射的 MySQL 端口)
-   - **用户名**: `root`
-   - **密码**: `Ls-88888888` (您在 `.env` 中配置的密码)
-3. **SSH 设置**：
-   - **勾选 "使用 SSH 隧道" (Use SSH Tunnel)**
-   - **SSH 主机**: `13.218.192.181` (您的 EC2 公网 IP)
-   - **SSH 端口**: `22`
-   - **用户名**: `ec2-user`
-   - **认证方法**: `公钥 (Public Key)`
-   - **私钥文件 (Private Key)**: 选择您本地的 `tool/listen.pem` 文件。
-
-#### 10.3 外部浏览器访问监控及服务端口
-如果您的安全组放行了对应端口，您可以在本地浏览器中直接访问以下面板：
-* **Spring Boot 业务接口**：`http://13.218.192.181:8080/v1/projects`
-* **Prometheus 指标大盘**：`http://13.218.192.181:9090` (默认安全组阻断，仅内网容器抓取)
-* **Grafana 数据可视化看板**：`http://13.218.192.181:3000` (需要安全组放行 `3000` 端口，默认管理员账号密码为 `admin / admin123`)
-
----
-
-## 第二部分：AWS 进阶云原生方案 (高可用、生产级伸缩)
-
-在将系统正式推向高可用的公网生产环境时，单台 EC2 虚机架构面临单点故障和手工维护成本高的问题。本部分提供了 AWS 核心云托管方案的设计指引。
-
-### 1. 配置文件通用性分析
-
-在向云原生迁移时，我们已有的微服务工程配置表现出了极佳的通用性：
-
-| 模块/配置文件 | 兼容度 | 迁移说明 |
-|--------------|-------|---------|
-| **application.properties** | ✅ 100% | Spring Boot 配置完全标准，在云端通过系统环境变量覆盖属性即可 |
-| **Dockerfile** | ✅ 100% | 适用于 ECS 任务定义或 EKS 的 Pod 节点基础容器环境 |
-| **monitoring/prometheus.yml** | ⚠️ 需调整 | 本地静态抓取需调整为 AWS 基于 EC2 动态服务发现（EC2 Service Discovery）模式 |
-| **docker-compose.yml** | ❌ 需替代 | 生产环境使用 AWS ECS Task Definition 或 Kubernetes YAML 进行编排 |
-
----
-
-### 2. 🚀 三大云原生部署方案选型
-
-#### 方案 A: AWS ECS Fargate (首选推荐)
-* **适用场景**：无需管理底层虚机的无服务器容器架构，自动水平扩缩容。
-* **优势**：
-  * **零虚机运维**：不需升级 Linux 内核或担忧单机宕机。
-  * **极致的安全隔离**：每个 Task 容器都拥有独立的虚拟化沙箱及专有的 IAM 角色权限。
-* **部署命令示例**：
-  ```bash
-  # 通过云端 CloudFormation 堆堆声明一键拉起 ECS Fargate 任务
-  aws cloudformation deploy \
-      --template-file aws/cloudformation/monitoring-stack.yaml \
-      --stack-name production-portfolio-monitoring \
-      --parameter-overrides \
-          Environment=production \
-          DatabasePassword=your_secure_db_password \
-          VpcId=vpc-xxxxxx \
-          SubnetIds=subnet-xxx,subnet-yyy \
-      --capabilities CAPABILITY_IAM
-  ```
-
-#### 方案 B: AWS EKS (托管 Kubernetes)
-* **适用场景**：需要 K8s 标准生态、跨云调度或复杂微服务调用链的项目。
-* **优势**：
-  * 支持 Helm 一键编排；具备强大的服务发现与滚动更新策略。
-* **部署步骤**：
-  ```bash
-  # 1. 在本地配置 EKS 集群连接
-  aws eks update-kubeconfig --name production-portfolio-cluster --region us-east-1
-  
-  # 2. 应用 K8s Deployment 与 Service YAML
-  kubectl apply -f aws/k8s/
-  ```
-
----
-
-### 3. 🔧 生产级 AWS 环境配置调整
-
-#### 3.1 环境变量覆盖与数据库云托管 (RDS)
-生产环境应废弃容器内的 MySQL，改用高可用的 **AWS RDS (Aurora/MySQL)**，通过环境变量注入 Spring 属性：
-```properties
-# 数据库：切换为 RDS 域名，使用 SSL 安全连接
-spring.datasource.url=jdbc:mysql://portfolio-db-cluster.xxx.us-east-1.rds.amazonaws.com:3306/portfolio?useSSL=true
-spring.datasource.username=db_admin
-spring.datasource.password=${DATABASE_PASSWORD}
-```
-
-#### 3.2 可观测性深度集成
-* **CloudWatch Logs**：通过在 ECS 任务定义中配置 `awslogs` 驱动，自动将 Spring Boot 控制台输出的业务和访问日志汇聚到 CloudWatch Logs。
-* **AWS X-Ray**：在 POM 中引入 AWS X-Ray SDK。启动时配置 `-javaagent` 拦截器，自动将 Trace ID 贯穿到 AWS 各类托管服务中，渲染系统调用拓扑和服务地图。
-
----
-
-### 4. 📊 Prometheus 动态服务发现配置 (AWS 版)
-
-生产环境下，微服务容器在 Fargate/EKS 下的 IP 是动态变化的。Prometheus 需要基于 AWS EC2 过滤器进行弹性抓取，而不是使用静态 IP：
-
-```yaml
-# monitoring/prometheus-aws.yml
-global:
-  scrape_interval: 15s
-
-scrape_configs:
-  - job_name: 'portfolio-app-aws-discovery'
-    # 使用 AWS EC2 动态服务发现
-    ec2_sd_configs:
-      - region: us-east-1
-        port: 8080
-        filters:
-          - name: 'tag:Environment'
-            values: ['production']
-          - name: 'tag:Service'
-            values: ['portfolio-api']
-    metrics_path: '/actuator/prometheus'
+# 手动重启单一服务
+docker compose --profile local restart app
 ```
 
 ---
 
-### 5. 🔒 生产安全与成本优化最佳实践
+### 4.3 经典生产故障排查与应急修复 (Troubleshooting)
 
-1. **凭证隔离安全**：
-   禁止将任何密钥硬编码在镜像或 properties 中。利用 **AWS Secrets Manager** 或 **System Manager (SSM) Parameter Store** 托管密码，在容器启动时动态解密拉取。
-2. **ALB 负载均衡与 SSL**：
-   在公网入口挂载 **Application Load Balancer (ALB)**，将 HTTPS (443) 证书终止在 ALB（通过 AWS Certificate Manager 免费申请管理证书），后方 App 服务安全收敛在私有子网，仅接受来自 ALB 安全组的入站流量。
-3. **成本极客优化 (Fargate Spot)**：
-   在非核心开发/测试环境部署时，配置 ECS 任务使用 **Fargate Spot** 计费模式，可降低多达 **70%** 的容器算力账单。
+#### 故障 1：SSH 登录超时，提示 `Connection timed out during banner exchange`
+- **成因**：物理内存（1GB）耗尽，Linux 内核陷入频繁页换出死锁，SSH 进程无响应。
+- **SOP 修复方案**：
+  1. 进入 AWS 控制台，对该实例执行 **“强制停止 (Force Stop)”**；
+  2. 待 Stopped 状态后重新 **“启动 (Start)”**；
+  3. 连入后立即检查并确保 `swapon -s` 显示 2GB Swap 分区已挂载。
+
+#### 故障 2：访问 API 返回 502 Bad Gateway
+- **成因**：Spring Boot 容器正在拉起，或者 Flyway 迁移脚本发生死锁崩溃退出。
+- **SOP 修复方案**：
+  1. 执行 `docker compose ps` 查看 `app` 容器是否处于 Exited 状态；
+  2. 执行 `docker compose logs app --tail=100` 查看异常堆栈；
+  3. 若为 Flyway 校验和不一致，执行自动修复或重新部署。
+
+---
+
+## 五、进阶云原生托管方案演进 (ECS Fargate / EKS)
+
+当业务流量增长、需要 SLA 99.99% 高可用时，单台 EC2 虚机应平滑演进为 AWS 托管云原生架构：
+
+| 维度 | 当前方案 (EC2 + Compose) | 进阶推荐方案 (AWS ECS Fargate) | 大型分布式方案 (AWS EKS) |
+| :--- | :--- | :--- | :--- |
+| **计算架构** | 单台虚拟机 `t2.micro` | 无服务器容器 (Serverless Container) | 托管 Kubernetes 集群 |
+| **运维负担** | 需维护 Linux 内核、Swap、磁盘 | **零虚机运维**，仅关注容器镜像 | 需维护 K8s 节点与网络插件 |
+| **数据库** | 容器内自建 MySQL 8.0 | **AWS RDS (Aurora Serverless v2)** | AWS RDS 或分布式 TiDB |
+| **缓存** | 容器内自建 Redis 7.2 | **AWS ElastiCache for Redis** | AWS ElastiCache 集群 |
+| **弹性伸缩** | 手动垂直扩容 (修改实例规格) | 基于 CPU/内存指标**秒级自动水平伸缩** | HPA / KEDA 高级自动伸缩 |
+| **高可用性** | 单可用区 (AZ)，存在单点故障 | **跨多可用区 (Multi-AZ) 容灾** | 跨多可用区 / 跨地域容灾 |
+| **月度预算** | 免费套餐 / 极低成本 (~$5/月) | 按秒计费 (~$20~$50/月) | 较高 ($100+/月起) |
+
+---
+
+## 六、已知不足与演进方向 (记录于 todo.md)
+
+基于对当前 AWS 生产拓扑与自动化流水线的深度审计，识别出以下 4 项核心演进点，已系统化归档至 [`docs/todo.md`](./todo.md) 中的 **第 13 章节：AWS 云上生产架构与自动化流水线演进**：
+
+1. **基于 AWS Systems Manager (SSM) 的零开放端口安全通信 (SSM Session Manager)**：
+   - 现存问题：CI/CD 部署与远程连接依赖安全组开放 22 端口并暴露于公网。
+   - 优化方案：启用 AWS SSM Agent，彻底关闭公网 22 端口，通过 IAM 授权的加密 Session 通道进行管理和部署。
+2. **静态资源 CDN 加速与 AWS CloudFront / S3 动静分离 (CloudFront Static Acceleration)**：
+   - 现存问题：Flutter Web 静态文件与 CanvasKit Wasm 资源由单机 Nginx 直接承载，消耗单核 EC2 宝贵带宽。
+   - 优化方案：将前端构建产物部署至 S3 存储桶并挂载 CloudFront 全球 CDN 边缘节点，仅将 `/api/*` 动态流量回源。
+3. **GitHub Actions 部署后自动化全链路烟雾测试与自愈回滚 (Automated Smoke Test & Rollback)**：
+   - 现存问题：CI 流水线在容器启动后即标记成功，无法感知容器内初始化崩溃。
+   - 优化方案：追加自动化健康探测脚本（验证 `/actuator/health` 与 `/api/v1/projects`），探测失败自动拉起上一版本备份并回滚。
+4. **生产环境向无服务器容器 AWS ECS Fargate 平滑迁移评估 (ECS Fargate Migration Readiness)**：
+   - 现存问题：单机 EC2 虚机存在硬件单点故障。
+   - 优化方案：输出 Terraform / CloudFormation IaC 编排模板，将 Spring Boot App 与托管 RDS / ElastiCache 对接，实现高可用弹性伸缩。\n

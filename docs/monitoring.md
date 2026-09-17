@@ -1,725 +1,395 @@
-# 📊 Portfolio 应用监控系统
+# 📊 应用监控与可观测性系统深度指南 (Portfolio Monitoring & Observability Guide)
 
-**Status**: `Implemented for Local Docker Profile`
+**Status**: `Production-Ready Architecture (Prometheus + Grafana + Spring Boot Actuator)`
 
-> 当前监控栈以根目录 `docker-compose.yml` 为准，Prometheus / Grafana 配置文件位于 `monitoring/` 目录。
-> 如与本文档冲突，请优先参考 `docker-compose.yml`、`monitoring/prometheus.yml` 与 `monitoring/grafana/**`。
-
-## 🎯 概述
-
-本项目集成了 **Grafana + Prometheus** 监控系统，提供实时的应用性能监控、健康检查和可视化仪表板。
-
-## 📁 文件结构
-
-```
-monitoring/
-├── prometheus.yml                      # Prometheus 监控配置
-└── grafana/
-    ├── provisioning/
-    │   ├── datasources/
-    │   │   └── datasource.yml          # Grafana 数据源自动配置
-    │   └── dashboards/
-    │       └── dashboards.yml          # Grafana 仪表板自动配置
-    └── dashboards/
-        └── portfolio-dashboard.json     # Portfolio 应用监控仪表板
-```
-
-## 🚀 快速启动
-
-### 📋 前置条件
-
-确保您的系统已安装：
-- **Docker Desktop** - 下载地址: https://www.docker.com/products/docker-desktop
-- **PowerShell** - Windows 自带
-
-### 🔄 启动步骤
-
-#### **步骤 1: 检查 Docker 状态**
-
-```powershell
-# 检查 Docker 是否正常运行
-docker --version
-```
-
-如果看到 `Docker version 29.3.0...`，说明 Docker 已就绪。
-
-#### **步骤 2: 启动监控系统**
-
-```powershell
-# 使用本地 profile 启动应用 + MySQL + Redis + Prometheus + Grafana
-docker-compose --profile local up -d --build
-```
-
-当前仓库中用于本地监控的最小启动路径就是上面的 `docker-compose` 命令。
-若需要脚本化部署，可参考根目录 `docker_deploy.ps1`，但文档中的监控栈说明默认基于 `docker-compose.yml`。
-
-### 📱 启动成功后的访问地址
-
-| 服务 | 地址 | 账号 | 说明 |
-|------|------|------|------|
-| **Portfolio App** | http://localhost:8080 | - | 主应用 |
-| **Prometheus** | http://localhost:9090 | - | 指标收集和查询 |
-| **Grafana** | http://localhost:3000 | admin / admin123 | 可视化监控面板 |
-
-> Grafana 默认账号密码来自 `docker-compose.yml` 中的环境变量默认值，可通过环境变量覆盖。
-
-### ⚡ 快速验证
-
-启动完成后，验证服务状态：
-
-```powershell
-# 检查应用健康状态
-Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing
-
-# 检查 Prometheus
-Invoke-WebRequest -Uri "http://localhost:9090/-/healthy" -UseBasicParsing
-
-# 检查 Grafana
-Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing
-```
-
-### 🛠️ 手动启动（备选方案）
-
-如果脚本出现问题，可以手动启动：
-
-```powershell
-# 1. 构建应用
-.\gradlew.bat bootWar
-
-# 2. 启动服务
-docker-compose --profile local up -d --build
-
-# 3. 等待服务启动
-Start-Sleep -Seconds 30
-
-# 4. 检查状态
-docker-compose ps
-```
-
-## 🔧 配置文件详解
-
-### 1. docker-compose.yml (根目录)
-
-**作用**: 定义完整的监控栈服务
-- 📦 **Portfolio App**: Spring Boot 应用 (端口 8080)
-- 🗄️ **MySQL**: 数据库服务 (端口 3307)
-- 📊 **Prometheus**: 指标收集服务 (端口 9090)
-- 📈 **Grafana**: 可视化面板 (端口 3000)
-
-**关键特性**:
-- ✅ **服务依赖**: 应用等待数据库健康后启动
-- ✅ **网络隔离**: 自定义 Docker 网络确保服务间通信
-- ✅ **数据持久化**: 所有数据都持久化到 Docker 卷
-- ✅ **JVM 优化**: 配置了 G1GC 和内存参数
-- ✅ **Profile 启动**: 应用、MySQL、Redis、Prometheus、Grafana 都挂在 `local` profile 下
-- ✅ **环境变量**: 应用容器默认设置 `SPRING_PROFILES_ACTIVE=docker`
-
-### 2. prometheus.yml
-
-**作用**: Prometheus 监控配置文件
-- 🎯 **监控目标**: Portfolio 应用和 Prometheus 自身
-- ⏱️ **抓取频率**: 应用指标 10秒，全局默认 15秒
-- 📊 **指标路径**: `/actuator/prometheus` (Spring Boot Actuator)
-- 🔔 **告警支持**: 预留告警规则配置
-
-**配置详情**:
-```yaml
-global:
-  scrape_interval: 15s          # 全局抓取间隔
-  evaluation_interval: 15s      # 告警评估间隔
-
-scrape_configs:
-  - job_name: 'prometheus'      # 监控 Prometheus 自身
-  - job_name: 'portfolio-app-local'  # 监控 Portfolio 应用 (本地模式)
-    metrics_path: '/actuator/prometheus'  # Spring Boot 指标端点
-    scrape_interval: 10s        # 应用指标抓取间隔
-  - job_name: 'portfolio-app-docker'  # 监控 Portfolio 应用 (Docker 模式)
-    metrics_path: '/actuator/prometheus'
-    scrape_interval: 10s
-```
-
-### 3. grafana/provisioning/datasources/datasource.yml
-
-**作用**: Grafana 数据源自动配置
-- 🔄 **自动加载**: Grafana 启动时自动创建数据源
-- 🔗 **连接 Prometheus**: 配置 Prometheus 作为数据源
-- 🛡️ **代理访问**: 通过 Grafana 代理避免跨域问题
-- ⭐ **默认数据源**: 设为默认数据源
-
-**配置效果**:
-- 无需手动配置数据源
-- 开箱即用的监控体验
-- 自动连接到 Prometheus 服务
-
-### 4. grafana/provisioning/dashboards/dashboards.yml
-
-**作用**: Grafana 仪表板自动部署
-- 📁 **自动扫描**: 扫描指定目录下的仪表板文件
-- 🔄 **热更新**: 每 10 秒检查文件变化
-- 📊 **JSON 格式**: 支持 JSON 格式的仪表板定义
-- ✏️ **允许编辑**: 支持在 UI 中修改仪表板
-
-**配置效果**:
-- 仪表板自动导入
-- 支持仪表板版本控制
-- 无需手动导入仪表板
-
-### 5. grafana/dashboards/portfolio-dashboard.json
-
-**作用**: 仓库中预置的 Grafana 仪表板定义文件
-- 📈 **已提交 JSON 配置**: 可随仓库版本一起管理
-- 🔄 **自动导入**: 由 Grafana provisioning 在启动时加载
-- 🎯 **面向 Spring Boot 指标**: 查询 Prometheus 中的 HTTP / JVM / 系统类指标
-
-> 仪表板中的具体 panel 数量、标题和查询语句请以 `portfolio-dashboard.json` 或 Grafana UI 中当前导入结果为准。
-
-## 🚀 工作原理
-
-### 启动流程
-
-1. **Docker Compose 启动**
-   - 按依赖顺序启动服务
-   - 创建网络和数据卷
-   - 挂载配置文件
-
-2. **服务初始化**
-   - MySQL 启动并创建数据库
-   - Portfolio App 等待数据库健康后启动
-   - Prometheus 加载配置文件
-   - Grafana 加载 provisioning 配置
-
-3. **监控配置生效**
-   - Grafana 自动创建 Prometheus 数据源
-   - Grafana 自动导入 Portfolio 仪表板
-   - Prometheus 开始抓取应用指标
-   - 仪表板显示实时数据
-
-### 数据流向
-
-```
-Portfolio App → /actuator/prometheus → Prometheus → Grafana → 仪表板
-```
-
-## 🎯 如何使用监控系统
-
-### 📊 Grafana 可视化面板
-
-#### **访问 Grafana**
-
-1. 打开浏览器访问: http://localhost:3000
-2. 使用账号登录: **admin / admin123**
-3. 您将看到预配置的 "Portfolio App Monitoring" 仪表板
-
-#### **仪表板功能**
-
-| 面板名称 | 监控内容 | 正常范围 | 异常处理 |
-|----------|----------|----------|----------|
-| **HTTP Response Time** | API 响应时间 | < 500ms | > 1s 需要优化 |
-| **HTTP Request Rate** | 每秒请求数 | 根据业务量 | 突增需检查 |
-| **System CPU Usage** | CPU 使用率 | < 70% | > 80% 需要扩容 |
-| **JVM Heap Memory Usage** | 堆内存使用率 | < 80% | > 90% 需要优化 |
-| **Spring Security Processing Time** | 安全处理时间 | < 100ms | > 200ms 需要优化 |
-| **Garbage Collection Pause Time** | GC 暂停时间 | < 50ms | > 100ms 需要调优 |
-
-#### **自定义查询**
-
-在 Grafana 中可以创建自定义查询：
-
-```promql
-# 平均响应时间 (按端点)
-rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m])
-
-# 错误率
-rate(http_server_requests_seconds_count{status=~"5.."}[5m]) / rate(http_server_requests_seconds_count[5m])
-
-# 请求量排行
-topk(10, rate(http_server_requests_seconds_count[5m]))
-
-# 内存使用率
-jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}
-```
-
-### 📊 Prometheus 指标查询
-
-#### **访问 Prometheus**
-
-1. 打开浏览器访问: http://localhost:9090
-2. 在查询框中输入指标名称
-3. 选择时间范围查看趋势
-
-#### **常用指标查询**
-
-```promql
-# 查看所有 HTTP 请求指标
-http_server_requests_seconds_count
-
-# 查看特定端点的响应时间
-http_server_requests_seconds_sum{uri="/actuator/prometheus"}
-
-# 查看 JVM 内存使用
-jvm_memory_used_bytes
-
-# 查看 CPU 使用率
-system_cpu_usage
-
-# 查看 GC 指标
-jvm_gc_pause_seconds
-```
-
-### 🔍 应用健康检查
-
-#### **健康检查端点**
-
-```powershell
-# 基本健康状态
-Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing | ConvertFrom-Json
-
-# 存活探针
-Invoke-WebRequest -Uri "http://localhost:8080/actuator/health/liveness" -UseBasicParsing
-
-# 就绪探针
-Invoke-WebRequest -Uri "http://localhost:8080/actuator/health/readiness" -UseBasicParsing
-```
-
-#### **健康状态说明**
-
-| 状态 | 含义 | 处理方式 |
-|------|------|----------|
-| **UP** | 服务正常 | 继续监控 |
-| **DOWN** | 服务异常 | 查看日志，重启服务 |
-| **OUT_OF_SERVICE** | 维护中 | 等待恢复 |
-| **UNKNOWN** | 状态未知 | 检查配置 |
-
-### 📱 实时监控和日志
-
-#### **查看实时日志**
-
-```powershell
-# 查看应用日志
-docker-compose logs -f app
-
-# 查看 Prometheus 日志
-docker-compose logs -f prometheus
-
-# 查看 Grafana 日志
-docker-compose logs -f grafana
-
-# 查看数据库日志
-docker-compose logs -f db
-```
-
-#### **查看服务状态**
-
-```powershell
-# 查看所有服务状态
-docker-compose ps
-
-# 查看资源使用情况
-docker stats
-
-# 查看网络连接
-docker network ls
-```
-
-### ⚙️ 监控配置管理
-
-#### **重启服务**
-
-```powershell
-# 重启单个服务
-docker-compose restart app
-docker-compose restart prometheus
-docker-compose restart grafana
-
-# 重启所有服务
-docker-compose restart
-```
-
-#### **更新配置**
-
-```powershell
-# 修改配置后重新构建
-docker-compose --profile local up --build -d
-
-# 仅重新构建应用
-docker-compose --profile local up --build -d app
-```
-
-#### **数据备份**
-
-```powershell
-# 备份 Prometheus 数据
-docker exec prometheus tar -czf /tmp/prometheus-backup.tar.gz /prometheus
-docker cp prometheus:/tmp/prometheus-backup.tar.gz ./prometheus-backup.tar.gz
-
-# 备份 Grafana 配置
-docker exec grafana tar -czf /tmp/grafana-backup.tar.gz /var/lib/grafana
-docker cp grafana:/tmp/grafana-backup.tar.gz ./grafana-backup.tar.gz
-```
-
-## 📊 监控指标详解
-
-### 1. 应用性能指标
-
-| 指标名称 | 说明 | 用途 | 正常范围 |
-|----------|------|------|----------|
-| `http_server_requests_seconds` | HTTP 请求响应时间 | API 性能监控 | < 500ms |
-| `http_server_requests_seconds_count` | HTTP 请求计数 | 吞吐量统计 | 根据业务量 |
-| `system_cpu_usage` | 系统 CPU 使用率 | 资源监控 | < 70% |
-| `jvm_memory_used_bytes` | JVM 内存使用量 | 内存监控 | < 80% |
-| `jvm_gc_pause_seconds` | GC 暂停时间 | 垃圾回收监控 | < 50ms |
-
-### 2. 业务指标
-
-| 指标名称 | 说明 | 用途 |
-|----------|------|------|
-| `user_registrations_total` | 用户注册总数 | 业务增长 |
-| `user_logins_total` | 用户登录总数 | 用户活跃度 |
-| `api_calls_total` | API 调用总数 | API 使用统计 |
-| `api_errors_total` | API 错误总数 | 错误率监控 |
-
-### 3. 安全指标
-
-| 指标名称 | 说明 | 用途 |
-|----------|------|------|
-| `spring_security_http_secured_requests_seconds` | 安全处理时间 | 安全性能 |
-| `spring_security_filterchains_seconds` | 过滤器处理时间 | 安全链路监控 |
-
-## 🎯 使用场景
-
-### 开发环境
-- 🔍 **实时调试**: 查看应用性能指标
-- 📊 **性能分析**: 分析 API 响应时间和资源使用
-- 🐛 **问题定位**: 通过指标快速定位问题
-
-### 测试环境
-- 📈 **性能测试**: 监控负载测试期间的性能表现
-- 🔎 **回归测试**: 确保代码变更不影响性能
-- 📋 **测试报告**: 生成性能测试报告
-
-### 生产环境
-- 🚨 **实时监控**: 7x24 小时监控应用状态
-- 📊 **容量规划**: 基于历史数据规划资源
-- 🔔 **告警通知**: 配置指标告警（预留功能）
-
-## 🔧 自定义配置
-
-### 添加新的监控目标
-
-在 `prometheus.yml` 中添加新的 `scrape_configs`:
-
-```yaml
-- job_name: 'new-service'
-  static_configs:
-    - targets: ['new-service:8080']
-  metrics_path: '/actuator/prometheus'
-  scrape_interval: 10s
-```
-
-### 创建新的仪表板
-
-1. 在 Grafana UI 中创建仪表板
-2. 导出为 JSON 文件
-3. 放入 `grafana/dashboards/` 目录
-4. Grafana 会自动加载新仪表板
-
-### 修改监控频率
-
-在 `prometheus.yml` 中调整 `scrape_interval`:
-
-```yaml
-- job_name: 'portfolio-app-local'
-  scrape_interval: 5s  # 更频繁的抓取
-```
-
-## 🚨 故障排除
-
-### 常见问题及解决方案
-
-#### **问题 1: 应用无法启动**
-
-**症状**: `Portfolio App: Unhealthy`
-
-**排查步骤**:
-```powershell
-# 1. 查看应用日志
-docker-compose logs app
-
-# 2. 检查端口占用
-netstat -an | findstr 8080
-
-# 3. 重新构建应用
-docker-compose --profile local up --build -d app
-```
-
-**常见原因**:
-- 端口 8080 被占用
-- 应用构建失败
-- 数据库连接问题
-
-#### **问题 2: Prometheus 无法收集指标**
-
-**症状**: `Prometheus: Unhealthy`
-
-**排查步骤**:
-```powershell
-# 1. 检查指标端点
-Invoke-WebRequest -Uri "http://localhost:8080/actuator/prometheus" -UseBasicParsing
-
-# 2. 查看 Prometheus 日志
-docker-compose logs prometheus
-
-# 3. 检查网络连通性
-docker exec prometheus ping app
-```
-
-**常见原因**:
-- 应用指标端点不可访问
-- Prometheus 配置错误
-- 网络连接问题
-
-#### **问题 3: Grafana 无法连接 Prometheus**
-
-**症状**: Grafana 仪表板显示 "No data"
-
-**排查步骤**:
-```powershell
-# 1. 检查 Grafana 数据源配置
-curl -u admin:admin123 http://localhost:3000/api/datasources
-
-# 2. 查看 Grafana 日志
-docker-compose logs grafana
-
-# 3. 测试 Prometheus 连接
-curl http://localhost:9090/api/v1/query?query=up
-```
-
-**常见原因**:
-- 数据源配置错误
-- Prometheus 服务未启动
-- 网络连接问题
-
-#### **问题 4: 内存使用过高**
-
-**症状**: JVM 内存使用率 > 80%
-
-**排查步骤**:
-```powershell
-# 1. 查看内存指标
-curl http://localhost:8080/actuator/prometheus | grep jvm_memory
-
-# 2. 分析内存泄漏
-docker stats app
-
-# 3. 调整 JVM 参数
-# 编辑 docker-compose.yml 中的 JAVA_OPTS
-```
-
-**解决方案**:
-- 调整堆内存大小
-- 优化代码减少内存使用
-- 增加内存限制
-
-### 性能优化建议
-
-#### **应用层面优化**
-
-1. **数据库优化**
-   - 配置连接池大小
-   - 启用查询缓存
-   - 优化 SQL 查询
-
-2. **缓存策略**
-   - 启用 Redis 缓存
-   - 配置本地缓存
-   - 实现缓存预热
-
-3. **异步处理**
-   - 使用 @Async 注解
-   - 配置线程池
-   - 实现异步 API
-
-#### **JVM 层面优化**
-
-```yaml
-# docker-compose.yml 中的 JVM 优化参数
-environment:
-  JAVA_OPTS: >-
-    -Xms512m
-    -Xmx1024m
-    -XX:+UseG1GC
-    -XX:MaxGCPauseMillis=100
-    -XX:+PrintGCDetails
-    -XX:+PrintGCTimeStamps
-    -Xloggc:/app/gc.log
-```
-
-#### **监控层面优化**
-
-```properties
-# application.properties 中的监控优化
-management.metrics.export.prometheus.step=30s
-management.endpoint.health.cache.time-to-live=60s
-management.endpoint.info.cache.time-to-live=60s
-```
-
-## 📈 最佳实践
-
-### 1. 监控策略
-
-- **设置告警阈值**: 根据业务需求设置合理的告警阈值
-- **建立基线**: 记录正常运行时的指标基线
-- **定期巡检**: 每日检查关键指标趋势
-- **容量规划**: 基于历史数据预测资源需求
-
-### 2. 日志管理
-
-- **结构化日志**: 使用 JSON 格式便于分析
-- **日志级别**: 生产环境使用 WARN 或 ERROR
-- **日志轮转**: 配置日志文件大小和保留策略
-- **集中收集**: 使用 ELK 或 Loki 收集日志
-
-### 3. 安全考虑
-
-- **访问控制**: 限制监控端点的访问权限
-- **数据加密**: 传输敏感指标时使用 HTTPS
-- **审计日志**: 记录监控系统的访问日志
-- **定期更新**: 保持 Prometheus 和 Grafana 版本更新
-
-### 4. 备份策略
-
-- **配置备份**: 定期备份 Grafana 仪表板和配置
-- **数据备份**: 备份 Prometheus 历史数据
-- **版本控制**: 将监控配置纳入版本控制
-- **灾难恢复**: 制定监控系统故障恢复方案
-
-## 🚨 告警配置
-
-### Prometheus 告警规则示例
-
-```yaml
-# alerts.yml
-groups:
-  - name: portfolio.rules
-    rules:
-      - alert: HighResponseTime
-        expr: rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m]) > 1
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High response time detected"
-          
-      - alert: HighCPUUsage
-        expr: system_cpu_usage > 0.8
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "High CPU usage detected"
-          
-      - alert: HighMemoryUsage
-        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.8
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High memory usage detected"
-```
-
-## 🔍 故障排查
-
-### 1. 服务无法启动
-
-```bash
-# 检查日志
-docker-compose logs app
-
-# 检查端口占用
-netstat -an | grep 8080
-netstat -an | grep 9090
-netstat -an | grep 3000
-```
-
-### 2. Prometheus 无法收集指标
-
-```bash
-# 检查指标端点
-curl http://localhost:8080/actuator/prometheus
-
-# 检查 Prometheus 配置
-curl http://localhost:9090/targets
-```
-
-### 3. Grafana 无法连接 Prometheus
-
-```bash
-# 检查 Grafana 数据源配置
-curl -u admin:admin123 http://localhost:3000/api/datasources
-
-# 检查网络连通性
-docker exec prometheus ping grafana
-```
-
-## 📊 性能调优建议
-
-### 1. 应用层面
-
-- **数据库连接池**: 优化连接池配置
-- **缓存策略**: 启用适当的缓存机制
-- **异步处理**: 使用异步处理提高并发性能
-
-### 2. JVM 层面
-
-- **内存分配**: 根据实际需求调整堆内存大小
-- **GC 策略**: 使用 G1GC 减少停顿时间
-- **线程池**: 优化线程池配置
-
-### 3. 监控层面
-
-- **指标采样**: 调整指标收集频率
-- **数据保留**: 配置适当的数据保留策略
-- **告警阈值**: 根据业务需求调整告警阈值
-
-## 🔄 数据备份
-
-### Prometheus 数据备份
-
-```bash
-# 备份 Prometheus 数据
-docker exec prometheus tar -czf /tmp/prometheus-backup.tar.gz /prometheus
-
-# 恢复 Prometheus 数据
-docker exec prometheus tar -xzf /tmp/prometheus-backup.tar.gz -C /
-```
-
-### Grafana 配置备份
-
-```bash
-# 备份 Grafana 配置
-docker exec grafana tar -czf /tmp/grafana-backup.tar.gz /var/lib/grafana
-
-# 恢复 Grafana 配置
-docker exec grafana tar -xzf /tmp/grafana-backup.tar.gz -C /
-```
-
-## 📚 相关文档
-
-- [Prometheus 官方文档](https://prometheus.io/docs/)
-- [Grafana 官方文档](https://grafana.com/docs/)
-- [Spring Boot Actuator 文档](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html)
-- [Micrometer 文档](https://micrometer.io/docs/)
-
-## 🆘 技术支持
-
-如果遇到问题，可以：
-
-1. **查看日志**: `docker-compose logs -f [service-name]`
-2. **检查配置**: 确认配置文件正确性
-3. **重启服务**: `docker-compose restart [service-name]`
-4. **社区支持**: 查阅相关技术文档和社区
+> 本监控栈遵循云原生可观测性规范构建。指标采集、时序存储与数据可视化配置文件位于 `monitoring/` 目录，基础设施编排以根目录 `docker-compose.yml` 为准。
 
 ---
 
-*最后更新: 2026-03-27*  
-*维护者: Development Team*
+## 一、架构设计理念与技术全貌
+
+在企业级微服务与现代化 Web 架构中，**可观测性 (Observability)** 由三大支柱构成：**指标 (Metrics)**、**日志 (Logs)** 与 **调用链路 (Tracing)**。本项目重点落盘了以 **Spring Boot Actuator + Micrometer + Prometheus + Grafana** 为核心的工业级时序指标监控系统。
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   Portfolio 全链路时序监控拓扑架构                                        │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+    [ 业务请求流量 ]
+           │
+           ▼
+    ┌───────────────────────────────┐
+    │ Spring Boot 3 Portfolio App   │
+    │ (端口: 8080)                  │
+    ├───────────────────────────────┤
+    │ • Spring MVC / Tomcat 线程池   │
+    │ • Spring Security 认证过滤链   │
+    │ • MyBatis-Plus / HikariCP     │
+    │ • RedisTemplate 缓存交互      │
+    ├───────────────────────────────┤
+    │ Micrometer 核心度量门面       │ ── 内存中维护 Counter, Timer, Gauge, DistributionSummary
+    ├───────────────────────────────┤
+    │ Spring Boot Actuator 端点     │
+    │ 暴露: /actuator/prometheus    │ ── 输出符合 OpenMetrics / Prometheus 文本标准的度量快照
+    └───────────────────────────────┘
+                   ▲
+                   │ (1. HTTP GET 定时拉取 / 10s 间隔)
+                   │ 容器网络 (portfolio-network) 或 host.docker.internal
+    ┌───────────────────────────────┐
+    │ Prometheus TSDB (时序数据库)  │
+    │ (端口: 9090)                  │
+    ├───────────────────────────────┤
+    │ • Scrape Engine (抓取引擎)    │ ── 解析 prometheus.yml，定时触发抓取任务
+    │ • TSDB 本地时序存储           │ ── 数据持久化于 prometheus_data 数据卷 (默认保留 24h)
+    │ • PromQL 算子计算引擎         │ ── 支持 rate()、sum()、topk()、分位数计算
+    │ • Web Console / HTTP API      │ ── 提供 /-/healthy 与 /api/v1/query 端点
+    └───────────────────────────────┘
+                   ▲
+                   │ (2. HTTP 数据源查询 PromQL)
+                   │ 通过 Docker 内部网络: http://prometheus:9090
+    ┌───────────────────────────────┐
+    │ Grafana 可视化服务器          │
+    │ (端口: 3000)                  │
+    ├───────────────────────────────┤
+    │ • Provisioning 自动装配机制   │ ── 启动时免密自动注入 Prometheus 数据源与 Dashboard
+    │ • JSON 仪表板动态解析渲染     │ ── 实时加载 portfolio-dashboard.json
+    │ • 告警与面板渲染引擎          │ ── QPS、P99 延时、JVM 堆内存、GC 暂停、CPU 饱和度
+    └───────────────────────────────┘
+                   ▲
+                   │ (3. HTTPS / HTTP 浏览器访问)
+                   │ http://localhost:3000 (admin / admin123)
+    ┌───────────────────────────────┐
+    │ 开发者 / 运维工程师 / 浏览器    │
+    └───────────────────────────────┘
+```
+
+### 核心架构设计哲学 (Architectural Decisions)
+
+1. **Pull 抓取模型 vs Push 推送模型**：
+   - 系统采用 Prometheus 经典的 **Pull 拉取模型**。应用无须关注监控组件的 IP 和部署状态，仅在自身内存中累加计数器，并通过无状态的 `/actuator/prometheus` 端点对外暴露；
+   - 监控系统（Prometheus）全权控制采样频率（10s）与超时策略（5s），避免应用因向外部不可用的监控组件推送数据而引发线程阻塞或级联雪崩；
+   - 具备天然的存活感知能力：若 Prometheus 连续抓取失败，指标 `up{job="portfolio-app"} == 0` 会瞬间反映应用离线，无需额外的独立心跳报文。
+2. **零手动配置的 GitOps 自动装配 (Zero-Touch Provisioning)**：
+   - 摒弃了在 Grafana UI 界面手动点击“创建数据源”和“导入 JSON 文件”的易错方式；
+   - 采用 Grafana 官方 **Provisioning 机制**，通过 `datasource.yml` 与 `dashboards.yml` 实现启动时全自动化加载，代码与监控资产 100% 纳入 Git 版本控制。
+3. **分层网络隔离与纵深防御 (Defense in Depth)**：
+   - 容器编排使用专用的 Docker 桥接网络（`portfolio-network`），Prometheus 与 Grafana 之间通过内部容器名通信（`http://prometheus:9090`）；
+   - 在生产环境，`/actuator/**` 严禁直接暴露于公网，仅允许宿主机 Nginx 网关反向代理公网业务流量，内网端口与监控端点受到严格的 VPC 安全组隔离。
+
+---
+
+## 二、文件目录与组件职责
+
+```
+monitoring/
+├── prometheus.yml                      # Prometheus 核心抓取配置（支持 local 与 docker 双轨模式）
+└── grafana/
+    ├── provisioning/                   # Grafana 自动装配目录（启动时自动扫描挂载）
+    │   ├── datasources/
+    │   │   └── datasource.yml          # 数据源自动配置（将 Prometheus 设为默认数据源）
+    │   └── dashboards/
+    │       └── dashboards.yml          # 仪表板提供者配置（定义扫描路径与 10s 热刷新间隔）
+    └── dashboards/
+        └── portfolio-dashboard.json    # 预置的 Spring Boot 性能大盘（包含 6 大核心面板）
+```
+
+---
+
+## 三、核心配置文件深度解析
+
+### 1. Spring Boot Actuator & 指标配置 (`application.properties`)
+
+```properties
+# ===================================================================
+# Spring Boot Actuator 端点暴露与安全管控
+# ===================================================================
+# 严格遵循最小特权原则，仅暴露基础运行状况与指标端点
+# 绝不暴露敏感高危端点（如 env、shutdown、heapdump、beans）
+management.endpoints.web.exposure.include=health,info,prometheus
+
+# 健康检查详情展示策略：always 表示返回各组件（DB、Redis、磁盘等）的详细就绪状态
+management.endpoint.health.show-details=always
+
+# 开启 Kubernetes/容器编排专用的存活 (liveness) 与就绪 (readiness) 探针
+management.endpoint.health.probes.enabled=true
+
+# ===================================================================
+# Micrometer & Prometheus 指标导出优化
+# ===================================================================
+# 开启分布式追踪上下文注入
+management.tracing.enabled=true
+
+# 启用 Prometheus 格式指标导出适配器
+management.metrics.export.prometheus.enabled=true
+
+# 指标统计步长（Step Window），定义直方图与分位数的统计滑动周期
+management.metrics.export.prometheus.step=15s
+
+# 显式激活核心度量绑定器
+management.metrics.bindings.jvm.enabled=true         # JVM 内存、GC、线程
+management.metrics.bindings.web.enabled=true         # HTTP 请求延时与状态码
+management.metrics.bindings.processor.enabled=true   # 系统 CPU 核心使用率
+```
+
+### 2. Prometheus 抓取配置 (`monitoring/prometheus.yml`)
+
+Prometheus 配置文件创新性地设计了 **本地开发 (Local)** 与 **容器化 (Docker)** 双轨支持模式：
+
+```yaml
+global:
+  scrape_interval: 15s      # 全局默认抓取频率
+  evaluation_interval: 15s  # 告警规则评估周期
+
+scrape_configs:
+  # 1. Prometheus 自身性能监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # 2. 本地宿主机运行模式 (开发/调试)
+  # 容器内的 Prometheus 通过 host.docker.internal 反向穿透访问宿主机 8080
+  - job_name: 'portfolio-app-local'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    params:
+      environment: ['local']
+
+  # 3. Docker 容器完整栈模式 (生产/部署)
+  # 通过 Docker 内部网络直接解析服务名 app:8080
+  - job_name: 'portfolio-app-docker'
+    static_configs:
+      - targets: ['app:8080']
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    params:
+      environment: ['docker']
+```
+
+### 3. Grafana 数据源自动装配 (`monitoring/grafana/provisioning/datasources/datasource.yml`)
+
+```yaml
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy  # 由 Grafana 后端服务器代理请求，彻底根除浏览器跨域 (CORS) 问题
+    url: http://${PROMETHEUS_HOST:-prometheus}:${PROMETHEUS_PORT:-9090}
+    isDefault: true
+    editable: true
+```
+
+### 4. Grafana 仪表盘自动装配 (`monitoring/grafana/provisioning/dashboards/dashboards.yml`)
+
+```yaml
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10  # 每 10 秒检测一次磁盘 JSON 文件更新，支持热重载
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards  # 挂载 portfolio-dashboard.json 的容器内路径
+```
+
+---
+
+## 四、重点与难点指标与 PromQL 算法深度剖析
+
+预置在 [`portfolio-dashboard.json`](file:///c:/Users/liste/Downloads/github/ListenPortfolioBackend/monitoring/grafana/dashboards/portfolio-dashboard.json) 中的 6 大核心面板采用了高度严谨的 PromQL 算子，以下为每个面板的数学原理与生产排障指引：
+
+---
+
+### 面板 1：HTTP 接口平均响应延时 (HTTP Response Time)
+
+#### 📈 PromQL 表达式：
+```promql
+rate(http_server_requests_seconds_sum[5m]) / rate(http_server_requests_seconds_count[5m])
+```
+
+#### 🧠 数学原理与底层实现难点：
+- **为什么不能直接计算均值？**
+  Micrometer 为 HTTP 请求维护了两个累加计数器（Cumulative Counter）：`http_server_requests_seconds_sum`（请求耗时总秒数累加）与 `http_server_requests_seconds_count`（请求总次数累加）。这两个数值随应用启动持续单调递增；
+- 若直接相除（`sum / count`），得到的是应用从启动至今所有历史请求的“全局历史平均”，无法反映系统在最近 5 分钟内的性能波动；
+- **`rate(...[5m])` 算子的妙用**：
+  `rate()` 会在 5 分钟的滑动时间窗口内计算两个相邻采样点之间的导数（每秒增量），即使应用重启发生计数器重置（Counter Reset），`rate()` 也能自动识别并平滑处理；
+- 将【每秒耗时增量】除以【每秒请求增量】，精确计算出**当前窗口内单次 HTTP 请求的瞬时平均耗时**（单位：秒）。
+
+#### 🎯 阈值与排障基线：
+- `< 200ms`：性能卓越（常规查询）；
+- `200ms ~ 500ms`：正常区间；
+- `> 1000ms`：性能劣化预警，需排查慢 SQL、第三方 SMTP 邮件同步等待或 Redis 网络锁。
+
+---
+
+### 面板 2：每秒请求吞吐量 (HTTP Request Rate / QPS)
+
+#### 📈 PromQL 表达式：
+```promql
+rate(http_server_requests_seconds_count[5m])
+```
+
+#### 🧠 原理解析：
+- 对接口请求总数执行每秒速率运算，即时反映系统的每秒并发事务吞吐能力（Queries Per Second, QPS）；
+- 可通过 Label 维度扩展下钻，例如按接口分组：`sum by (uri) (rate(http_server_requests_seconds_count[5m]))`。
+
+---
+
+### 面板 3：系统 CPU 使用率 (System CPU Usage)
+
+#### 📈 PromQL 表达式：
+```promql
+system_cpu_usage
+```
+
+#### 🧠 原理解析：
+- 由 Micrometer 的 `ProcessorMetrics` 绑定器调用操作系统底层 JMX `OperatingSystemMXBean` 获取；
+- 数值范围在 `0.0` 至 `1.0` 之间（表示 0% ~ 100%）。持续超过 `0.80`（80%）提示系统可能遭遇密集死循环、暴力破解或严重垃圾回收。
+
+---
+
+### 面板 4：JVM 堆内存饱和度 (JVM Heap Memory Usage)
+
+#### 📈 PromQL 表达式：
+```promql
+jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}
+```
+
+#### 🧠 原理解析：
+- 严格过滤 Label `area="heap"`，排除 Metaspace（元空间）与 Code Cache（代码缓存区）等非堆内存；
+- 计算已用堆内存与最大可用堆内存（`-Xmx`）的比率。若比率持续高于 `0.85` 且在 Full GC 后依然无法回落，表明存在严重的内存泄漏（Memory Leak）。
+
+---
+
+### 面板 5：Spring Security 认证耗时 (Security Processing Time)
+
+#### 📈 PromQL 表达式：
+```promql
+rate(spring_security_http_secured_requests_seconds_sum[5m]) / rate(spring_security_http_secured_requests_seconds_count[5m])
+```
+
+#### 🧠 原理解析：
+- 专门监控 Spring Security 过滤器链（包括 `JwtRequestFilter` 解析、Token 校验、上下文构建及 BCrypt 密码校验）的独立耗时；
+- 帮助开发者精准定位性能瓶颈究竟是出现在业务 Controller / DAO 层，还是出现在安全认证与拦截链路。
+
+---
+
+### 面板 6：JVM GC 停顿时间 (Garbage Collection Pause Time)
+
+#### 📈 PromQL 表达式：
+```promql
+rate(jvm_gc_pause_seconds_sum[5m]) / rate(jvm_gc_pause_seconds_count[5m])
+```
+
+#### 🧠 原理解析：
+- 计算 G1GC（Garbage-First）垃圾收集器导致的 Stop-The-World (STW) 线程暂停平均耗时；
+- 若 GC 暂停时间突增至 `> 200ms`，说明 Young 区过小、晋升过快或发生了 Mixed GC / Full GC，需调优 `-XX:MaxGCPauseMillis` 参数。
+
+---
+
+## 五、安全设计与网络隔离方案
+
+### 1. Actuator 端点放行机制与纵深防御
+
+在 [`SecurityConfig.java`](file:///c:/Users/liste/Downloads/github/ListenPortfolioBackend/src/main/java/com/listen/portfolio/common/config/SecurityConfig.java) 中，配置了如下放行规则：
+
+```java
+// Spring Boot Actuator 监控与健康探针端点放行
+.requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/prometheus").permitAll()
+```
+
+#### 🔒 安全防御分析：
+1. **为什么必须 permitAll()？**
+   Prometheus 抓取器与 Docker/K8s 容器探针是基础设施级自动化程序，无法持有动态签发的业务 JWT 令牌。若要求携带 Bearer Token，探针会因 401 失败而导致容器被编排引擎强制杀死；
+2. **最小暴露范围防御**：
+   在 `application.properties` 中只暴露 `health,info,prometheus`。攻击者即便能访问该端口，也无法调用高危端点（如 `/actuator/env` 刺探数据库账号密码，或 `/actuator/shutdown` 远程关停服务）；
+3. **网关层物理阻断（生产推荐）**：
+   在外部 Nginx 网关中添加如下配置，仅放行内网监控网段：
+   ```nginx
+   location /actuator/ {
+       allow 172.18.0.0/16;    # Docker 容器内部子网
+       allow 127.0.0.1;        # 宿主机回环地址
+       deny all;               # 阻断所有公网请求
+   }
+   ```
+
+---
+
+## 六、快速启动与验证实操
+
+### 1. 本地一键拉起监控全栈
+
+```powershell
+# 1. 编译可执行 WAR 产物
+./gradlew bootWar
+
+# 2. 启动包含 Prometheus 与 Grafana 的 local profile 容器栈
+docker-compose --profile local up -d --build
+```
+
+### 2. 验证各服务健康状态
+
+```powershell
+# 验证后端 App 健康状态
+Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing
+
+# 验证 Prometheus 就绪状态
+Invoke-WebRequest -Uri "http://localhost:9090/-/healthy" -UseBasicParsing
+
+# 验证 Grafana API 就绪状态
+Invoke-WebRequest -Uri "http://localhost:3000/api/health" -UseBasicParsing
+```
+
+### 3. 服务访问控制台
+
+| 服务 | 本地访问 URL | 默认凭据 | 职责说明 |
+| :--- | :--- | :--- | :--- |
+| **Portfolio App** | `http://localhost:8080` | - | Spring Boot 业务主应用 |
+| **Actuator 指标** | `http://localhost:8080/actuator/prometheus` | 无需凭据 | Prometheus 原生文本指标快照 |
+| **Prometheus Web** | `http://localhost:9090` | 无需凭据 | 时序指标查询与 Target 状态查看 |
+| **Grafana 仪表板** | `http://localhost:3000` | `admin` / `admin123` | 性能大盘与可视化图表分析 |
+
+---
+
+## 七、生产高频排障手册 (Troubleshooting)
+
+### 1. Prometheus 抓取目标显示 DOWN (`context deadline exceeded` 或 `connection refused`)
+- **排查步骤**：
+  1. 访问 `http://localhost:9090/targets`，查看对应 Target 的 Error 信息；
+  2. 若在容器内使用本地模式，确保使用的是 `host.docker.internal:8080`；在 Linux 环境需配置 `--add-host=host.docker.internal:host-gateway`；
+  3. 若在容器完整栈模式，确保两者处于同一 Docker 网络（`portfolio-network`），且应用服务名为 `app:8080`；
+  4. 检查应用的 `SecurityConfig` 是否放行了 `/actuator/prometheus`。
+
+### 2. Grafana 仪表板显示 "No Data"
+- **排查步骤**：
+  1. 打开 Grafana ➔ Configuration ➔ Data Sources ➔ 点击 Prometheus ➔ 点击 "Save & Test"，确认返回 `Data source is working`；
+  2. 进入面板编辑模式，复制 PromQL 语句粘贴到 Prometheus 原生界面（`http://localhost:9090/graph`）中直接执行；
+  3. 确认右上角时间选择器未选在“无数据产生的历史时间区间”（建议选择 `Last 15 minutes`）。
+
+### 3. Prometheus 配置动态热加载（无需重启容器）
+Prometheus 镜像已在 `docker-compose.yml` 中声明启用了 `--web.enable-lifecycle`，修改 `monitoring/prometheus.yml` 后可直接通过 HTTP 发送热加载信号：
+```bash
+curl -X POST http://localhost:9090/-/reload
+```
+
+---
+
+## 八、监控架构演进与治理待办 (Roadmap)
+
+根据本项目监控现状，已在 [`docs/todo.md`](file:///c:/Users/liste/Downloads/github/ListenPortfolioBackend/docs/todo.md) **第 17 章节（应用监控与可观测性体系深度治理）** 中建立以下 4 项演进目标：
+
+1. **Actuator 监控端点网络安全隔离与鉴权 (Actuator Endpoint Security)**：
+   - 在 Nginx 层配置白名单阻断公网爬虫，或引入独立的 management 端口隔离内外部流量。
+2. **Prometheus 告警规则持久化与 Alertmanager 多通道通知闭环 (Alertmanager Pipelines)**：
+   - 固化 `portfolio-alerts.yml` 告警规则，编排 Alertmanager 服务，打通企业微信/钉钉/邮件报警。
+3. **Micrometer 业务级核心指标埋点与 Grafana 专用大盘 (Custom Business Metrics)**：
+   - 埋点用户登录、密码重置发信、限流拦截等业务计数器，构建真实反映业务活跃度的可视化大盘。
+4. **日志、指标与分布式链路追踪黄金三要素统一联动 (Loki & Tempo Observability)**：
+   - 接入 Grafana Loki 与 Tempo，打通“指标异常 ➔ 日志下钻 ➔ 全链路追踪”的云原生可观测闭环。

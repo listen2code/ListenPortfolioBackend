@@ -2,7 +2,7 @@
 
 [![Backend CI](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml/badge.svg)](https://github.com/listen2code/ListenPortfolioBackend/actions/workflows/ci.yml)
 
-ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 Spring Boot 3.2.1 构建。它的首要目标不是做成一个“泛企业平台样板”，而是为 Flutter 作品集 App 提供可信、可维护、可联调的 REST API，同时保留一定工程深度用于展示架构判断。
+ListenPortfolioBackend 是 `ListenPortfolioFlutter` 的支撑型后端，基于 Spring Boot 3.4.2 构建。它的首要目标不是做成一个“泛企业平台样板”，而是为 Flutter 作品集 App 提供可信、可维护、可联调的 REST API，同时保留一定工程深度用于展示架构判断。
 
 当前文档遵循两条规则：
 
@@ -192,10 +192,10 @@ $env:MAIL_PASSWORD="your-gmail-app-password"
 
 ### 当前状态判断
 
-- 已有 Controller / Service / Repository / Integration 测试基础
-- JaCoCo 和 SpotBugs 工具链已接入
-- **GitHub Actions CI/CD 已接入**：Push/PR 自动触发编译、测试与部署
-- 一部分测试依赖 Redis，本地未启动 Redis 时会失败
+- **全量测试套件**: **369 个测试用例，33 个测试套件，100% 绿色通过 (0 failures, 0 errors, 0 skipped)**
+- **JaCoCo 质量门禁**: 全局代码行覆盖率 **92.05%** (1,367/1,485 行)，指令覆盖率 **92.30%** (5,347/5,793)，方法覆盖率 **96.74%** (386/399)，类覆盖率 **95.12%** (39/41)
+- **内嵌 Redis 测试环境**: 集成测试底层基于 EmbeddedRedisTestConfig / BaseIntegrationTest，执行 ./gradlew test 无需本地预先启动独立 Redis 实例
+- **CI/CD 自动化门禁**: GitHub Actions 流水线自动化执行编译、单测、JaCoCo 覆盖率报告生成与 SpotBugs 静态安全检测
 
 ## 🐳 Docker 与部署
 

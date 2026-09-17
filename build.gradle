@@ -99,14 +99,32 @@ spotbugsMain {
     }
 }
 
+// ===================================================================
+// 测试任务配置 (JUnit 5 + 排除规则 + 自动绑定覆盖率分析)
+// ===================================================================
 tasks.named('test') {
+    // 启用现代 JUnit Platform (JUnit 5 Jupiter) 驱动执行
     useJUnitPlatform()
+    
+    // 持续集成环境与快速构建规则：
+    // 在 CI 自动化构建流水线或指定 excludePerformanceTest 参数时，排除高耗时性能测试，防止流水线超时
     if (System.getenv('CI') == 'true' || project.hasProperty('excludePerformanceTest')) {
         exclude '**/performance/**'
     }
+    
+    // 核心钩子 (finalizedBy)：无论单测执行成功与否，一旦测试任务结束，自动拉起 JaCoCo 覆盖率报表生成
     finalizedBy jacocoTestReport
 }
 
+// ===================================================================
+// JaCoCo 覆盖率报表生成任务配置 (jacocoTestReport)
+// ===================================================================
+// 机制原理：
+//   1. dependsOn test：强制依赖测试任务，保证测试执行产出 .exec 字节码执行跟踪数据文件
+//   2. reports 配置：
+//      - xml.required = true：生成标准 XML 报告，便于 GitHub Actions、SonarQube 或 CI 平台解析
+//      - html.required = true：生成全套可视化网页报告（位于 build/reports/jacoco/test/html/）
+// ===================================================================
 jacocoTestReport {
     dependsOn test
     reports {
@@ -114,3 +132,4 @@ jacocoTestReport {
         html.required = true
     }
 }
+

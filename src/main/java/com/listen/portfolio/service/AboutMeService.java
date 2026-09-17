@@ -34,7 +34,17 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * AboutMe 业务服务类（MyBatis-Plus 版本）
+ * AboutMe Business Service (MyBatis-Plus Implementation).
+ *
+ * <p>Architectural Responsibilities:
+ * <ul>
+ *   <li><b>Profile Aggregation</b>: Assembles a composite portfolio profile spanning career experiences,
+ *       academic degrees, language proficiencies, statistics, certifications, and 6-dimensional skill radar models.</li>
+ *   <li><b>Dynamic Localization</b>: Applies {@link I18nUtils} against client request {@link Locale}
+ *       across all nested child entities.</li>
+ *   <li><b>Read-Only Isolation</b>: Operates inside a read-only transaction ({@code @Transactional(readOnly = true)})
+ *       to guarantee a consistent snapshot read across all underlying tables.</li>
+ * </ul>
  */
 @Service
 public class AboutMeService {
@@ -60,9 +70,11 @@ public class AboutMeService {
     }
 
     /**
-     * 说明：
-     * - 在 Service 的只读事务内完成实体与关联集合的装配并转换为 DTO
-     * - 根据 LocaleContextHolder 获取客户端 Accept-Language 并做多语言字段动态映射
+     * Fetches and assembles the complete AboutMe profile DTO for the given user,
+     * resolving dynamic language translations and mapping all sub-collections.
+     *
+     * @param userId Target user ID.
+     * @return {@link Optional} containing the assembled {@link AboutMeDto}, or empty if not found.
      */
     @Transactional(readOnly = true)
     public Optional<AboutMeDto> getAboutMeDto(Long userId) {

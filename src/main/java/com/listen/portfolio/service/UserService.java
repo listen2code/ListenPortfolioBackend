@@ -31,7 +31,10 @@ public class UserService {
     }
 
     /**
-     * 根据用户名查询用户信息（区分大小写）
+     * Looks up an active user account by username using case-sensitive matching.
+     *
+     * @param username Target username string.
+     * @return {@link Optional} containing {@link UserEntity} if found.
      */
     @Transactional(readOnly = true)
     public Optional<UserEntity> getUserByName(String username) {
@@ -40,7 +43,10 @@ public class UserService {
     }
 
     /**
-     * 根据用户ID获取用户摘要信息
+     * Retrieves client-safe summary information for the specified user ID.
+     *
+     * @param id The target user ID.
+     * @return {@link Optional} containing {@link UserSummaryDto}, or empty if user doesn't exist.
      */
     @Transactional(readOnly = true)
     public Optional<UserSummaryDto> getUserSummaryById(Long id) {
@@ -50,7 +56,10 @@ public class UserService {
     }
 
     /**
-     * 将用户实体转换为用户摘要DTO
+     * Maps persistent {@link UserEntity} to client-facing {@link UserSummaryDto}.
+     *
+     * @param entity The source database entity.
+     * @return Mapped DTO instance.
      */
     private UserSummaryDto toUserSummaryDto(UserEntity entity) {
         UserSummaryDto dto = new UserSummaryDto();
@@ -63,7 +72,10 @@ public class UserService {
     }
 
     /**
-     * 修改用户密码
+     * Verifies the old password using BCrypt and updates the password to a newly encoded hash.
+     *
+     * @param changePasswordRequest DTO containing userId, oldPassword, and newPassword.
+     * @return {@code true} if password verification and update succeeded, {@code false} otherwise.
      */
     @Transactional
     public boolean changePassword(ChangePasswordRequest changePasswordRequest) {
@@ -84,7 +96,17 @@ public class UserService {
     }
 
     /**
-     * 删除用户账户（软删除）
+     * Performs a soft deletion of the specified user account.
+     *
+     * <p>Safety Controls:
+     * <ul>
+     *   <li>Prevents deletion of seed/admin user (userId = 1).</li>
+     *   <li>Appends timestamp prefixes to email and username to free up unique indexes for future registrations.</li>
+     *   <li>Marks {@code deleted = true} for logical deletion.</li>
+     * </ul>
+     *
+     * @param userId The ID of the user to be soft-deleted.
+     * @return {@code true} if deletion succeeded, {@code false} if blocked or user not found.
      */
     @Transactional
     public boolean deleteAccount(Long userId) {

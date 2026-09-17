@@ -11,15 +11,27 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
 /**
- * OpenAPI 配置（Swagger UI）。
- * 说明：
- * - 自动生成 /v3/api-docs JSON 与 /swagger-ui 可视化文档
- * - 便于前后端联调与回归验证
- * 原理：
- * - 依赖 springdoc-openapi 对 Spring Web 注解进行扫描与建模
+ * OpenAPI 3.0 与 Swagger UI 规范化文档装配配置类 (OpenAPI Configuration)
+ *
+ * <h3>架构设计与核心职责：</h3>
+ * <ul>
+ *   <li><b>自动化元数据契约生成：</b>
+ *       基于 {@code springdoc-openapi-starter-webmvc-ui} 扫描 Controller 与 DTO 注解，
+ *       动态生成符合 OpenAPI 3.0 规范的元数据描述文档（{@code /v3/api-docs}）。</li>
+ *   <li><b>可视化交互式调试控制台 (Swagger UI)：</b>
+ *       自动提供基于 Web 的前端交互界面（{@code /swagger-ui/index.html} 或 {@code /swagger-ui.html}），
+ *       支持免 Postman 直接在浏览器在线测试 API 入参、出参及响应状态码。</li>
+ *   <li><b>Bearer JWT 全局安全认证方案声明：</b>
+ *       在 OpenAPI 组件中显式声明 {@code bearerAuth} 安全方案（{@link SecurityScheme.Type#HTTP} + {@code scheme="bearer"}），
+ *       在 Swagger UI 顶部激活全局 "Authorize" 按钮，输入登录后获取的 JWT 即可自动在所有受保护接口追加
+ *       {@code Authorization: Bearer <token>} 请求标头。</li>
+ *   <li><b>Spring Security 协同策略：</b>
+ *       在 {@link SecurityConfig} 中显式声明对 {@code /v3/api-docs/**} 与 {@code /swagger-ui/**} 放行，
+ *       确保联调与自测无需预先认证。</li>
+ * </ul>
  */
+@Configuration
 public class OpenApiConfig {
 
     @Bean

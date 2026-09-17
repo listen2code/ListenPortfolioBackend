@@ -1,63 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- =================================================================== -->
+<!-- SpotBugs 静态代码漏洞与坏味道过滤器规则配置 (spotbugs-exclude.xml) -->
+<!-- =================================================================== -->
+<!-- 核心设计思想：
+     SpotBugs 基于静态字节码模式匹配进行深度代码走查。在现代 Spring Boot 3 与
+     Lombok / MyBatis-Plus 体系下，很多框架级的设计模式（如依赖注入不可变性、
+     数据传输对象 DTO、自动生成的合成类）会被 SpotBugs 判定为潜在缺陷。
+     本过滤文件的作用是：
+     1. 精准屏蔽已知的框架级良性“误报”(False Positives)；
+     2. 保留对真正高危 Bug（如 SQL 注入、空指针反引用、并发竞态、资源泄漏）的拦截灵敏度；
+     3. 避免噪音过多导致研发团队对静态扫描结果产生狼来了的钝化效应。
+=================================================================== -->
 <FindBugsFilter>
-    <!-- SpotBugs 排除配置 -->
-    <!-- 说明：排除一些常见的误报或不重要的警告 -->
-    
-    <!-- 排除测试类 -->
+    <!-- 规则 1：排除单元测试与集成测试代码 (*Test*) -->
+    <!-- 说明：测试用例中经常包含 Assert 预期断言、硬编码字符串与 Mock 数据构造，
+         不作为生产级严苛检查对象，故对测试类做全量抑制 -->
     <Match>
         <Class name="~.*Test.*" />
         <Bug pattern="~.*" />
     </Match>
     
-    <!-- 排除 Lombok 生成的代码 -->
+    <!-- 规则 2：排除内部匿名类与 Lombok 生成的代码 ($ 符号命名) -->
+    <!-- 说明：Lombok 编译期注解处理器生成的字节码包含大量的合成方法 (Synthetic Methods)，
+         这些机器生成的中间字节码无需人工介入修改 -->
     <Match>
         <Class name="~.*\$.*" />
         <Bug pattern="~.*" />
     </Match>
     
-    <!-- 排除 Spring Boot 自动配置 -->
+    <!-- 规则 3：排除 Spring 自动装配类的序列化警告 (SE_BAD_FIELD) -->
+    <!-- 说明：Spring 管理的单例 Bean 通常驻留在 JVM 内存中，并不需要真正通过 Java 原生序列化持久化至磁盘 -->
     <Match>
         <Class name="~.*\$.*" />
         <Method name="~.*" />
         <Bug pattern="SE_BAD_FIELD" />
     </Match>
     
-    <!-- 排除序列化相关的警告 -->
+    <!-- 规则 4：排除短暂性瞬态字段未反序列化恢复警告 (SE_TRANSIENT_FIELD_NOT_RESTORED) -->
+    <!-- 说明：优先级为 3（低优先级）的瞬态字段警告属于业务预期行为 -->
     <Match>
         <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
         <Priority value="3" />
     </Match>
     
-    <!-- 排除 Hibernate 实体类的某些警告 -->
+    <!-- 规则 5：排除实体类引用暴露警告 (EI_EXPOSE_REP, EI_EXPOSE_REP2) -->
+    <!-- 说明：Entity 领域模型中可能包含 Date/List 等可变对象的 Getter/Setter。
+         在 ORM (MyBatis-Plus) 与 JavaBean 规范中，这是标准的属性读写设计，强制防御性深拷贝反而会带来 GC 内存压力 -->
     <Match>
         <Class name="~.*Entity$" />
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
     </Match>
     
-    <!-- 排除 JPA 相关的警告 -->
+    <!-- 规则 6：排除持久层与 Mapper 的空指针潜在风险警告 (NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE) -->
+    <!-- 说明：数据库查询返回 null 属于可预期的业务逻辑（通过 Optional 或 if-null 判定），在此处抑制静态误报 -->
     <Match>
-        <Class name="~.*Repository$" />
+        <Class name="~.*(Repository|Mapper)$" />
         <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE" />
     </Match>
     
-    <!-- 排除 Controller 中的某些警告 -->
+    <!-- 规则 7：排除 Controller 控制器中的低优先级内部引用暴露警告 -->
+    <!-- 说明：Spring MVC 控制器处理入参和返回 DTO 时，对象引用直接由 Jackson 序列化，低优先级暴露告警可安全忽略 -->
     <Match>
         <Class name="~.*Controller$" />
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
         <Priority value="3" />
     </Match>
     
-    <!-- 排除 Config 类中的警告 -->
+    <!-- 规则 8：排除配置类中的属性字段序列化告警 (SE_BAD_FIELD) -->
+    <!-- 说明：以 Config 结尾的配置 Bean 仅由 Spring 容器生命周期管理，无需支持二进制原生序列化 -->
     <Match>
         <Class name="~.*Config$" />
         <Bug pattern="SE_BAD_FIELD" />
         <Priority value="3" />
     </Match>
     
-    <!-- 排除 DTO 类中的序列化警告 -->
+    <!-- 规则 9：排除 DTO 数据传输对象的反序列化警告 -->
+    <!-- 说明：API 交互的 DTO 统一通过 JSON (Jackson) 编解码，不依赖 Java 原生 Serializable 接口 -->
     <Match>
         <Class name="~.*Dto$" />
         <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
         <Priority value="3" />
     </Match>
 </FindBugsFilter>
+
